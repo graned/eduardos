@@ -117,14 +117,13 @@ pkgs.testers.runNixOSTest {
             "| grep -iq ghostty",
             timeout=45
         )
-        # Capture a baseline of the mapped desktop. Screenshot files
-        # become outputs of the successful NixOS test derivation.
+        # Keep all existing functional checks, but curate Classic previews
+        # separately from the multi-window keyboard test.
+        import json
+        import time
         machine.screenshot("obsidian-forge-ghostty-before.png")
         if ${if preview then "True" else "False"}:
-            machine.screenshot("${theme}-desktop.png")
             if ${if theme == "forge-classic" then "True" else "False"}:
-                # A clean view exposes the wallpaper otherwise hidden
-                # behind maximized/tiled terminal windows.
                 machine.wait_until_succeeds(
                     "pgrep -u forge -f 'swaybg.*forge-classic-wallpaper' >/dev/null",
                     timeout=30
@@ -132,25 +131,37 @@ pkgs.testers.runNixOSTest {
                 machine.succeed(
                     "test -s /etc/xdg/eduardos/forge-classic-wallpaper.png"
                 )
-                # The previous wallpaper process segfaulted after a short
-                # startup, while an instantaneous pgrep allowed CI to pass.
-                # Check it is still alive after the initial rendering period.
-                import time
+                # A process that exits immediately is not a working wallpaper.
                 time.sleep(3)
                 machine.succeed(
                     "pgrep -u forge -f 'swaybg.*forge-classic-wallpaper' >/dev/null"
                 )
-                import json
-                import time
+                # The real Hyprland commands create one deliberate hero
+                # window. This does not alter the user's tiling defaults.
+                hyprctl("dispatch togglefloating")
+                hyprctl("dispatch resizeactive exact 900 540")
+                hyprctl("dispatch moveactive exact 95 150")
+                time.sleep(2)
+                machine.screenshot("forge-classic-desktop.png")
+                # A clean second workspace reveals the full wallpaper.
                 hyprctl("dispatch workspace 2")
                 for _ in range(15):
                     if json.loads(hyprctl("-j activeworkspace")).get("id") == 2:
                         break
                     time.sleep(1)
                 else:
-                    raise AssertionError("Classic preview workspace did not activate")
+                    raise AssertionError("Classic wallpaper workspace did not activate")
+                time.sleep(2)
                 machine.screenshot("forge-classic-wallpaper.png")
                 hyprctl("dispatch workspace 1")
+                for _ in range(15):
+                    if json.loads(hyprctl("-j activeworkspace")).get("id") == 1:
+                        break
+                    time.sleep(1)
+                else:
+                    raise AssertionError("Classic hero workspace did not reactivate")
+            else:
+                machine.screenshot("${theme}-desktop.png")
 
         # Exercise the *actual virtual keyboard* through QEMU and our
         # shipped Super+Return shortcut, rather than hyprctl dispatch.
@@ -177,11 +188,49 @@ pkgs.testers.runNixOSTest {
             )
         machine.screenshot("obsidian-forge-ghostty-after-shortcut.png")
         if ${if preview then "True" else "False"}:
+            if ${if theme == "forge-classic" then "True" else "False"}:
+                # Capture Fuzzel over an unobstructed wallpaper, and show
+                # a real result from the installed default Brave browser.
+                hyprctl("dispatch workspace 2")
+                for _ in range(15):
+                    if json.loads(hyprctl("-j activeworkspace")).get("id") == 2:
+                        break
+                    time.sleep(1)
             machine.send_key("meta_l-d")
             machine.wait_until_succeeds(
-                "pgrep -u forge -f '^fuzzel$' >/dev/null",
+                "pgrep -u forge -f '^fuzzel
+        machine.succeed("systemctl is-active edos-hyprland-smoke.service")
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed("ps -u forge -o pid,comm,args || true"))
+        print(machine.succeed("find /run/user/$(id -u forge)/hypr -maxdepth 2 -ls || true"))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null",
                 timeout=30
             )
+            if ${if theme == "forge-classic" then "True" else "False"}:
+                machine.send_chars("brave")
+                time.sleep(2)
             machine.screenshot("${theme}-launcher.png")
         machine.succeed("systemctl is-active edos-hyprland-smoke.service")
     except Exception:
