@@ -65,3 +65,32 @@ nix build .#checks.x86_64-linux.hyprland-session -L
 The first check builds generated Waybar CSS for all three choices and
 verifies each accent color. The others still require real NixOS boot
 and Hyprland graphical-session behavior.
+
+## Real desktop screenshots from CI
+
+PRs also boot all three themes in separate QEMU guests, start Hyprland,
+Waybar, Mako and Ghostty, verify that the Super+Return shortcut maps
+another Ghostty window, and invoke Fuzzel through Super+D. The test
+captures two actual VM display screenshots for each theme:
+
+| Theme | Desktop | Launcher |
+| --- | --- | --- |
+| Classic | `forge-classic-desktop.png` | `forge-classic-launcher.png` |
+| Neon | `forge-neon-desktop.png` | `forge-neon-launcher.png` |
+| Brutalist | `forge-brutalist-desktop.png` | `forge-brutalist-launcher.png` |
+
+Download all six from **Actions → successful workflow run →
+Artifacts → `eduardos-theme-previews`**. Artifacts are kept for 14 days.
+If a preview test fails, files produced by earlier themes may still be
+uploaded; the VM logs provide the startup failure details.
+
+The preview images reflect the **current shipped UI**, not the cinematic
+concept art. Wallpaper artwork, theme-specific backgrounds and deeper
+styling are still separate design work. Screenshot capture is automatic;
+pixel-diff comparison is deliberately not a pass/fail criterion yet.
+
+To build an individual theme preview on an x86_64 Linux KVM host:
+
+```sh
+nix build .#checks.x86_64-linux.theme-preview-neon -L
+```
