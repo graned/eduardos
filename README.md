@@ -1,1 +1,1 @@
-# eduardos
+# EduardOS
