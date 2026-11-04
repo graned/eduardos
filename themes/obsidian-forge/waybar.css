@@ -1,0 +1,27 @@
+/* eduardOS Obsidian Forge: no heavy blur, predictable contrast */
+* {
+  font-family: "JetBrainsMono Nerd Font", "DejaVu Sans", sans-serif;
+  font-size: 12px;
+  border: none;
+  border-radius: 0;
+}
+window#waybar {
+  background: #0b0d12;
+  color: #e7e3dd;
+  border-bottom: 2px solid #303641;
+}
+#workspaces button {
+  padding: 0 9px;
+  color: #aab3c2;
+}
+#workspaces button.active {
+  color: #e56b35;
+  background: #1b202b;
+  box-shadow: inset 0 -2px #e56b35;
+}
+#clock, #network, #pulseaudio, #cpu, #memory, #tray {
+  padding: 0 10px;
+}
+#clock { color: #ffb366; }
+#network { color: #40c9b6; }
+#cpu, #memory { color: #aab3c2; }
