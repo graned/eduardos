@@ -41,6 +41,10 @@ pkgs.testers.runNixOSTest {
     uid = machine.succeed("id -u forge").strip()
     runtime = f"/run/user/{uid}"
 
+    # Aquamarine's nested Wayland backend requires wl_seat and
+    # zwp_linux_dmabuf_v1. Weston headless without --fake-seat has
+    # no wl_seat; Pixman rendering does not advertise DMA-BUF.
+    # Use software GL and a synthetic input seat in this test only.
     # Start an actual Wayland server on a dedicated socket. A systemd
     # service is not a logind graphical login session, so direct DRM
     # initialization cannot be relied on in a headless CI machine.
@@ -52,7 +56,7 @@ pkgs.testers.runNixOSTest {
         f"--setenv=XDG_RUNTIME_DIR={runtime} "
         "--setenv=LIBGL_ALWAYS_SOFTWARE=1 "
         "/run/current-system/sw/bin/weston "
-        "--backend=headless --renderer=pixman "
+        "--backend=headless --renderer=gl --fake-seat "
         "--socket=edos-parent --idle-time=0"
     )
     machine.wait_until_succeeds(
