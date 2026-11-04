@@ -21,10 +21,21 @@ merely a running Ghostty process. The compositor must remain active.
 This is not a substitute for a login-manager test or physical hardware
 testing.
 
+The test also captures a screenshot of the running compositor with Ghostty,
+sends `Super+Return` through QEMU's virtual keyboard, and requires Hyprland
+to report **another** mapped Ghostty window. A second screenshot is taken
+after the shortcut. This checks a real keyboard path rather than just an IPC
+command; no OCR or pixel comparison is used to decide pass/fail.
+
+On successful GitHub Actions runs, both PNGs are uploaded as the
+`obsidian-forge-desktop-screenshots` artifact (retained 14 days).
+On failed Nix builds these images may not be available, so consult
+the VM driver and Hyprland logs; screenshot uploads are best-effort.
+
 A passing result establishes *DRM compositor startup and a mapped Ghostty
 window in QEMU*, not complete desktop acceptance. It does not prove
 correct visual rendering, GPU acceleration, browser usability, audio,
-keyboard/mouse behavior, display hotplug, or physical hardware compatibility.
+mouse behavior, sustained text input, display hotplug, or physical hardware compatibility.
 
 ## Version and migration policy
 

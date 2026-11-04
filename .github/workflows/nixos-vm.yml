@@ -31,7 +31,20 @@ jobs:
         run: nix flake check --no-build --show-trace
       - name: Boot test in QEMU (systemd, NetworkManager, desktop binaries)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.boot
-      - name: Smoke test Hyprland compositor startup under QEMU
-        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.hyprland-session
+      - name: Test desktop keyboard input and capture screenshots in QEMU
+        run: |
+          nix build --out-link graphical-test-result --print-build-logs .#checks.x86_64-linux.hyprland-session
+          mkdir -p artifacts/screenshots
+          cp -L graphical-test-result/*.png artifacts/screenshots/
+          test -f artifacts/screenshots/obsidian-forge-ghostty-before.png
+          test -f artifacts/screenshots/obsidian-forge-ghostty-after-shortcut.png
+      - name: Upload desktop screenshot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: obsidian-forge-desktop-screenshots
+          path: artifacts/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Build interactive VM launcher
         run: nix build --no-link --print-build-logs .#vm
