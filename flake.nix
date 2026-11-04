@@ -53,7 +53,9 @@
           machine.succeed("uname -s | grep Linux")
           machine.succeed("systemctl is-active NetworkManager.service")
           machine.succeed("test -x /run/current-system/sw/bin/Hyprland")
-          machine.succeed("test -x /run/current-system/sw/bin/firefox")
+          machine.succeed("test -x /run/current-system/sw/bin/brave")
+          machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-classic")
+          machine.succeed("grep -Fq brave-browser.desktop /etc/xdg/mimeapps.list")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
           machine.succeed("opencode --version")
           # Home Manager must actually activate inside the guest.
