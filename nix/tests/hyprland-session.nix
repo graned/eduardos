@@ -198,34 +198,7 @@ pkgs.testers.runNixOSTest {
                     time.sleep(1)
             machine.send_key("meta_l-d")
             machine.wait_until_succeeds(
-                "pgrep -u forge -f '^fuzzel
-        machine.succeed("systemctl is-active edos-hyprland-smoke.service")
-    except Exception:
-        print(machine.succeed(
-            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
-        ))
-        print(machine.succeed(
-            "journalctl -u seatd.service --no-pager -n 120 || true"
-        ))
-        print(machine.succeed("ps -u forge -o pid,comm,args || true"))
-        print(machine.succeed("find /run/user/$(id -u forge)/hypr -maxdepth 2 -ls || true"))
-        print(machine.succeed(
-            "ls -la /dev/dri /run/user/$(id -u forge) || true"
-        ))
-        print(machine.succeed(
-            "find /home/forge/.cache/hyprland -maxdepth 1 "
-            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
-            "2>/dev/null || true"
-        ))
-        print(machine.succeed(
-            "find /run/user/$(id -u forge)/hypr "
-            "-name 'hyprland.log' -type f -exec cat {} + "
-            "2>/dev/null || true"
-        ))
-        raise
-  '';
-}
- >/dev/null",
+                "pgrep -u forge -f '^fuzzel$' >/dev/null",
                 timeout=30
             )
             if ${if theme == "forge-classic" then "True" else "False"}:
