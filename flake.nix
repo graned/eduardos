@@ -12,6 +12,7 @@
         ./nix/modules/desktop/hyprland.nix
         ./nix/modules/desktop/obsidian-forge.nix
         ./nix/modules/development/opencode.nix
+        ./nix/modules/development/isenguard.nix
       ];
     in
     {
@@ -41,6 +42,8 @@
           machine.succeed("test -x /run/current-system/sw/bin/firefox")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
           machine.succeed("opencode --version")
+          machine.succeed("env HOME=/tmp/edos-isenguard XDG_CONFIG_HOME=/tmp/edos-isenguard/config isenguard --version")
+          machine.succeed("test -f /tmp/edos-isenguard/config/isenguard/init.lua")
           # Verify the actual desktop configuration lands in the booted guest.
           machine.succeed("test -r /etc/xdg/hypr/hyprland.conf")
           machine.succeed("grep -Fq 'exec-once = waybar' /etc/xdg/hypr/hyprland.conf")
