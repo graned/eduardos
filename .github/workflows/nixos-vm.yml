@@ -1,0 +1,28 @@
+name: NixOS VM build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vm-build:
+    name: Evaluate and build x86_64 Linux VM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Check flake
+        run: nix flake check --show-trace
+      - name: Build virtual machine launcher
+        run: nix build --no-link --print-build-logs .#vm
