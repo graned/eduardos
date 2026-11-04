@@ -10,13 +10,14 @@ Run on an x86_64 Linux host with Nix and KVM:
 nix build .#checks.x86_64-linux.hyprland-session -L
 ```
 
-The test boots NixOS under QEMU, starts a headless Weston Wayland server with a synthetic seat and software GL renderer,
-and launches Hyprland nested as the non-root `forge` account using software
-rendering. It still provisions a virtual `virtio-vga` DRM device for GPU
-library compatibility, but does not require an active physical login seat. It fails if a Wayland
-socket does not appear or if the service is not active.
+The test boots NixOS under QEMU with a virtual `virtio-vga` GPU and
+starts the pinned Hyprland compositor directly using the `seatd` seat
+manager under the non-root `forge` account. It verifies that `seatd` is
+running and that the DRM device exists, then requires a Wayland socket
+and an active Hyprland process. These checks do not substitute for a
+real graphical login session or physical hardware testing.
 
-A passing result establishes *nested compositor startup*, not a complete desktop
+A passing result establishes *DRM compositor startup in QEMU*, not a complete desktop
 acceptance test. It does not prove GPU acceleration, browser rendering,
 audio, input handling, display hotplug or real hardware compatibility.
 
