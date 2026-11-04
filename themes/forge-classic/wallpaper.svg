@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#090b0f"/><stop offset=".52" stop-color="#17171a"/><stop offset=".85" stop-color="#2d1b17"/><stop offset="1" stop-color="#080a0d"/></linearGradient>
+    <radialGradient id="glow" cx="65%" cy="73%" r="53%"><stop stop-color="#e56b35" stop-opacity=".45"/><stop offset=".35" stop-color="#b54822" stop-opacity=".18"/><stop offset="1" stop-color="#e56b35" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ember" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#ffbd7b"/><stop offset=".4" stop-color="#ee7840"/><stop offset="1" stop-color="#71291e"/></linearGradient>
+    <linearGradient id="rock" x2=".5" y2="1"><stop stop-color="#2f292b"/><stop offset="1" stop-color="#0a0e13"/></linearGradient>
+    <linearGradient id="foreground" x2="0" y2="1"><stop stop-color="#161a1d"/><stop offset="1" stop-color="#07090c"/></linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="24"/></filter>
+    <filter id="halo"><feGaussianBlur stdDeviation="7"/></filter>
+    <pattern id="grid" width="70" height="70" patternUnits="userSpaceOnUse"><path d="M70 0H0V70" fill="none" stroke="#9b7765" stroke-opacity=".11" stroke-width=".6"/></pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <ellipse cx="1180" cy="706" rx="530" ry="160" fill="#de5c30" opacity=".20" filter="url(#soft)"/>
+  <path d="M0 620 180 576 322 608 520 478 648 567 831 507 1061 601 1241 461 1368 576 1561 500 1748 577 1920 540V1080H0Z" fill="#15171a"/>
+  <path d="M0 719 178 651 379 692 559 563 719 666 846 602 1018 695 1177 522 1304 656 1461 594 1639 682 1840 585 1920 650V1080H0Z" fill="url(#rock)"/>
+  <path d="M0 812 230 730 410 784 670 705 876 764 1100 690 1370 787 1574 715 1770 792 1920 730V1080H0Z" fill="#111418"/>
+  <path d="M0 874 245 841 386 868 596 785 845 845 1077 794 1274 865 1532 799 1710 877 1920 839V1080H0Z" fill="url(#foreground)"/>
+  <path d="M760 855 967 834 1120 790 1184 786 1264 748 1293 735 1335 737 1379 712 1447 711 1510 682 1480 722 1390 742 1337 760 1274 770 1211 817 1113 829 1007 864 834 888Z" fill="#f36a32" opacity=".35" filter="url(#halo)"/>
+  <path d="M752 855 967 832 1120 789 1184 785 1264 745 1293 734 1335 735 1379 710 1447 710 1510 681" fill="none" stroke="url(#ember)" stroke-width="5"/>
+  <path d="M1108 795 1138 816 1173 810 1191 830 1246 820 1264 843 1322 830" fill="none" stroke="#b94a2c" stroke-width="2" opacity=".8"/>
+  <g fill="#f9a25d">
+    <circle cx="849" cy="684" r="2" opacity=".5"/><circle cx="1097" cy="642" r="2.5" opacity=".7"/><circle cx="1162" cy="574" r="2" opacity=".5"/><circle cx="1268" cy="639" r="1.5"/><circle cx="1441" cy="527" r="2"/><circle cx="1549" cy="608" r="2"/><circle cx="1682" cy="465" r="1.5"/><circle cx="1769" cy="579" r="2"/>
+  </g>
+  <rect width="1920" height="1080" fill="url(#grid)" opacity=".34"/>
+  <path d="M66 110h130M66 110v130M1854 110h-130M1854 110v130M66 970h130M66 970v-130M1854 970h-130M1854 970v-130" fill="none" stroke="#bd693b" stroke-width="1.7" opacity=".46"/>
+  <g transform="translate(1470 280)">
+    <path d="M-136 -49H136L109 -18H62L36 21 68 46 50 70H-50L-68 46 -36 21 -62 -18H-109Z" fill="#0c1014" stroke="#e56b35" stroke-width="5" stroke-linejoin="miter"/>
+    <path d="M-115 -38H115M-38 56H38" fill="none" stroke="#ffb16d" stroke-width="2" opacity=".85"/>
+    <path d="M-144 -56H144" fill="none" stroke="#ffa16a" stroke-width="2" opacity=".38" filter="url(#halo)"/>
+  </g>
+  <text x="1470" y="430" fill="#f2e6d8" font-family="DejaVu Sans,sans-serif" font-size="55" text-anchor="middle" font-weight="bold" letter-spacing="-1">eduard<tspan fill="#e56b35">OS</tspan></text>
+  <text x="1470" y="466" fill="#c28c69" font-family="DejaVu Sans,sans-serif" font-size="16" text-anchor="middle" letter-spacing="7">OBSIDIAN FORGE</text>
+  <path d="M1284 492H1656" stroke="#d27b4b" stroke-opacity=".42"/>
+  <text x="1470" y="533" fill="#ad9387" font-family="DejaVu Sans,sans-serif" font-size="15" text-anchor="middle" letter-spacing="3">FORGED IN CHAOS</text>
+  <text x="1470" y="563" fill="#e0b19a" font-family="DejaVu Sans,sans-serif" font-size="13" text-anchor="middle" letter-spacing="2">THE MACHINE SHALL OBEY</text>
+  <text x="88" y="1004" fill="#d19b79" opacity=".66" font-family="DejaVu Sans,sans-serif" font-size="13" letter-spacing="5">EDUARDOS  /  FORGE CLASSIC</text>
+  <text x="1830" y="1004" fill="#a9846e" opacity=".55" font-family="DejaVu Sans,sans-serif" text-anchor="end" font-size="13" letter-spacing="3">01 — EMBER</text>
+</svg>
