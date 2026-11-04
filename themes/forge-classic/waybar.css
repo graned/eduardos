@@ -1,0 +1,70 @@
+/* Forge Classic / Obsidian Forge — crisp and cinematic, no blur.
+   GTK CSS only; no scripts, transparency compositor or extra daemons. */
+* {
+  font-family: "JetBrainsMono Nerd Font", "DejaVu Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+window#waybar {
+  background: #101115;
+  color: #e8e3da;
+  border-bottom: 1px solid #69412f;
+}
+#workspaces {
+  margin: 5px 0 5px 12px;
+  padding: 2px 5px;
+  background: #202024;
+  border: 1px solid #41342f;
+  border-radius: 9px;
+}
+#workspaces button {
+  padding: 2px 10px;
+  min-width: 18px;
+  color: #a9a6a4;
+  background: transparent;
+  border-radius: 6px;
+}
+#workspaces button.active {
+  color: #101115;
+  background: #e56b35;
+}
+#workspaces button.urgent {
+  color: #ffb366;
+}
+#window {
+  color: #c4b1a5;
+  padding: 0 12px;
+  font-size: 11px;
+}
+#clock {
+  color: #ffbd82;
+  padding: 4px 16px;
+  background: #202024;
+  border: 1px solid #4a3830;
+  border-radius: 8px;
+}
+#pulseaudio, #network, #cpu, #memory, #tray {
+  color: #c3b8b0;
+  padding: 4px 12px;
+  margin: 5px 2px;
+  background: #1b1c20;
+  border-radius: 7px;
+}
+#network {
+  color: #60c8ba;
+}
+#cpu, #memory {
+  color: #d4b6a4;
+}
+#tray {
+  margin-right: 12px;
+}
+tooltip {
+  background: #111217;
+  color: #e8e3da;
+  border: 1px solid #e56b35;
+  border-radius: 8px;
+}
