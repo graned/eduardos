@@ -79,7 +79,403 @@ pkgs.testers.runNixOSTest {
         # Hyprland is configured to auto-launch these two services.
         # Verify actual user processes, not only package installation.
         machine.wait_until_succeeds(
-            "pgrep -u forge -f '^waybar", timeout=30
+            "pgrep -u forge -f '^waybar\
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -f '^mako\
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x mako >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x mako >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -f '^mako", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x mako >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x mako >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x mako >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x mako >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null", timeout=30
         )
         machine.wait_until_succeeds(
             "pgrep -u forge -f '^mako", timeout=30
