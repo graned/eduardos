@@ -9,6 +9,13 @@ pkgs.testers.runNixOSTest {
 
     # A software-rendered QEMU smoke test, not a GPU performance test.
     environment.variables.LIBGL_ALWAYS_SOFTWARE = "1";
+
+    # NixOS test guests are console-first and need an explicit virtual
+    # graphics device for Aquamarine to initialize a DRM backend.
+    # This remains a software-rendered, non-accelerated smoke test.
+    virtualisation.qemu.options = [ "-device virtio-vga" ];
+    hardware.graphics.enable = true;
+    users.users.forge.extraGroups = [ "video" "render" ];
   };
 
   testScript = ''
@@ -17,6 +24,11 @@ pkgs.testers.runNixOSTest {
     machine.wait_until_succeeds(
         "test -f /home/forge/.config/eduardos/managed-by-home-manager"
     )
+
+    # Fail with an actionable message if the virtual DRM device is
+    # absent, rather than timing out after Hyprland crashes.
+    machine.wait_until_succeeds("test -e /dev/dri/card0", timeout=30)
+    machine.succeed("ls -l /dev/dri")
 
     # Linger creates a normal logind user runtime directory.
     machine.succeed("loginctl enable-linger forge")
@@ -40,15 +52,22 @@ pkgs.testers.runNixOSTest {
         "--config /etc/xdg/hypr/hyprland.conf"
     )
 
-    # Fail if Hyprland exits early, and surface the journal for diagnosis.
-    machine.wait_until_succeeds(
-        "test -S /run/user/$(id -u forge)/wayland-1 "
-        "|| test -S /run/user/$(id -u forge)/wayland-0",
-        timeout=90
-    )
-    machine.succeed("systemctl is-active edos-hyprland-smoke.service")
-    machine.succeed(
-        "journalctl -u edos-hyprland-smoke.service --no-pager -n 50"
-    )
+    # A socket and active compositor are both required.
+    # On failure print the actual startup journal before raising.
+    try:
+        machine.wait_until_succeeds(
+            "test -S /run/user/$(id -u forge)/wayland-1 "
+            "|| test -S /run/user/$(id -u forge)/wayland-0",
+            timeout=40
+        )
+        machine.succeed("systemctl is-active edos-hyprland-smoke.service")
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        raise
   '';
 }
