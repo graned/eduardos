@@ -1,11 +1,12 @@
-{ pkgs, modules }:
+{ pkgs, modules, theme ? "forge-classic", preview ? false }:
 
 pkgs.testers.runNixOSTest {
-  name = "eduardos-hyprland-session";
+  name = "eduardos-hyprland-${theme}${if preview then "-preview" else ""}";
   nodes.machine = { ... }: {
     imports = modules;
     networking.hostName = "eduardos-graphical-test";
     system.stateVersion = "26.05";
+    eduardos.theme = theme;
 
     # A software-rendered QEMU smoke test, not a GPU performance test.
     environment.variables.LIBGL_ALWAYS_SOFTWARE = "1";
@@ -85,6 +86,7 @@ pkgs.testers.runNixOSTest {
             "pgrep -u forge -f '^mako$' >/dev/null", timeout=30
         )
         machine.succeed("test -x /run/current-system/sw/bin/ghostty")
+        machine.succeed("grep -Fxq '${theme}' /etc/xdg/eduardos/theme")
 
         # Query the compositor itself; a Ghostty process alone does not
         # prove that a Wayland surface was mapped successfully.
@@ -118,6 +120,8 @@ pkgs.testers.runNixOSTest {
         # Capture a baseline of the mapped desktop. Screenshot files
         # become outputs of the successful NixOS test derivation.
         machine.screenshot("obsidian-forge-ghostty-before.png")
+        if ${if preview then "True" else "False"}:
+            machine.screenshot("${theme}-desktop.png")
 
         # Exercise the *actual virtual keyboard* through QEMU and our
         # shipped Super+Return shortcut, rather than hyprctl dispatch.
@@ -143,6 +147,41 @@ pkgs.testers.runNixOSTest {
                 "Super+Return did not map an additional Ghostty window"
             )
         machine.screenshot("obsidian-forge-ghostty-after-shortcut.png")
+        if ${if preview then "True" else "False"}:
+            # Use the real Super+D shortcut from the shipped Hyprland config.
+            machine.send_key("meta_l-d")
+            machine.wait_until_succeeds(
+                "pgrep -u forge -f '^fuzzel
+        machine.succeed("systemctl is-active edos-hyprland-smoke.service")
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed("ps -u forge -o pid,comm,args || true"))
+        print(machine.succeed("find /run/user/$(id -u forge)/hypr -maxdepth 2 -ls || true"))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}
+ >/dev/null",
+                timeout=30
+            )
+            machine.screenshot("${theme}-launcher.png")
         machine.succeed("systemctl is-active edos-hyprland-smoke.service")
     except Exception:
         print(machine.succeed(
