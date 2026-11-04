@@ -15,6 +15,10 @@ pkgs.testers.runNixOSTest {
     # This remains a software-rendered, non-accelerated smoke test.
     virtualisation.qemu.options = [ "-device virtio-vga" ];
     hardware.graphics.enable = true;
+
+    # Weston supplies a parent Wayland server without needing to acquire
+    # a physical logind/DRM seat. Available only in this test guest.
+    environment.systemPackages = [ pkgs.weston ];
     users.users.forge.extraGroups = [ "video" "render" ];
   };
 
@@ -36,6 +40,25 @@ pkgs.testers.runNixOSTest {
 
     uid = machine.succeed("id -u forge").strip()
     runtime = f"/run/user/{uid}"
+
+    # Start an actual Wayland server on a dedicated socket. A systemd
+    # service is not a logind graphical login session, so direct DRM
+    # initialization cannot be relied on in a headless CI machine.
+    machine.succeed(
+        "systemd-run --unit=edos-weston-parent --collect "
+        "--property=User=forge "
+        "--property=WorkingDirectory=/home/forge "
+        "--setenv=HOME=/home/forge "
+        f"--setenv=XDG_RUNTIME_DIR={runtime} "
+        "--setenv=LIBGL_ALWAYS_SOFTWARE=1 "
+        "/run/current-system/sw/bin/weston "
+        "--backend=headless --renderer=pixman "
+        "--socket=edos-parent --idle-time=0"
+    )
+    machine.wait_until_succeeds(
+        f"test -S {runtime}/edos-parent", timeout=30
+    )
+    machine.succeed("systemctl is-active edos-weston-parent.service")
 
     # Start Hyprland using the SAME configuration we ship. Preserve the
     # version in pinned Nixpkgs; don't override upstream packages.
@@ -64,6 +87,9 @@ pkgs.testers.runNixOSTest {
     except Exception:
         print(machine.succeed(
             "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u edos-weston-parent.service --no-pager -n 100 || true"
         ))
         print(machine.succeed(
             "ls -la /dev/dri /run/user/$(id -u forge) || true"
