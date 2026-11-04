@@ -85,6 +85,37 @@ pkgs.testers.runNixOSTest {
             "pgrep -u forge -f '^mako$' >/dev/null", timeout=30
         )
         machine.succeed("test -x /run/current-system/sw/bin/ghostty")
+
+        # Query the compositor itself; a Ghostty process alone does not
+        # prove that a Wayland surface was mapped successfully.
+        # The instance signature is created by Hyprland at runtime.
+        signature = machine.succeed(
+            f"find {runtime}/hypr -mindepth 1 -maxdepth 1 "
+            "-type d -printf '%f\\n' | head -n 1"
+        ).strip()
+        assert signature, "Hyprland did not create an instance directory"
+        session_env = (
+            f"XDG_RUNTIME_DIR={runtime} "
+            f"HYPRLAND_INSTANCE_SIGNATURE={signature} "
+            "PATH=/run/current-system/sw/bin:/run/wrappers/bin"
+        )
+        def hyprctl(command):
+            return machine.succeed(
+                f"runuser -u forge -- env {session_env} "
+                f"/run/current-system/sw/bin/hyprctl {command}"
+            )
+        # Avoid silently passing if no output is configured.
+        assert "Monitor " in hyprctl("monitors"), (
+            "Hyprland started, but no usable monitor was reported"
+        )
+        hyprctl("dispatch exec ghostty")
+        machine.wait_until_succeeds(
+            f"runuser -u forge -- env {session_env} "
+            "/run/current-system/sw/bin/hyprctl clients "
+            "| grep -iq ghostty",
+            timeout=45
+        )
+        machine.succeed("systemctl is-active edos-hyprland-smoke.service")
     except Exception:
         print(machine.succeed(
             "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
@@ -93,6 +124,7 @@ pkgs.testers.runNixOSTest {
             "journalctl -u seatd.service --no-pager -n 120 || true"
         ))
         print(machine.succeed("ps -u forge -o pid,comm,args || true"))
+        print(machine.succeed("find /run/user/$(id -u forge)/hypr -maxdepth 2 -ls || true"))
         print(machine.succeed(
             "ls -la /dev/dri /run/user/$(id -u forge) || true"
         ))
