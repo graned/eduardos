@@ -52,7 +52,7 @@
             neon = themeStyles "forge-neon";
             brutalist = themeStyles "forge-brutalist";
           } ''
-            grep -Fq '#e56b35' "$classic"
+            grep -Fq '#f18a4e' "$classic"
             grep -Fq '#19c6bf' "$neon"
             grep -Fq '#ff8a45' "$brutalist"
             touch "$out"
