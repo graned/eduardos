@@ -71,6 +71,9 @@ pkgs.testers.runNixOSTest {
         "--setenv=LIBGL_ALWAYS_SOFTWARE=1 "
         "--setenv=AQ_NO_KMS_REQUIREMENT=1 "
         "--setenv=HYPRLAND_NO_RT=1 "
+        "--setenv=AQ_TRACE=1 "
+        "--setenv=HYPRLAND_TRACE=1 "
+        "--setenv=PATH=/run/current-system/sw/bin:/run/wrappers/bin "
         "/run/current-system/sw/bin/Hyprland "
         "--config /etc/xdg/hypr/hyprland.conf"
     )
@@ -93,6 +96,16 @@ pkgs.testers.runNixOSTest {
         ))
         print(machine.succeed(
             "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
         ))
         raise
   '';
