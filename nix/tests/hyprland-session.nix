@@ -16,10 +16,10 @@ pkgs.testers.runNixOSTest {
     virtualisation.qemu.options = [ "-device virtio-vga" ];
     hardware.graphics.enable = true;
 
-    # Weston supplies a parent Wayland server without needing to acquire
-    # a physical logind/DRM seat. Available only in this test guest.
-    environment.systemPackages = [ pkgs.weston ];
-    users.users.forge.extraGroups = [ "video" "render" ];
+    # Give the test account a seat manager able to broker DRM/input fds.
+    # Never use chmod 666 on /dev/dri or launch Hyprland as root.
+    services.seatd.enable = true;
+    users.users.forge.extraGroups = [ "seat" "video" "render" ];
   };
 
   testScript = ''
@@ -45,24 +45,13 @@ pkgs.testers.runNixOSTest {
     # zwp_linux_dmabuf_v1. Weston headless without --fake-seat has
     # no wl_seat; Pixman rendering does not advertise DMA-BUF.
     # Use software GL and a synthetic input seat in this test only.
-    # Start an actual Wayland server on a dedicated socket. A systemd
-    # service is not a logind graphical login session, so direct DRM
-    # initialization cannot be relied on in a headless CI machine.
-    machine.succeed(
-        "systemd-run --unit=edos-weston-parent --collect "
-        "--property=User=forge "
-        "--property=WorkingDirectory=/home/forge "
-        "--setenv=HOME=/home/forge "
-        f"--setenv=XDG_RUNTIME_DIR={runtime} "
-        "--setenv=LIBGL_ALWAYS_SOFTWARE=1 "
-        "/run/current-system/sw/bin/weston "
-        "--backend=headless --renderer=gl --fake-seat "
-        "--socket=edos-parent --idle-time=0"
-    )
-    machine.wait_until_succeeds(
-        f"test -S {runtime}/edos-parent", timeout=30
-    )
-    machine.succeed("systemctl is-active edos-weston-parent.service")
+    # The old nested Weston workaround depended on software DMA-BUF
+    # allocation and failed even after all protocols were available.
+    # Test native DRM startup through seatd instead.
+    machine.wait_for_unit("seatd.service")
+    machine.wait_until_succeeds("test -S /run/seatd.sock", timeout=30)
+    machine.succeed("id forge")
+    machine.succeed("ls -l /run/seatd.sock /dev/dri/card0")
 
     # Start Hyprland using the SAME configuration we ship. Preserve the
     # version in pinned Nixpkgs; don't override upstream packages.
@@ -97,7 +86,7 @@ pkgs.testers.runNixOSTest {
             "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
         ))
         print(machine.succeed(
-            "journalctl -u edos-weston-parent.service --no-pager -n 100 || true"
+            "journalctl -u seatd.service --no-pager -n 120 || true"
         ))
         print(machine.succeed(
             "ls -la /dev/dri /run/user/$(id -u forge) || true"
