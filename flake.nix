@@ -2,8 +2,12 @@
   description = "eduardOS — Forged in Chaos: Obsidian Forge desktop";
 
   inputs.nixpkgs.url = "https://channels.nixos.org/nixos-26.05/nixexprs.tar.zst";
+  inputs.home-manager = {
+    url = "github:nix-community/home-manager/release-26.05";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, home-manager }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
@@ -14,11 +18,15 @@
         ./nix/modules/development/opencode.nix
         ./nix/modules/development/isenguard.nix
       ];
+      vmModules = desktopModules ++ [
+        home-manager.nixosModules.home-manager
+        ./hosts/virtual-machine/user.nix
+      ];
     in
     {
       nixosConfigurations.eduardos-vm = nixpkgs.lib.nixosSystem {
         inherit system;
-        modules = desktopModules ++ [
+        modules = vmModules ++ [
           ./hosts/virtual-machine/default.nix
         ];
       };
@@ -29,7 +37,7 @@
       checks.${system}.boot = pkgs.testers.runNixOSTest {
         name = "eduardos-boot";
         nodes.machine = { ... }: {
-          imports = desktopModules;
+          imports = vmModules;
           networking.hostName = "eduardos-test";
           system.stateVersion = "26.05";
         };
@@ -42,6 +50,9 @@
           machine.succeed("test -x /run/current-system/sw/bin/firefox")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
           machine.succeed("opencode --version")
+          # Home Manager must actually activate inside the guest.
+          machine.wait_until_succeeds("test -f /home/forge/.config/eduardos/managed-by-home-manager")
+          machine.succeed("grep -Fq 'profile: forge-vm' /home/forge/.config/eduardos/managed-by-home-manager")
           machine.succeed("env HOME=/tmp/edos-isenguard XDG_CONFIG_HOME=/tmp/edos-isenguard/config isenguard --version")
           machine.succeed("test -f /tmp/edos-isenguard/config/isenguard/init.lua")
           # Verify the actual desktop configuration lands in the booted guest.
