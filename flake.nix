@@ -34,12 +34,13 @@
       packages.${system}.vm =
         self.nixosConfigurations.eduardos-vm.config.system.build.vm;
 
-      checks.${system}.hyprland-session = import ./nix/tests/hyprland-session.nix {
+      checks.${system} = {
+        hyprland-session = import ./nix/tests/hyprland-session.nix {
         inherit pkgs;
         modules = vmModules;
       };
 
-      checks.${system}.boot = pkgs.testers.runNixOSTest {
+        boot = pkgs.testers.runNixOSTest {
         name = "eduardos-boot";
         nodes.machine = { ... }: {
           imports = vmModules;
@@ -69,6 +70,7 @@
           machine.succeed("test -r /etc/xdg/fuzzel/fuzzel.ini")
           machine.succeed("test -r /etc/xdg/mako/config")
         '';
+      };
       };
     };
 }
