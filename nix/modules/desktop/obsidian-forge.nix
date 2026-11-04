@@ -1,31 +1,88 @@
-{ pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
+let
+  # A single desktop layout/behavior, with three lightweight colorways.
+  # Recolor the shipped Classic assets at evaluation time, not at runtime.
+  palettes = {
+    forge-classic = {
+      void = "0b0d12";
+      text = "e7e3dd";
+      border = "303641";
+      accent = "e56b35";
+      highlight = "ffb366";
+      signal = "40c9b6";
+      surface = "1b202b";
+      muted = "aab3c2";
+    };
+    forge-neon = {
+      void = "090e14";
+      text = "e5f4f2";
+      border = "294751";
+      accent = "19c6bf";
+      highlight = "ffad57";
+      signal = "e56b35";
+      surface = "122a32";
+      muted = "a0c2c9";
+    };
+    forge-brutalist = {
+      void = "101113";
+      text = "e8e8e5";
+      border = "414449";
+      accent = "ff8a45";
+      highlight = "f4f1e9";
+      signal = "b3b9bd";
+      surface = "232527";
+      muted = "b0b3b4";
+    };
+  };
+
+  classic = palettes.forge-classic;
+  selected = palettes.${config.eduardos.theme};
+  colorFields = [ "void" "text" "border" "accent" "highlight" "signal" "surface" "muted" ];
+  from = map (field: classic.${field}) colorFields;
+  to = map (field: selected.${field}) colorFields;
+  themed = name: file:
+    pkgs.writeText "eduardos-${config.eduardos.theme}-${name}"
+      (builtins.replaceStrings from to (builtins.readFile file));
+in
 {
-  # System defaults are deliberately placed under /etc/xdg:
-  # future Home Manager profiles can override them per user.
-  environment.etc."xdg/hypr/hyprland.conf".source =
-    ../../../themes/obsidian-forge/hyprland.conf;
-  environment.etc."xdg/waybar/config.jsonc".source =
-    ../../../themes/obsidian-forge/waybar.json;
-  environment.etc."xdg/waybar/style.css".source =
-    ../../../themes/obsidian-forge/waybar.css;
-  environment.etc."xdg/fuzzel/fuzzel.ini".source =
-    ../../../themes/obsidian-forge/fuzzel.ini;
-  environment.etc."xdg/mako/config".source =
-    ../../../themes/obsidian-forge/mako.conf;
-  environment.etc."xdg/ghostty/config".source =
-    ../../../themes/obsidian-forge/ghostty.conf;
+  options.eduardos.theme = lib.mkOption {
+    type = lib.types.enum [ "forge-classic" "forge-neon" "forge-brutalist" ];
+    default = "forge-classic";
+    description = ''
+      eduardOS Obsidian Forge appearance preset. This changes colors
+      across desktop applications without changing their behavior.
+    '';
+  };
 
-  fonts.packages = with pkgs; [
-    dejavu_fonts
-    nerd-fonts.jetbrains-mono
-  ];
+  config = {
+    # System fallback configs: future user setup can select a theme by
+    # setting eduardos.theme, while Home Manager overrides remain possible.
+    environment.etc."xdg/hypr/hyprland.conf".source =
+      themed "hyprland.conf" ../../../themes/obsidian-forge/hyprland.conf;
+    environment.etc."xdg/waybar/config.jsonc".source =
+      ../../../themes/obsidian-forge/waybar.json;
+    environment.etc."xdg/waybar/style.css".source =
+      themed "waybar.css" ../../../themes/obsidian-forge/waybar.css;
+    environment.etc."xdg/fuzzel/fuzzel.ini".source =
+      themed "fuzzel.ini" ../../../themes/obsidian-forge/fuzzel.ini;
+    environment.etc."xdg/mako/config".source =
+      themed "mako.conf" ../../../themes/obsidian-forge/mako.conf;
+    environment.etc."xdg/ghostty/config".source =
+      themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
+    environment.etc."xdg/eduardos/theme".text = config.eduardos.theme;
 
-  environment.systemPackages = with pkgs; [
-    hyprpaper
-    hyprlock
-    hypridle
-    pavucontrol
-    brightnessctl
-  ];
+    fonts.packages = with pkgs; [
+      dejavu_fonts
+      nerd-fonts.jetbrains-mono
+    ];
+
+    environment.systemPackages = with pkgs; [
+      hyprpaper
+      hyprlock
+      hypridle
+      pavucontrol
+      brightnessctl
+    ];
+  };
 }
