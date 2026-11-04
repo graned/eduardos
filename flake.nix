@@ -34,6 +34,11 @@
       packages.${system}.vm =
         self.nixosConfigurations.eduardos-vm.config.system.build.vm;
 
+      checks.${system}.hyprland-session = import ./nix/tests/hyprland-session.nix {
+        inherit pkgs;
+        modules = vmModules;
+      };
+
       checks.${system}.boot = pkgs.testers.runNixOSTest {
         name = "eduardos-boot";
         nodes.machine = { ... }: {
