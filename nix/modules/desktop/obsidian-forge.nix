@@ -44,6 +44,16 @@ let
   themed = name: file:
     pkgs.writeText "eduardos-${config.eduardos.theme}-${name}"
       (builtins.replaceStrings from to (builtins.readFile file));
+
+  # Classic receives its own curated visual design while Neon and
+  # Brutalist continue using the shared palette-based foundation.
+  isClassic = config.eduardos.theme == "forge-classic";
+  classicPath = ../../../themes/forge-classic;
+  wallpaper = pkgs.runCommand "eduardos-forge-classic-wallpaper.png" {
+    nativeBuildInputs = [ pkgs.librsvg ];
+  } ''
+    rsvg-convert --width=1920 --height=1080 ${classicPath}/wallpaper.svg > "$out"
+  '';
 in
 {
   options.eduardos.theme = lib.mkOption {
@@ -59,18 +69,29 @@ in
     # System fallback configs: future user setup can select a theme by
     # setting eduardos.theme, while Home Manager overrides remain possible.
     environment.etc."xdg/hypr/hyprland.conf".source =
-      themed "hyprland.conf" ../../../themes/obsidian-forge/hyprland.conf;
+      if isClassic then classicPath + "/hyprland.conf" else themed "hyprland.conf" ../../../themes/obsidian-forge/hyprland.conf;
     environment.etc."xdg/waybar/config.jsonc".source =
       ../../../themes/obsidian-forge/waybar.json;
     environment.etc."xdg/waybar/style.css".source =
-      themed "waybar.css" ../../../themes/obsidian-forge/waybar.css;
+      if isClassic then classicPath + "/waybar.css" else themed "waybar.css" ../../../themes/obsidian-forge/waybar.css;
     environment.etc."xdg/fuzzel/fuzzel.ini".source =
-      themed "fuzzel.ini" ../../../themes/obsidian-forge/fuzzel.ini;
+      if isClassic then classicPath + "/fuzzel.ini" else themed "fuzzel.ini" ../../../themes/obsidian-forge/fuzzel.ini;
     environment.etc."xdg/mako/config".source =
-      themed "mako.conf" ../../../themes/obsidian-forge/mako.conf;
+      if isClassic then classicPath + "/mako.conf" else themed "mako.conf" ../../../themes/obsidian-forge/mako.conf;
     environment.etc."xdg/ghostty/config".source =
-      themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
+      if isClassic then classicPath + "/ghostty.conf" else themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
     environment.etc."xdg/eduardos/theme".text = config.eduardos.theme;
+    environment.etc."xdg/hypr/hyprpaper.conf" = lib.mkIf isClassic {
+      text = ''
+        # Forge Classic static wallpaper; user overrides remain possible.
+        splash = false
+        wallpaper {
+          monitor =
+          path = ${wallpaper}
+          fit_mode = cover
+        }
+      '';
+    };
 
     fonts.packages = with pkgs; [
       dejavu_fonts
