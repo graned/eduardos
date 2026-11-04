@@ -21,8 +21,10 @@ animated wallpapers, extra agents or new runtime widget frameworks.
 
 The wallpaper is stored as editable SVG source, rendered once during the
 **Nix build** into a 1920×1080 PNG using `librsvg`; there is no runtime
-conversion process. Hyprpaper is already included in eduardOS's desktop
-packages and is started only with the Classic preset. No animations or
+conversion process. The lightweight `swaybg` wallpaper process is installed and started
+only with the Classic preset. The previously used `hyprpaper` crashed
+with SIGSEGV in the software-rendered QEMU test, leaving a blank desktop;
+CI now checks that swaybg remains alive after startup. No animations or
 blur are added, and the user's own Home Manager configuration continues
 to override system fallbacks.
 
