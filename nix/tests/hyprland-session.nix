@@ -41,13 +41,8 @@ pkgs.testers.runNixOSTest {
     uid = machine.succeed("id -u forge").strip()
     runtime = f"/run/user/{uid}"
 
-    # Aquamarine's nested Wayland backend requires wl_seat and
-    # zwp_linux_dmabuf_v1. Weston headless without --fake-seat has
-    # no wl_seat; Pixman rendering does not advertise DMA-BUF.
-    # Use software GL and a synthetic input seat in this test only.
-    # The old nested Weston workaround depended on software DMA-BUF
-    # allocation and failed even after all protocols were available.
-    # Test native DRM startup through seatd instead.
+    # The nested Weston test failed to supply an allocator despite
+    # advertising the necessary protocols. Test native DRM via seatd.
     machine.wait_for_unit("seatd.service")
     machine.wait_until_succeeds("test -S /run/seatd.sock", timeout=30)
     machine.succeed("id forge")
@@ -62,7 +57,7 @@ pkgs.testers.runNixOSTest {
         "--setenv=HOME=/home/forge "
         f"--setenv=XDG_RUNTIME_DIR={runtime} "
         "--setenv=LIBGL_ALWAYS_SOFTWARE=1 "
-        "--setenv=WAYLAND_DISPLAY=edos-parent "
+        "--setenv=LIBSEAT_BACKEND=seatd "
         "--setenv=AQ_NO_KMS_REQUIREMENT=1 "
         "--setenv=HYPRLAND_NO_RT=1 "
         "--setenv=AQ_TRACE=1 "
