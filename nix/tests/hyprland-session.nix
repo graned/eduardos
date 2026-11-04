@@ -126,10 +126,20 @@ pkgs.testers.runNixOSTest {
                 # A clean view exposes the wallpaper otherwise hidden
                 # behind maximized/tiled terminal windows.
                 machine.wait_until_succeeds(
-                    "pgrep -u forge -f '^hyprpaper$' >/dev/null",
+                    "pgrep -u forge -f 'swaybg.*forge-classic-wallpaper' >/dev/null",
                     timeout=30
                 )
-                machine.succeed("test -r /etc/xdg/hypr/hyprpaper.conf")
+                machine.succeed(
+                    "test -s /etc/xdg/eduardos/forge-classic-wallpaper.png"
+                )
+                # The previous wallpaper process segfaulted after a short
+                # startup, while an instantaneous pgrep allowed CI to pass.
+                # Check it is still alive after the initial rendering period.
+                import time
+                time.sleep(3)
+                machine.succeed(
+                    "pgrep -u forge -f 'swaybg.*forge-classic-wallpaper' >/dev/null"
+                )
                 import json
                 import time
                 hyprctl("dispatch workspace 2")
