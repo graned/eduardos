@@ -10,7 +10,7 @@ Run on an x86_64 Linux host with Nix and KVM:
 nix build .#checks.x86_64-linux.hyprland-session -L
 ```
 
-The test boots NixOS under QEMU, starts a headless Weston Wayland server,
+The test boots NixOS under QEMU, starts a headless Weston Wayland server with a synthetic seat and software GL renderer,
 and launches Hyprland nested as the non-root `forge` account using software
 rendering. It still provisions a virtual `virtio-vga` DRM device for GPU
 library compatibility, but does not require an active physical login seat. It fails if a Wayland
