@@ -11,6 +11,7 @@
         ./nix/modules/core.nix
         ./nix/modules/desktop/hyprland.nix
         ./nix/modules/desktop/obsidian-forge.nix
+        ./nix/modules/development/opencode.nix
       ];
     in
     {
@@ -39,6 +40,7 @@
           machine.succeed("test -x /run/current-system/sw/bin/Hyprland")
           machine.succeed("test -x /run/current-system/sw/bin/firefox")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
+          machine.succeed("opencode --version")
           # Verify the actual desktop configuration lands in the booted guest.
           machine.succeed("test -r /etc/xdg/hypr/hyprland.conf")
           machine.succeed("grep -Fq 'exec-once = waybar' /etc/xdg/hypr/hyprland.conf")
