@@ -14,11 +14,11 @@ The test boots NixOS under QEMU with a virtual `virtio-vga` GPU and
 starts the pinned Hyprland compositor directly using the `seatd` seat
 manager under the non-root `forge` account. It verifies that `seatd` is
 running and that the DRM device exists, then requires a Wayland socket
-and an active Hyprland process. These checks do not substitute for a
+and an active Hyprland process. The test also waits for the actual\nWaybar and Mako user processes launched by the shipped `exec-once`\ncommands and verifies that Ghostty is installed. These checks do not substitute for a
 real graphical login session or physical hardware testing.
 
 A passing result establishes *DRM compositor startup in QEMU*, not a complete desktop
-acceptance test. It does not prove GPU acceleration, browser rendering,
+acceptance test. It does not prove graphical application windows, GPU acceleration, browser rendering,
 audio, input handling, display hotplug or real hardware compatibility.
 
 ## Version and migration policy
