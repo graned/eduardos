@@ -69,6 +69,7 @@ pkgs.testers.runNixOSTest {
         "--setenv=HOME=/home/forge "
         f"--setenv=XDG_RUNTIME_DIR={runtime} "
         "--setenv=LIBGL_ALWAYS_SOFTWARE=1 "
+        "--setenv=WAYLAND_DISPLAY=edos-parent "
         "--setenv=AQ_NO_KMS_REQUIREMENT=1 "
         "--setenv=HYPRLAND_NO_RT=1 "
         "--setenv=AQ_TRACE=1 "
