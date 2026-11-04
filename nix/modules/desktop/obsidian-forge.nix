@@ -71,7 +71,8 @@ in
     environment.etc."xdg/hypr/hyprland.conf".source =
       if isClassic then classicPath + "/hyprland.conf" else themed "hyprland.conf" ../../../themes/obsidian-forge/hyprland.conf;
     environment.etc."xdg/waybar/config.jsonc".source =
-      ../../../themes/obsidian-forge/waybar.json;
+      if isClassic then classicPath + "/waybar.json"
+      else ../../../themes/obsidian-forge/waybar.json;
     environment.etc."xdg/waybar/style.css".source =
       if isClassic then classicPath + "/waybar.css" else themed "waybar.css" ../../../themes/obsidian-forge/waybar.css;
     environment.etc."xdg/fuzzel/fuzzel.ini".source =
