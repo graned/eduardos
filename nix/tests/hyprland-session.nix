@@ -115,6 +115,34 @@ pkgs.testers.runNixOSTest {
             "| grep -iq ghostty",
             timeout=45
         )
+        # Capture a baseline of the mapped desktop. Screenshot files
+        # become outputs of the successful NixOS test derivation.
+        machine.screenshot("obsidian-forge-ghostty-before.png")
+
+        # Exercise the *actual virtual keyboard* through QEMU and our
+        # shipped Super+Return shortcut, rather than hyprctl dispatch.
+        import json
+        import time
+        def ghostty_windows():
+            clients = json.loads(hyprctl("-j clients"))
+            return sum(
+                "ghostty" in str(c.get("class", "")).lower()
+                or "ghostty" in str(c.get("initialClass", "")).lower()
+                for c in clients
+            )
+
+        baseline = ghostty_windows()
+        assert baseline >= 1, "No mapped Ghostty client before keyboard test"
+        machine.send_key("meta_l-ret")
+        for attempt in range(45):
+            if ghostty_windows() > baseline:
+                break
+            time.sleep(1)
+        else:
+            raise AssertionError(
+                "Super+Return did not map an additional Ghostty window"
+            )
+        machine.screenshot("obsidian-forge-ghostty-after-shortcut.png")
         machine.succeed("systemctl is-active edos-hyprland-smoke.service")
     except Exception:
         print(machine.succeed(
