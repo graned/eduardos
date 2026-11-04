@@ -1,0 +1,101 @@
+{ pkgs, modules }:
+
+pkgs.testers.runNixOSTest {
+  name = "eduardos-hyprland-session";
+  nodes.machine = { ... }: {
+    imports = modules;
+    networking.hostName = "eduardos-graphical-test";
+    system.stateVersion = "26.05";
+
+    # A software-rendered QEMU smoke test, not a GPU performance test.
+    environment.variables.LIBGL_ALWAYS_SOFTWARE = "1";
+
+    # NixOS test guests are console-first and need an explicit virtual
+    # graphics device for Aquamarine to initialize a DRM backend.
+    # This remains a software-rendered, non-accelerated smoke test.
+    virtualisation.qemu.options = [ "-device virtio-vga" ];
+    hardware.graphics.enable = true;
+
+    # Give the test account a seat manager able to broker DRM/input fds.
+    # Never use chmod 666 on /dev/dri or launch Hyprland as root.
+    services.seatd.enable = true;
+    users.users.forge.extraGroups = [ "seat" "video" "render" ];
+  };
+
+  testScript = ''
+    machine.start()
+    machine.wait_for_unit("multi-user.target")
+    machine.wait_until_succeeds(
+        "test -f /home/forge/.config/eduardos/managed-by-home-manager"
+    )
+
+    # Fail with an actionable message if the virtual DRM device is
+    # absent, rather than timing out after Hyprland crashes.
+    machine.wait_until_succeeds("test -e /dev/dri/card0", timeout=30)
+    machine.succeed("ls -l /dev/dri")
+
+    # Linger creates a normal logind user runtime directory.
+    machine.succeed("loginctl enable-linger forge")
+    machine.wait_until_succeeds("test -d /run/user/$(id -u forge)")
+
+    uid = machine.succeed("id -u forge").strip()
+    runtime = f"/run/user/{uid}"
+
+    # The nested Weston test failed to supply an allocator despite
+    # advertising the necessary protocols. Test native DRM via seatd.
+    machine.wait_for_unit("seatd.service")
+    machine.wait_until_succeeds("test -S /run/seatd.sock", timeout=30)
+    machine.succeed("id forge")
+    machine.succeed("ls -l /run/seatd.sock /dev/dri/card0")
+
+    # Start Hyprland using the SAME configuration we ship. Preserve the
+    # version in pinned Nixpkgs; don't override upstream packages.
+    machine.succeed(
+        "systemd-run --unit=edos-hyprland-smoke --collect "
+        "--property=User=forge "
+        "--property=WorkingDirectory=/home/forge "
+        "--setenv=HOME=/home/forge "
+        f"--setenv=XDG_RUNTIME_DIR={runtime} "
+        "--setenv=LIBGL_ALWAYS_SOFTWARE=1 "
+        "--setenv=LIBSEAT_BACKEND=seatd "
+        "--setenv=AQ_NO_KMS_REQUIREMENT=1 "
+        "--setenv=HYPRLAND_NO_RT=1 "
+        "--setenv=AQ_TRACE=1 "
+        "--setenv=HYPRLAND_TRACE=1 "
+        "--setenv=PATH=/run/current-system/sw/bin:/run/wrappers/bin "
+        "/run/current-system/sw/bin/Hyprland "
+        "--config /etc/xdg/hypr/hyprland.conf"
+    )
+
+    # A socket and active compositor are both required.
+    # On failure print the actual startup journal before raising.
+    try:
+        machine.wait_until_succeeds(
+            "test -S /run/user/$(id -u forge)/wayland-1 "
+            "|| test -S /run/user/$(id -u forge)/wayland-0",
+            timeout=40
+        )
+        machine.succeed("systemctl is-active edos-hyprland-smoke.service")
+    except Exception:
+        print(machine.succeed(
+            "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ls -la /dev/dri /run/user/$(id -u forge) || true"
+        ))
+        print(machine.succeed(
+            "find /home/forge/.cache/hyprland -maxdepth 1 "
+            "-name 'hyprlandCrashReport*' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        print(machine.succeed(
+            "find /run/user/$(id -u forge)/hypr "
+            "-name 'hyprland.log' -type f -exec cat {} + "
+            "2>/dev/null || true"
+        ))
+        raise
+  '';
+}

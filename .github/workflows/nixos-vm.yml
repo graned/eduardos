@@ -31,5 +31,7 @@ jobs:
         run: nix flake check --no-build --show-trace
       - name: Boot test in QEMU (systemd, NetworkManager, desktop binaries)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.boot
+      - name: Smoke test Hyprland compositor startup under QEMU
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.hyprland-session
       - name: Build interactive VM launcher
         run: nix build --no-link --print-build-logs .#vm
