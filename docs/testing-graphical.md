@@ -11,7 +11,7 @@ nix build .#checks.x86_64-linux.hyprland-session -L
 ```
 
 The test boots NixOS with QEMU and tries to launch Hyprland under the
-non-root `forge` account using software rendering. It fails if a Wayland
+non-root `forge` account using software rendering and an explicit QEMU `virtio-vga` DRM device. It fails if a Wayland
 socket does not appear or if the service is not active.
 
 A passing result establishes *compositor startup*, not a complete desktop
