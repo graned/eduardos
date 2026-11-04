@@ -122,6 +122,23 @@ pkgs.testers.runNixOSTest {
         machine.screenshot("obsidian-forge-ghostty-before.png")
         if ${if preview then "True" else "False"}:
             machine.screenshot("${theme}-desktop.png")
+            if ${if theme == "forge-classic" then "True" else "False"}:
+                # A clean view exposes the wallpaper otherwise hidden
+                # behind maximized/tiled terminal windows.
+                machine.wait_until_succeeds(
+                    "pgrep -u forge -f '^hyprpaper$' >/dev/null",
+                    timeout=30
+                )
+                machine.succeed("test -r /etc/xdg/hypr/hyprpaper.conf")
+                hyprctl("dispatch workspace 2")
+                machine.wait_until_succeeds(
+                    f"runuser -u forge -- env {session_env} "
+                    "/run/current-system/sw/bin/hyprctl -j activeworkspace "
+                    "| grep -Eq '\\\"id\\\":[[:space:]]*2'",
+                    timeout=15
+                )
+                machine.screenshot("forge-classic-wallpaper.png")
+                hyprctl("dispatch workspace 1")
 
         # Exercise the *actual virtual keyboard* through QEMU and our
         # shipped Super+Return shortcut, rather than hyprctl dispatch.
