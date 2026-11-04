@@ -1,4 +1,4 @@
-name: NixOS VM build
+name: eduardOS system integration
 
 on:
   pull_request:
@@ -10,19 +10,26 @@ permissions:
   contents: read
 
 jobs:
-  vm-build:
-    name: Evaluate and build x86_64 Linux VM
+  vm-build-and-boot:
+    name: Build and boot NixOS guest
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+      - name: Enable KVM access
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-      - name: Check flake
-        run: nix flake check --show-trace
-      - name: Build virtual machine launcher
+            extra-system-features = kvm
+      - name: Evaluate flake
+        run: nix flake check --no-build --show-trace
+      - name: Boot test in QEMU (systemd, NetworkManager, desktop binaries)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.boot
+      - name: Build interactive VM launcher
         run: nix build --no-link --print-build-logs .#vm
