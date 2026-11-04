@@ -35,6 +35,28 @@
         self.nixosConfigurations.eduardos-vm.config.system.build.vm;
 
       checks.${system} = {
+        # Evaluate and build the generated assets of every supported preset.
+        # This catches invalid choices or broken recoloring without booting
+        # three complete VMs.
+        theme-presets =
+          let
+            themeStyles = name:
+              (nixpkgs.lib.nixosSystem {
+                inherit system;
+                modules = vmModules ++ [
+                  { eduardos.theme = name; system.stateVersion = "26.05"; }
+                ];
+              }).config.environment.etc."xdg/waybar/style.css".source;
+          in pkgs.runCommand "eduardos-theme-presets" {
+            classic = themeStyles "forge-classic";
+            neon = themeStyles "forge-neon";
+            brutalist = themeStyles "forge-brutalist";
+          } ''
+            grep -Fq '#e56b35' "$classic"
+            grep -Fq '#19c6bf' "$neon"
+            grep -Fq '#ff8a45' "$brutalist"
+            touch "$out"
+          '';
         hyprland-session = import ./nix/tests/hyprland-session.nix {
         inherit pkgs;
         modules = vmModules;
