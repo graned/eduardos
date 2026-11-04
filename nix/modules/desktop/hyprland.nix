@@ -16,9 +16,21 @@
     wl-clipboard
     grim
     slurp
-    firefox
+    brave
     mpv
   ];
 
-  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    BROWSER = "brave";
+  };
+
+  # Set browser associations system-wide; users can override them in
+  # their own XDG MIME configuration.
+  xdg.mime.defaultApplications = {
+    "text/html" = "brave-browser.desktop";
+    "application/xhtml+xml" = "brave-browser.desktop";
+    "x-scheme-handler/http" = "brave-browser.desktop";
+    "x-scheme-handler/https" = "brave-browser.desktop";
+  };
 }

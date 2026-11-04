@@ -29,6 +29,8 @@ jobs:
             extra-system-features = kvm
       - name: Evaluate flake
         run: nix flake check --no-build --show-trace
+      - name: Validate all three Forge theme presets
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.theme-presets
       - name: Boot test in QEMU (systemd, NetworkManager, desktop binaries)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.boot
       - name: Test desktop keyboard input and capture screenshots in QEMU
@@ -44,6 +46,23 @@ jobs:
         with:
           name: obsidian-forge-desktop-screenshots
           path: artifacts/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Render all three Forge themes in QEMU
+        run: |
+          mkdir -p artifacts/theme-previews
+          for preset in classic neon brutalist; do
+            nix build --out-link "theme-preview-$preset-result" --print-build-logs ".#checks.x86_64-linux.theme-preview-$preset"
+            cp -L "theme-preview-$preset-result/forge-$preset-desktop.png" artifacts/theme-previews/
+            cp -L "theme-preview-$preset-result/forge-$preset-launcher.png" artifacts/theme-previews/
+          done
+          test "$(find artifacts/theme-previews -maxdepth 1 -name '*.png' | wc -l)" -eq 6
+      - name: Upload Forge theme previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eduardos-theme-previews
+          path: artifacts/theme-previews/
           if-no-files-found: warn
           retention-days: 14
       - name: Build interactive VM launcher

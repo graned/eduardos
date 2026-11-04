@@ -35,10 +35,50 @@
         self.nixosConfigurations.eduardos-vm.config.system.build.vm;
 
       checks.${system} = {
+        # Evaluate and build the generated assets of every supported preset.
+        # This catches invalid choices or broken recoloring without booting
+        # three complete VMs.
+        theme-presets =
+          let
+            themeStyles = name:
+              (nixpkgs.lib.nixosSystem {
+                inherit system;
+                modules = vmModules ++ [
+                  { eduardos.theme = name; system.stateVersion = "26.05"; }
+                ];
+              }).config.environment.etc."xdg/waybar/style.css".source;
+          in pkgs.runCommand "eduardos-theme-presets" {
+            classic = themeStyles "forge-classic";
+            neon = themeStyles "forge-neon";
+            brutalist = themeStyles "forge-brutalist";
+          } ''
+            grep -Fq '#e56b35' "$classic"
+            grep -Fq '#19c6bf' "$neon"
+            grep -Fq '#ff8a45' "$brutalist"
+            touch "$out"
+          '';
         hyprland-session = import ./nix/tests/hyprland-session.nix {
-        inherit pkgs;
-        modules = vmModules;
-      };
+          inherit pkgs;
+          modules = vmModules;
+        };
+        theme-preview-classic = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-classic";
+          preview = true;
+        };
+        theme-preview-neon = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-neon";
+          preview = true;
+        };
+        theme-preview-brutalist = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-brutalist";
+          preview = true;
+        };
 
         boot = pkgs.testers.runNixOSTest {
         name = "eduardos-boot";
@@ -53,7 +93,9 @@
           machine.succeed("uname -s | grep Linux")
           machine.succeed("systemctl is-active NetworkManager.service")
           machine.succeed("test -x /run/current-system/sw/bin/Hyprland")
-          machine.succeed("test -x /run/current-system/sw/bin/firefox")
+          machine.succeed("test -x /run/current-system/sw/bin/brave")
+          machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-classic")
+          machine.succeed("grep -Fq brave-browser.desktop /etc/xdg/mimeapps.list")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
           machine.succeed("opencode --version")
           # Home Manager must actually activate inside the guest.
