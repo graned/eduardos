@@ -58,9 +58,27 @@
             touch "$out"
           '';
         hyprland-session = import ./nix/tests/hyprland-session.nix {
-        inherit pkgs;
-        modules = vmModules;
-      };
+          inherit pkgs;
+          modules = vmModules;
+        };
+        theme-preview-classic = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-classic";
+          preview = true;
+        };
+        theme-preview-neon = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-neon";
+          preview = true;
+        };
+        theme-preview-brutalist = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-brutalist";
+          preview = true;
+        };
 
         boot = pkgs.testers.runNixOSTest {
         name = "eduardos-boot";
