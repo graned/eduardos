@@ -130,13 +130,15 @@ pkgs.testers.runNixOSTest {
                     timeout=30
                 )
                 machine.succeed("test -r /etc/xdg/hypr/hyprpaper.conf")
+                import json
+                import time
                 hyprctl("dispatch workspace 2")
-                machine.wait_until_succeeds(
-                    f"runuser -u forge -- env {session_env} "
-                    "/run/current-system/sw/bin/hyprctl -j activeworkspace "
-                    "| grep -Eq '\\\"id\\\":[[:space:]]*2'",
-                    timeout=15
-                )
+                for _ in range(15):
+                    if json.loads(hyprctl("-j activeworkspace")).get("id") == 2:
+                        break
+                    time.sleep(1)
+                else:
+                    raise AssertionError("Classic preview workspace did not activate")
                 machine.screenshot("forge-classic-wallpaper.png")
                 hyprctl("dispatch workspace 1")
 
