@@ -7,12 +7,15 @@ animated wallpapers, extra agents or new runtime widget frameworks.
 ## Visual identity
 
 - **Wallpaper**: original vector landscape (`themes/forge-classic/wallpaper.svg`)
-  with volcanic mountain silhouettes, ember flow, geometric detail and
-  a custom forged-anvil eduardOS mark.
-- **Waybar**: styled workspace pills, compact command-deck modules,
-  warmer focus state and improved typography.
-- **Ghostty**: warm high-contrast ANSI palette, softer black, internal spacing.
-- **Fuzzel**: deliberate prompt/search spacing, warmer selection, stronger border.
+  with layered obsidian ridges, a winding molten river, atmospheric furnace
+  glow, textured terrain and a restrained forged-anvil eduardOS mark.
+- **Waybar**: a dedicated Classic layout with a static eduardOS brand mark,
+  styled workspace pills, grouped command-deck modules, warm clock focus
+  and responsive spacing.
+- **Ghostty**: warm high-contrast ANSI palette, softly contrasted black, more generous
+  internal spacing and JetBrains Mono Nerd Font.
+- **Fuzzel**: a compact searchable command palette, deliberate spacing, warm
+  selection colors and a stronger border.
 - **Mako**: compact industrial notification treatment.
 - **Hyprland**: small refinements to gaps, rounding and focused borders,
   with a static hyprpaper background on this theme only.
@@ -36,9 +39,15 @@ configs. They will get independent design work in later PRs.
 GitHub Actions runs the usual boot and graphical assertions plus all
 three preset previews. The successful run uploads the
 `eduardos-theme-previews` artifact. In addition to six existing UI
-screenshots, the new `forge-classic-wallpaper.png` is captured from
-an **empty Hyprland workspace** so the artwork is visible without a
-terminal window hiding it.
+screenshots, the `forge-classic-wallpaper.png` is captured from
+an **empty Hyprland workspace**. The `forge-classic-desktop.png` now
+shows a **single 900×540 floating Ghostty window** for a useful hero view,
+and `forge-classic-launcher.png` uses the real Fuzzel launcher with a
+`brave` search query, instead of an empty prompt.
+
+The independent keyboard test still proves that Super+Return opens
+a second mapped Ghostty window. These preview-only layout changes
+do not modify users' normal tiling behavior.
 
 Evaluate the PNGs before merging. A green build proves startup and
 screenshot capture, not visual quality.
