@@ -81,17 +81,10 @@ in
     environment.etc."xdg/ghostty/config".source =
       if isClassic then classicPath + "/ghostty.conf" else themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
     environment.etc."xdg/eduardos/theme".text = config.eduardos.theme;
-    environment.etc."xdg/hypr/hyprpaper.conf" = lib.mkIf isClassic {
-      text = ''
-        # Forge Classic static wallpaper; user overrides remain possible.
-        splash = false
-        wallpaper {
-          monitor =
-          path = ${wallpaper}
-          fit_mode = cover
-        }
-      '';
-    };
+    environment.etc."xdg/eduardos/forge-classic-wallpaper.png" =
+      lib.mkIf isClassic { source = wallpaper; };
+
+    environment.systemPackages = lib.optionals isClassic [ pkgs.swaybg ];
 
     fonts.packages = with pkgs; [
       dejavu_fonts
