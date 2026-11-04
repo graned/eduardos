@@ -76,12 +76,26 @@ pkgs.testers.runNixOSTest {
             timeout=40
         )
         machine.succeed("systemctl is-active edos-hyprland-smoke.service")
+        # Hyprland is configured to auto-launch these two services.
+        # Verify actual user processes, not only package installation.
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x waybar >/dev/null", timeout=30
+        )
+        machine.wait_until_succeeds(
+            "pgrep -u forge -x mako >/dev/null", timeout=30
+        )
+        machine.succeed(
+            "test -x /run/current-system/sw/bin/ghostty"
+        )
     except Exception:
         print(machine.succeed(
             "journalctl -u edos-hyprland-smoke.service --no-pager -n 120 || true"
         ))
         print(machine.succeed(
             "journalctl -u seatd.service --no-pager -n 120 || true"
+        ))
+        print(machine.succeed(
+            "ps -u forge -o pid,comm,args || true"
         ))
         print(machine.succeed(
             "ls -la /dev/dri /run/user/$(id -u forge) || true"
