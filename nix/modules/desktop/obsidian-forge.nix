@@ -84,19 +84,17 @@ in
     environment.etc."xdg/eduardos/forge-classic-wallpaper.png" =
       lib.mkIf isClassic { source = wallpaper; };
 
-    environment.systemPackages = lib.optionals isClassic [ pkgs.swaybg ];
-
     fonts.packages = with pkgs; [
       dejavu_fonts
       nerd-fonts.jetbrains-mono
     ];
 
-    environment.systemPackages = with pkgs; [
+    environment.systemPackages = (with pkgs; [
       hyprpaper
       hyprlock
       hypridle
       pavucontrol
       brightnessctl
-    ];
+    ]) ++ lib.optionals isClassic [ pkgs.swaybg ];
   };
 }
