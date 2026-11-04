@@ -10,16 +10,21 @@ Run on an x86_64 Linux host with Nix and KVM:
 nix build .#checks.x86_64-linux.hyprland-session -L
 ```
 
-The test boots NixOS under QEMU with a virtual `virtio-vga` GPU and
-starts the pinned Hyprland compositor directly using the `seatd` seat
-manager under the non-root `forge` account. It verifies that `seatd` is
-running and that the DRM device exists, then requires a Wayland socket
-and an active Hyprland process. The test also waits for the actual\nWaybar and Mako user processes launched by the shipped `exec-once`\ncommands and verifies that Ghostty is installed. These checks do not substitute for a
-real graphical login session or physical hardware testing.
+The test boots NixOS under QEMU with a virtual `virtio-vga` GPU,
+starts pinned Hyprland through `seatd` as the unprivileged `forge` user,
+and requires a live Wayland socket and compositor service.
 
-A passing result establishes *DRM compositor startup in QEMU*, not a complete desktop
-acceptance test. It does not prove graphical application windows, GPU acceleration, browser rendering,
-audio, input handling, display hotplug or real hardware compatibility.
+It also verifies that Waybar and Mako really start from the shipped
+`exec-once` configuration, then launches Ghostty via Hyprland's IPC.
+It **requires Hyprland to report a mapped Ghostty client window**, not
+merely a running Ghostty process. The compositor must remain active.
+This is not a substitute for a login-manager test or physical hardware
+testing.
+
+A passing result establishes *DRM compositor startup and a mapped Ghostty
+window in QEMU*, not complete desktop acceptance. It does not prove
+correct visual rendering, GPU acceleration, browser usability, audio,
+keyboard/mouse behavior, display hotplug, or physical hardware compatibility.
 
 ## Version and migration policy
 
