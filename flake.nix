@@ -105,9 +105,9 @@
           machine.succeed("test -f /tmp/edos-isenguard/config/isenguard/init.lua")
           # Verify the actual desktop configuration lands in the booted guest.
           machine.succeed("test -r /etc/xdg/hypr/hyprland.conf")
-          machine.succeed("grep -Fq 'exec-once = hyprpaper' /etc/xdg/hypr/hyprland.conf")
-          machine.succeed("test -r /etc/xdg/hypr/hyprpaper.conf")
-          machine.succeed("grep -Fq 'forge-classic-wallpaper.png' /etc/xdg/hypr/hyprpaper.conf")
+          machine.succeed("grep -Fq 'exec-once = swaybg' /etc/xdg/hypr/hyprland.conf")
+          machine.succeed("test -r /etc/xdg/eduardos/forge-classic-wallpaper.png")
+          machine.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.png")
           machine.succeed("grep -Fq 'exec-once = waybar' /etc/xdg/hypr/hyprland.conf")
           machine.succeed("test -r /etc/xdg/waybar/config.jsonc")
           machine.succeed("test -r /etc/xdg/waybar/style.css")
