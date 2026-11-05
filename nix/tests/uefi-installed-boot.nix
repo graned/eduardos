@@ -15,6 +15,10 @@ pkgs.testers.runNixOSTest {
       virtualisation.diskSize = 12 * 1024;
       virtualisation.emptyDiskImages = [ 1024 ];
       virtualisation.rootDevice = "/dev/vdb";
+      # The installer boots from its own temporary /dev/vdb, not the
+      # target disk /dev/vda. Initialize that temporary root in initrd.
+      boot.initrd.systemd.enable = true;
+      virtualisation.fileSystems."/".autoFormat = true;
       virtualisation.memorySize = 4096;
       virtualisation.cores = 4;
 
