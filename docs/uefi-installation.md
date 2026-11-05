@@ -74,3 +74,33 @@ install eduardOS onto it with `nixos-install`, boot that installed
 image under QEMU with OVMF, unlock its LUKS partition, verify
 `/home` and `/persist` across a real reboot, then test recovery.
 Until then, the UEFI closure check is not proof of bootability.
+
+## PR #17 — installed encrypted UEFI boot integration test
+
+The new `uefi-installed-boot` check runs a separate **installer** VM and
+then a **firmware-booted** target VM using the same disposable qcow2 image:
+
+1. Boot a disposable installation environment with an empty target disk.
+2. Use the Disko-generated destroy/format/mount script for GPT, EFI,
+   LUKS2, and the five Btrfs subvolumes.
+3. Generate the throwaway encryption passphrase inside the installer
+   VM at `/run/edos-test-passphrase`. This plaintext exists solely in
+   the ephemeral CI guest, never in an installed initrd or real host.
+4. Install the actual eduardOS NixOS system closure using `nixos-install`,
+   without using the temporary rootfs or kernel-direct QEMU boot path.
+5. Stop the installer VM and start the same disk in a UEFI/OVMF guest,
+   respond to the *interactive* LUKS unlock prompt, and assert both
+   filesystem mounts and installed application binaries.
+6. Power down and boot again; verify persistent `/home` and
+   `/persist` markers remain intact.
+
+```sh
+nix build .#checks.x86_64-linux.uefi-installed-boot -L
+```
+
+**Do not treat this as production hardware certification.** Test failures
+must not be bypassed with kernel-direct boot, a baked-in unlock key, or
+mounting the host's Nix store in place of the installed system. CI uses
+test instrumentation and a disposable password solely to automate
+repeated installation verification. Real disk discovery, backups and
+recovery UX are separate installer milestones.
