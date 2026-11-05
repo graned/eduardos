@@ -67,6 +67,7 @@ pkgs.testers.runNixOSTest {
       "cryptsetup open --key-file /run/edos-storage-test.key "
       "/dev/vdb2 edos-crypt"
     )
+    machine.succeed("mkdir -p /mnt/edos-volume")
     for name in ["root", "home", "nix", "persist", "snapshots"]:
         machine.succeed(
           f"mount -o subvol=@{name},compress=zstd,noatime "
