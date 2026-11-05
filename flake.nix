@@ -15,6 +15,7 @@
         ./nix/modules/core.nix
         ./nix/modules/desktop/hyprland.nix
         ./nix/modules/desktop/obsidian-forge.nix
+        ./nix/modules/development/shell.nix
         ./nix/modules/development/opencode.nix
         ./nix/modules/development/isenguard.nix
       ];
