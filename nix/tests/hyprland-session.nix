@@ -117,32 +117,32 @@ pkgs.testers.runNixOSTest {
             "| grep -iq ghostty",
             timeout=45
         )
-        # Keep all existing functional checks, but curate Classic previews
+        # Keep all existing functional checks, but curate Classic/Neon previews
         # separately from the multi-window keyboard test.
         import json
         import time
         machine.screenshot("obsidian-forge-ghostty-before.png")
         if ${if preview then "True" else "False"}:
-            if ${if theme == "forge-classic" then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
                 machine.wait_until_succeeds(
-                    "pgrep -u forge -f 'swaybg.*forge-classic-wallpaper' >/dev/null",
+                    "pgrep -u forge -f 'swaybg.*${theme}-wallpaper' >/dev/null",
                     timeout=30
                 )
                 machine.succeed(
-                    "test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg"
+                    "test -s /etc/xdg/eduardos/${theme}-wallpaper.jpg"
                 )
                 # A process that exits immediately is not a working wallpaper.
                 time.sleep(3)
                 machine.succeed(
-                    "pgrep -u forge -f 'swaybg.*forge-classic-wallpaper' >/dev/null"
+                    "pgrep -u forge -f 'swaybg.*${theme}-wallpaper' >/dev/null"
                 )
-                # The real Hyprland commands create one deliberate hero
+                # The real Hyprland commands create one deliberate preview hero
                 # window. This does not alter the user's tiling defaults.
                 hyprctl("dispatch togglefloating")
                 hyprctl("dispatch resizeactive exact 900 540")
                 hyprctl("dispatch moveactive exact 95 150")
                 time.sleep(2)
-                machine.screenshot("forge-classic-desktop.png")
+                machine.screenshot("${theme}-desktop.png")
                 # A clean second workspace reveals the full wallpaper.
                 hyprctl("dispatch workspace 2")
                 for _ in range(15):
@@ -150,16 +150,16 @@ pkgs.testers.runNixOSTest {
                         break
                     time.sleep(1)
                 else:
-                    raise AssertionError("Classic wallpaper workspace did not activate")
+                    raise AssertionError("Themed wallpaper workspace did not activate")
                 time.sleep(2)
-                machine.screenshot("forge-classic-wallpaper.png")
+                machine.screenshot("${theme}-wallpaper.png")
                 hyprctl("dispatch workspace 1")
                 for _ in range(15):
                     if json.loads(hyprctl("-j activeworkspace")).get("id") == 1:
                         break
                     time.sleep(1)
                 else:
-                    raise AssertionError("Classic hero workspace did not reactivate")
+                    raise AssertionError("Themed hero workspace did not reactivate")
             else:
                 machine.screenshot("${theme}-desktop.png")
 
@@ -188,7 +188,7 @@ pkgs.testers.runNixOSTest {
             )
         machine.screenshot("obsidian-forge-ghostty-after-shortcut.png")
         if ${if preview then "True" else "False"}:
-            if ${if theme == "forge-classic" then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
                 # Capture Fuzzel over an unobstructed wallpaper, and show
                 # a real result from the installed default Brave browser.
                 hyprctl("dispatch workspace 2")
@@ -201,7 +201,7 @@ pkgs.testers.runNixOSTest {
                 "pgrep -u forge -f '^fuzzel$' >/dev/null",
                 timeout=30
             )
-            if ${if theme == "forge-classic" then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
                 machine.send_chars("brave")
                 time.sleep(2)
             machine.screenshot("${theme}-launcher.png")
