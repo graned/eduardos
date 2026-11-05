@@ -55,9 +55,11 @@ pkgs.testers.runNixOSTest {
         machine.succeed("umount /mnt/edos-volume")
     machine.succeed("cryptsetup close edos-crypt")
 
-    # The disk image persists across a full guest reboot; the disposable
-    # key lives in /run and is re-provisioned by the test harness only.
-    machine.reboot()
+    # Shut down the guest cleanly, then cold-boot the SAME QEMU disk image.
+    # This Nix test harness disconnects its control shell on guest reboot.
+    # A fresh start checks disk persistence more strictly than remount alone.
+    machine.shutdown()
+    machine.start()
     machine.wait_for_unit("multi-user.target")
     machine.succeed(
       "umask 077; printf 'disposable-QEMU-only-storage-test-key\n' "
