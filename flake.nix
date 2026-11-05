@@ -106,8 +106,8 @@
           # Verify the actual desktop configuration lands in the booted guest.
           machine.succeed("test -r /etc/xdg/hypr/hyprland.conf")
           machine.succeed("grep -Fq 'exec-once = swaybg' /etc/xdg/hypr/hyprland.conf")
-          machine.succeed("test -r /etc/xdg/eduardos/forge-classic-wallpaper.png")
-          machine.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.png")
+          machine.succeed("test -r /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
+          machine.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
           machine.succeed("grep -Fq 'exec-once = waybar' /etc/xdg/hypr/hyprland.conf")
           machine.succeed("test -r /etc/xdg/waybar/config.jsonc")
           machine.succeed("test -r /etc/xdg/waybar/style.css")
