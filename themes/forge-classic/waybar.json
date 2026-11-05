@@ -1,0 +1,40 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 43,
+  "spacing": 6,
+  "modules-left": ["custom/brand", "hyprland/workspaces", "hyprland/window"],
+  "modules-center": ["clock"],
+  "modules-right": ["pulseaudio", "network", "cpu", "memory", "tray"],
+  "custom/brand": {
+    "format": "◆  eduardOS",
+    "tooltip": false
+  },
+  "hyprland/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true,
+    "format": "{name}"
+  },
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 32,
+    "separate-outputs": true
+  },
+  "clock": {
+    "format": "  {:%a %d %b  ·  %H:%M}",
+    "tooltip-format": "{:%A, %d %B %Y}"
+  },
+  "pulseaudio": {
+    "format": "  {volume}%",
+    "format-muted": "󰝟  muted",
+    "tooltip": true
+  },
+  "network": {
+    "format-wifi": "󰖩  {essid}",
+    "format-ethernet": "󰈀  wired",
+    "format-disconnected": "󰖪  offline",
+    "tooltip": true
+  },
+  "cpu": { "format": "  {usage}%", "tooltip": true },
+  "memory": { "format": "  {}%", "tooltip": true }
+}

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+ <defs>
+  <linearGradient id="night" x2="0" y2="1"><stop stop-color="#080a0e"/><stop offset=".40" stop-color="#181115"/><stop offset=".72" stop-color="#47201b"/><stop offset="1" stop-color="#0a0b0d"/></linearGradient>
+  <radialGradient id="furnace"><stop stop-color="#fe9b54" stop-opacity=".86"/><stop offset=".27" stop-color="#c34a24" stop-opacity=".48"/><stop offset=".72" stop-color="#72251a" stop-opacity=".10"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+  <linearGradient id="ridge" x2="0" y2="1"><stop stop-color="#363037"/><stop offset=".35" stop-color="#1b1b22"/><stop offset="1" stop-color="#080c11"/></linearGradient>
+  <linearGradient id="foreground" x2="0" y2="1"><stop stop-color="#29232a"/><stop offset=".56" stop-color="#111318"/><stop offset="1" stop-color="#06090d"/></linearGradient>
+  <linearGradient id="molten" x1=".08" x2=".9" y1="0" y2="1"><stop stop-color="#ffdf95"/><stop offset=".19" stop-color="#ffb568"/><stop offset=".48" stop-color="#f26b31"/><stop offset="1" stop-color="#90291b"/></linearGradient>
+  <radialGradient id="vignette"><stop offset=".58" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></radialGradient>
+  <filter id="haze"><feGaussianBlur stdDeviation="37"/></filter>
+  <filter id="bloom"><feGaussianBlur stdDeviation="12"/></filter>
+  <pattern id="grain" width="63" height="47" patternUnits="userSpaceOnUse"><path d="M3 32l5 -7M44 8l8 4M28 40l-4 3" stroke="#e0a079" stroke-opacity=".08" stroke-width="1"/></pattern>
+ </defs>
+ <rect width="1920" height="1080" fill="url(#night)"/>
+ <ellipse cx="1310" cy="690" rx="830" ry="630" fill="url(#furnace)"/>
+ <ellipse cx="1305" cy="707" rx="560" ry="114" fill="#f27d42" opacity=".34" filter="url(#haze)"/>
+ <path d="M0 590L155 537 220 555 361 438 449 535 602 478 730 554 838 493 975 563 1101 403 1192 490 1259 440 1364 539 1509 460 1630 564 1788 493 1920 528V1080H0Z" fill="#1c1b22"/>
+ <path d="M760 590 866 507 1005 558 1100 406 1163 469 1190 452 1216 479 1260 441 1375 555 1485 510 1588 590 1920 577V1080H760Z" fill="url(#ridge)"/>
+ <path d="M1102 411 1120 475 1175 498 1185 542 1210 562 1263 602 1194 578 1146 556 1117 519 1099 465Z" fill="#5d3431" opacity=".57"/>
+ <path d="M1112 424 1136 488 1161 502 1172 548 1206 569" fill="none" stroke="#f7874a" stroke-width="6" opacity=".85"/>
+ <path d="M1127 460 1148 484 1159 526 1178 549" fill="none" stroke="#ffd08a" stroke-width="2.6" opacity=".8"/>
+ <ellipse cx="1157" cy="438" rx="130" ry="70" fill="#f98954" opacity=".20" filter="url(#haze)"/>
+ <path d="M0 719 122 659 251 682 360 607 481 659 616 580 782 673 906 595 1040 663 1154 562 1281 637 1426 569 1554 659 1697 597 1810 649 1920 606V1080H0Z" fill="#19191e" opacity=".88"/>
+ <path d="M0 795 186 713 287 760 443 678 633 750 782 674 931 748 1122 671 1275 739 1462 645 1623 732 1778 686 1920 740V1080H0Z" fill="url(#ridge)"/>
+ <path d="M172 742 260 759 381 691 426 712 465 726 517 699M1023 719l104 -42 103 48M1427 664l39 -24 90 57" stroke="#6c4e48" stroke-width="5" fill="none" opacity=".5"/>
+ <path d="M0 852 164 787 292 823 465 763 606 821 744 784 926 852 1072 772 1272 813 1456 748 1622 821 1760 775 1920 819V1080H0Z" fill="#101319"/>
+ <path d="M0 938 157 887 329 926 484 853 662 890 816 852 978 908 1180 848 1348 885 1582 817 1773 883 1920 858V1080H0Z" fill="url(#foreground)"/>
+ <!-- Molten river: winding channel, glow and thin hot core -->
+ <path d="M1822 777C1690 803 1650 833 1498 836S1233 878 1123 898 962 925 818 941 573 972 434 1001 223 1024 71 1084" stroke="#de5027" stroke-width="91" fill="none" opacity=".29" filter="url(#bloom)"/>
+ <path d="M1822 777C1690 803 1650 833 1498 836S1233 878 1123 898 962 925 818 941 573 972 434 1001 223 1024 71 1084" stroke="#92301e" stroke-width="47" fill="none"/>
+ <path d="M1822 777C1690 803 1650 833 1498 836S1233 878 1123 898 962 925 818 941 573 972 434 1001 223 1024 71 1084" stroke="url(#molten)" stroke-width="23" fill="none"/>
+ <path d="M1824 776C1680 812 1639 826 1495 835S1245 877 1129 895 970 922 817 941 575 969 438 1001 226 1020 76 1080" stroke="#ffe4a4" stroke-width="4" fill="none" opacity=".86"/>
+ <path d="M1674 816l69 13 53 -7M1215 883l45 17 77 -15M704 953l46 19 56 -9M323 1018l32 26" fill="none" stroke="#ff973f" stroke-width="3" opacity=".55"/>
+ <!-- Obsidian overhangs and fractured foreground -->
+ <path d="M0 890 143 840 244 885 335 847 440 910 529 875 566 922 400 984 308 954 187 1001 0 971Z" fill="#0b0d11"/>
+ <path d="M1400 895 1514 835 1621 859 1675 814 1792 849 1920 823V1080H1363Z" fill="#080b0e"/>
+ <path d="M1431 912l105 -47 103 10 37 -25M47 924l140 -44 89 24" fill="none" stroke="#57403c" stroke-width="3" opacity=".36"/>
+ <!-- Purposeful sparse sparks and ash -->
+ <g fill="#ffae65" opacity=".7"><circle cx="1011" cy="621" r="2"/><circle cx="1232" cy="581" r="3"/><circle cx="1395" cy="606" r="2"/><circle cx="1466" cy="545" r="1.5"/><circle cx="1085" cy="547" r="1.5"/><circle cx="1328" cy="480" r="2.5"/><circle cx="1514" cy="675" r="2"/></g>
+ <g fill="#ffb56e" opacity=".45"><circle cx="1281" cy="527" r="1.5"/><circle cx="1543" cy="595" r="2"/><circle cx="1366" cy="568" r="1.5"/><circle cx="1167" cy="379" r="2"/><circle cx="1589" cy="515" r="1.5"/></g>
+ <rect width="1920" height="1080" fill="url(#grain)"/>
+ <rect width="1920" height="1080" fill="url(#vignette)"/>
+ <!-- Restrained, engraved branding in the clear upper-right sky -->
+ <g transform="translate(1577 260)" opacity=".93">
+  <path d="M-82 -38H82L67 -19H40L27 4 44 22 33 36H-33L-44 22 -27 4 -40 -19H-67Z" fill="#101116" stroke="#f18a4e" stroke-width="3.5"/>
+  <path d="M-67 -26H67M-22 26H22" stroke="#ffbd83" stroke-width="1.4" opacity=".75"/>
+ </g>
+ <text x="1577" y="351" font-family="DejaVu Sans,sans-serif" font-size="34" font-weight="bold" fill="#f1e2d7" text-anchor="middle">eduard<tspan fill="#f18a4e">OS</tspan></text>
+ <text x="1577" y="383" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#d7a081" letter-spacing="5" text-anchor="middle">OBSIDIAN FORGE</text>
+ <path d="M1438 411H1717" stroke="#bc6740" opacity=".45"/>
+ <text x="1577" y="445" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#b8a39e" letter-spacing="2.8" text-anchor="middle">FORGED IN CHAOS</text>
+ <g stroke="#d88a58" stroke-width="1.2" opacity=".39" fill="none"><path d="M50 113v78M50 113h108M1870 113v78M1870 113h-108M50 967v-64M50 967h108M1870 967v-64M1870 967h-108"/></g>
+ <text x="85" y="1015" font-family="DejaVu Sans,sans-serif" font-size="13" fill="#c89f8a" opacity=".58" letter-spacing="4">FORGE CLASSIC / 01</text>
+</svg>

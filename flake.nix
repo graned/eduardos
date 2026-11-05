@@ -15,6 +15,7 @@
         ./nix/modules/core.nix
         ./nix/modules/desktop/hyprland.nix
         ./nix/modules/desktop/obsidian-forge.nix
+        ./nix/modules/development/shell.nix
         ./nix/modules/development/opencode.nix
         ./nix/modules/development/isenguard.nix
       ];
@@ -52,7 +53,7 @@
             neon = themeStyles "forge-neon";
             brutalist = themeStyles "forge-brutalist";
           } ''
-            grep -Fq '#e56b35' "$classic"
+            grep -Fq '#f18a4e' "$classic"
             grep -Fq '#19c6bf' "$neon"
             grep -Fq '#ff8a45' "$brutalist"
             touch "$out"
@@ -94,6 +95,12 @@
           machine.succeed("systemctl is-active NetworkManager.service")
           machine.succeed("test -x /run/current-system/sw/bin/Hyprland")
           machine.succeed("test -x /run/current-system/sw/bin/brave")
+          machine.succeed("test -x /run/current-system/sw/bin/zsh")
+          machine.succeed("getent passwd forge | grep -q '/zsh$'")
+          machine.succeed(
+            "runuser -u forge -- zsh -ic 'print -r -- $ZSH_THEME' "
+            "| grep -Fxq eduardos-catppuccin"
+          )
           machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-classic")
           machine.succeed("grep -Fq brave-browser.desktop /etc/xdg/mimeapps.list")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
@@ -105,10 +112,15 @@
           machine.succeed("test -f /tmp/edos-isenguard/config/isenguard/init.lua")
           # Verify the actual desktop configuration lands in the booted guest.
           machine.succeed("test -r /etc/xdg/hypr/hyprland.conf")
+          machine.succeed("grep -Fq 'exec-once = swaybg' /etc/xdg/hypr/hyprland.conf")
+          machine.succeed("test -r /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
+          machine.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
           machine.succeed("grep -Fq 'exec-once = waybar' /etc/xdg/hypr/hyprland.conf")
           machine.succeed("test -r /etc/xdg/waybar/config.jsonc")
           machine.succeed("test -r /etc/xdg/waybar/style.css")
           machine.succeed("test -r /etc/xdg/ghostty/config")
+          machine.succeed("grep -Fqx 'background-opacity = 0.88' /etc/xdg/ghostty/config")
+          machine.succeed("grep -Fqx 'background = #1e1e2e' /etc/xdg/ghostty/config")
           machine.succeed("test -r /etc/xdg/fuzzel/fuzzel.ini")
           machine.succeed("test -r /etc/xdg/mako/config")
         '';

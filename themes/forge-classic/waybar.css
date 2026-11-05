@@ -1,0 +1,80 @@
+/* Forge Classic — quiet command deck with warm metal details.
+   No background polling scripts, blur or graphical effects. */
+* {
+  font-family: "JetBrainsMono Nerd Font", "DejaVu Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+window#waybar {
+  background: #0c0e13;
+  color: #e8e3da;
+  border-bottom: 1px solid #604131;
+}
+#custom-brand {
+  color: #ffaf72;
+  padding: 0 17px;
+  margin: 6px 13px 6px 11px;
+  background: #26201e;
+  border: 1px solid #865239;
+  border-radius: 7px;
+  font-weight: 800;
+}
+#workspaces {
+  margin: 6px 0;
+  padding: 2px 5px;
+  background: #1e1e23;
+  border: 1px solid #4e3930;
+  border-radius: 8px;
+}
+#workspaces button {
+  margin: 0 2px;
+  padding: 1px 10px;
+  min-width: 14px;
+  background: transparent;
+  color: #aab0b5;
+  border-radius: 5px;
+  transition: none;
+}
+#workspaces button.active {
+  color: #100e0e;
+  background: #f18a4e;
+}
+#workspaces button.urgent {
+  color: #ffcb8e;
+}
+#window {
+  color: #a99a95;
+  padding: 0 12px;
+  font-size: 11px;
+}
+window#waybar.empty #window {
+  padding: 0;
+}
+#clock {
+  color: #ffd0a0;
+  background: #242024;
+  border: 1px solid #6d4938;
+  padding: 5px 19px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+#pulseaudio, #network, #cpu, #memory, #tray {
+  background: #1b1b21;
+  border: 1px solid #302b2d;
+  border-radius: 7px;
+  padding: 4px 12px;
+  margin: 6px 2px;
+  color: #c4c0bc;
+}
+#network { color: #6bd7bf; }
+#cpu, #memory { color: #d6a68a; }
+#tray { margin-right: 11px; }
+tooltip {
+  background: #111217;
+  color: #f1e6dc;
+  border: 1px solid #c16b42;
+  border-radius: 8px;
+}
