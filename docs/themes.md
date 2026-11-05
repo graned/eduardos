@@ -8,10 +8,12 @@ eduardOS has three official lightweight appearance presets:
 | `forge-neon` | Signal teal `#19c6bf` | Futuristic cyber-forge |
 | `forge-brutalist` | Sharp orange `#ff8a45` | Restrained high-contrast minimal |
 
-All presets use the **same** Hyprland key bindings, startup commands,
-Waybar modules, fonts, packages and performance settings. The NixOS
-module recolors the same shared config files at build time, so changing
-presets does not add a runtime CSS engine, daemon or separate compositor.
+All presets share the **same** Hyprland shortcuts, developer packages,
+and core desktop behavior. Forge Classic and Forge Neon now have
+independent artwork, Waybar layouts, Ghostty palettes, launcher styling
+and static wallpapers. Forge Brutalist still uses the shared palette
+foundation. Each of the first two themes uses the same lightweight
+`swaybg` engine, not video playback or a runtime CSS service.
 
 ## Choose a preset
 
@@ -43,9 +45,10 @@ selected option into the generated host configuration, and explain that
 users can switch themes later. That should happen before the first user
 session, not by mutating files in `~/.config` behind the user's back.
 
-This is a color-preset foundation. The distinct custom artwork,
-wallpapers and richer visual styling shown in concept images will be
-produced and reviewed in a separate design/implementation PR.
+Forge Classic and Forge Neon each have an original branded high-definition
+wallpaper packaged directly in the repository. See
+[`forge-classic.md`](forge-classic.md) and [`forge-neon.md`](forge-neon.md)
+for screenshots and visual details. Forge Brutalist is scheduled next.
 
 ## Default web browser
 
@@ -79,14 +82,15 @@ captures two actual VM display screenshots for each theme:
 | Neon | `forge-neon-desktop.png` | `forge-neon-launcher.png` |
 | Brutalist | `forge-brutalist-desktop.png` | `forge-brutalist-launcher.png` |
 
-Download all six from **Actions → successful workflow run →
-Artifacts → `eduardos-theme-previews`**. Artifacts are kept for 14 days.
+Download the screenshots from **Actions → successful workflow run →
+Artifacts → `eduardos-theme-previews`**. There are now additional
+empty-workspace wallpaper screenshots for Classic and Neon, for eight
+screenshots total. Artifacts are kept for 14 days.
 If a preview test fails, files produced by earlier themes may still be
 uploaded; the VM logs provide the startup failure details.
 
-The preview images reflect the **current shipped UI**, not the cinematic
-concept art. Wallpaper artwork, theme-specific backgrounds and deeper
-styling are still separate design work. Screenshot capture is automatic;
+The preview images reflect the **current shipped UI**, including the
+branded wallpapers for Classic and Neon. Screenshot capture is automatic;
 pixel-diff comparison is deliberately not a pass/fail criterion yet.
 
 To build an individual theme preview on an x86_64 Linux KVM host:
