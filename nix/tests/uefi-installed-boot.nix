@@ -1,4 +1,4 @@
-{ pkgs, targetSystem, formattingSystem }:
+{ pkgs, lib, targetSystem, formattingSystem }:
 
 # Install eduardOS onto a throwaway disk; boot that disk via OVMF.
 pkgs.testers.runNixOSTest {
@@ -70,8 +70,8 @@ pkgs.testers.runNixOSTest {
             "> /run/edos-test-passphrase"
         )
         installer.succeed(
-            "${formattingSystem.config.system.build.destroyFormatMount}/bin/"
-            "destroyFormatMount --yes-wipe-all-disks"
+            "${lib.getExe formattingSystem.config.system.build.destroyFormatMount} "
+            "--yes-wipe-all-disks"
         )
         installer.succeed("cryptsetup isLuks --type luks2 /dev/vda2")
         installer.succeed("findmnt /mnt")
