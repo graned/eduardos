@@ -49,11 +49,8 @@ let
   # Brutalist continue using the shared palette-based foundation.
   isClassic = config.eduardos.theme == "forge-classic";
   classicPath = ../../../themes/forge-classic;
-  wallpaper = pkgs.runCommand "eduardos-forge-classic-wallpaper.png" {
-    nativeBuildInputs = [ pkgs.librsvg ];
-  } ''
-    rsvg-convert --width=1920 --height=1080 ${classicPath}/wallpaper.svg > "$out"
-  '';
+  # Bundled high-definition generated image: no wallpaper conversion build.
+  wallpaper = classicPath + "/wallpaper.jpg";
 in
 {
   options.eduardos.theme = lib.mkOption {
@@ -82,7 +79,7 @@ in
     environment.etc."xdg/ghostty/config".source =
       if isClassic then classicPath + "/ghostty.conf" else themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
     environment.etc."xdg/eduardos/theme".text = config.eduardos.theme;
-    environment.etc."xdg/eduardos/forge-classic-wallpaper.png" =
+    environment.etc."xdg/eduardos/forge-classic-wallpaper.jpg" =
       lib.mkIf isClassic { source = wallpaper; };
 
     fonts.packages = with pkgs; [
