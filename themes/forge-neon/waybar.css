@@ -1,0 +1,70 @@
+/* Forge Neon — rain-soaked obsidian HUD; static CSS, no polling helpers. */
+* {
+  font-family: "JetBrainsMono Nerd Font", "DejaVu Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+window#waybar {
+  background: #06131a;
+  color: #ddf2f2;
+  border-bottom: 1px solid #19616b;
+}
+#custom-brand {
+  color: #72e9e9;
+  padding: 0 15px;
+  margin: 6px 13px 6px 11px;
+  background: #092a34;
+  border: 1px solid #158d9a;
+  border-radius: 7px;
+  font-weight: 800;
+}
+#workspaces {
+  margin: 6px 0;
+  padding: 2px 5px;
+  background: #10232d;
+  border: 1px solid #24535b;
+  border-radius: 8px;
+}
+#workspaces button {
+  margin: 0 2px;
+  padding: 1px 10px;
+  min-width: 14px;
+  background: transparent;
+  color: #93bdc4;
+  border-radius: 5px;
+  transition: none;
+}
+#workspaces button.active {
+  color: #071419;
+  background: #19c6bf;
+}
+#workspaces button.urgent { color: #ffbd68; }
+#window { color: #8fb5c2; padding: 0 12px; font-size: 11px; }
+window#waybar.empty #window { padding: 0; }
+#clock {
+  color: #73f1e8;
+  background: #102b37;
+  border: 1px solid #196a73;
+  padding: 5px 19px;
+  border-radius: 8px;
+}
+#pulseaudio, #network, #cpu, #memory, #tray {
+  background: #101f29;
+  border: 1px solid #243845;
+  border-radius: 7px;
+  padding: 4px 12px;
+  margin: 6px 2px;
+  color: #c6dade;
+}
+#network { color: #ffb66b; }
+#cpu, #memory { color: #87dfe7; }
+#tray { margin-right: 11px; }
+tooltip {
+  background: #0b1720;
+  color: #e4fbf9;
+  border: 1px solid #19c6bf;
+  border-radius: 8px;
+}
