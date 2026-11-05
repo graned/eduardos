@@ -37,6 +37,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-storage-layout
       - name: Build UEFI installation closure
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-install-config
+      - name: Install eduardOS on encrypted disk and boot with OVMF
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-installed-boot
       - name: Validate all three Forge theme presets
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.theme-presets
       - name: Validate encrypted persistent disk across QEMU reboot
