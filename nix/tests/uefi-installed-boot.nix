@@ -99,7 +99,13 @@ pkgs.testers.runNixOSTest {
 
     def boot_and_unlock():
         target.start()
-        target.wait_for_console_text("passphrase for", timeout=180)
+        # The passphrase prompt is printed without a newline. The test
+        # driver's console matcher consumes completed serial lines and
+        # can therefore time out even though the prompt is visible.
+        # The ttyS0 password agent announces itself on a complete line.
+        target.wait_for_console_text(
+            "Starting password query on /dev/ttyS0", timeout=180
+        )
         target.send_console("edos-disposable-test-passphrase\\n")
         target.wait_for_unit("multi-user.target", timeout=180)
         target.succeed("test -e /dev/mapper/edos-crypt")
