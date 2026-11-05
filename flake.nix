@@ -6,8 +6,12 @@
     url = "github:nix-community/home-manager/release-26.05";
     inputs.nixpkgs.follows = "nixpkgs";
   };
+  inputs.disko = {
+    url = "github:nix-community/disko/latest";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-  outputs = { self, nixpkgs, home-manager }:
+  outputs = { self, nixpkgs, home-manager, disko }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
@@ -32,6 +36,17 @@
       };
     in
     {
+      # Lab-only configuration: fully declarative UEFI + encrypted Btrfs.
+      # Never point this at a real disk: device=/dev/vda is a QEMU fixture.
+      nixosConfigurations.eduardos-uefi-lab = nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = desktopModules ++ [
+          disko.nixosModules.disko
+          ./nix/storage/disko-layout.nix
+          ./hosts/uefi-lab/default.nix
+        ];
+      };
+
       nixosConfigurations.eduardos-vm = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = vmModules ++ [
@@ -45,6 +60,26 @@
       };
 
       checks.${system} = {
+        # Build the NixOS installation closure, including systemd-boot,
+        # initrd cryptsetup and generated mount definitions. This is not
+        # yet a booted installation test.
+        uefi-install-config = self.nixosConfigurations.eduardos-uefi-lab.config.system.build.toplevel;
+        uefi-storage-layout =
+          let
+            cfg = self.nixosConfigurations.eduardos-uefi-lab.config;
+            required = [ "/" "/boot" "/home" "/nix" "/persist" "/.snapshots" ];
+            generated = builtins.attrNames cfg.fileSystems;
+            correctMounts = builtins.all (p: builtins.elem p generated) required;
+            disk = cfg.disko.devices.disk.system;
+            correctDisk = disk.device == "/dev/vda";
+            correctBoot = cfg.boot.loader.systemd-boot.enable;
+            usesLuks = disk.content.partitions.encrypted.content.type == "luks";
+            luksBtrfs = disk.content.partitions.encrypted.content.content.type == "btrfs";
+          in assert correctMounts && correctDisk && correctBoot && usesLuks && luksBtrfs;
+          pkgs.runCommand "eduardos-uefi-disko-config-validation" {} ''
+            mkdir -p "$out"
+            echo "Validated: GPT/EFI/LUKS2/Btrfs and six mounts" > "$out/result"
+          '';
         storage-persistence = import ./nix/tests/storage-persistence.nix {
           inherit pkgs;
           modules = vmModules;

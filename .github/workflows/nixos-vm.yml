@@ -27,8 +27,16 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
             extra-system-features = kvm
+      - name: Require committed, unchanged flake lock
+        run: |
+          nix flake metadata --no-write-lock-file --json >/dev/null
+          git diff --exit-code -- flake.lock
       - name: Evaluate flake
         run: nix flake check --no-build --show-trace
+      - name: Validate UEFI encrypted storage layout
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-storage-layout
+      - name: Build UEFI installation closure
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-install-config
       - name: Validate all three Forge theme presets
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.theme-presets
       - name: Validate encrypted persistent disk across QEMU reboot
