@@ -34,8 +34,8 @@ nix build .#checks.x86_64-linux.storage-persistence -L
 This starts a NixOS guest with a separate, disposable 4 GiB block disk,
 requires a key file and explicit destructive flag, creates GPT + LUKS2 +
 Btrfs, closes/reopens the encrypted volume, writes markers to all five
-subvolumes, reboots the guest, reopens the volume and verifies the markers
-survived. The original Hyprland and screenshot tests continue unchanged.
+subvolumes, shuts down the guest, cold-starts it with the same QEMU disk image,
+reopens the volume and verifies the markers survived. The original Hyprland and screenshot tests continue unchanged.
 
 ## Destructive tool — not a first-boot installer
 
