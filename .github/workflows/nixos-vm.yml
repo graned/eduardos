@@ -27,18 +27,10 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
             extra-system-features = kvm
-      - name: Lock Disko dependency and expose generated lock
+      - name: Require committed, unchanged flake lock
         run: |
-          nix flake lock
-          echo '=== GENERATED FLAKE LOCK ==='
-          cat flake.lock
-          echo '=== END GENERATED FLAKE LOCK ==='
-      - name: Upload resolved Disko flake lock
-        uses: actions/upload-artifact@v4
-        with:
-          name: eduardos-disko-flake-lock
-          path: flake.lock
-          retention-days: 2
+          nix flake metadata --no-write-lock-file --json >/dev/null
+          git diff --exit-code -- flake.lock
       - name: Evaluate flake
         run: nix flake check --no-build --show-trace
       - name: Validate UEFI encrypted storage layout
