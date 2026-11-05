@@ -106,6 +106,13 @@ pkgs.testers.runNixOSTest {
                 f"runuser -u forge -- env {session_env} "
                 f"/run/current-system/sw/bin/hyprctl {command}"
             )
+        # A live compositor can start and map windows even when its
+        # config contains errors (the red warning banner in screenshots).
+        # Treat any parser complaint as a failed graphical smoke test.
+        config_errors = hyprctl("configerrors").strip()
+        assert not config_errors or config_errors.lower() in (
+            "no errors", "no config errors"
+        ), f"Hyprland configuration errors: {config_errors}"
         # Avoid silently passing if no output is configured.
         assert "Monitor " in hyprctl("monitors"), (
             "Hyprland started, but no usable monitor was reported"
@@ -123,7 +130,7 @@ pkgs.testers.runNixOSTest {
         import time
         machine.screenshot("obsidian-forge-ghostty-before.png")
         if ${if preview then "True" else "False"}:
-            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" ] then "True" else "False"}:
                 machine.wait_until_succeeds(
                     "pgrep -u forge -f 'swaybg.*${theme}-wallpaper' >/dev/null",
                     timeout=30
@@ -188,7 +195,7 @@ pkgs.testers.runNixOSTest {
             )
         machine.screenshot("obsidian-forge-ghostty-after-shortcut.png")
         if ${if preview then "True" else "False"}:
-            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" ] then "True" else "False"}:
                 # Capture Fuzzel over an unobstructed wallpaper, and show
                 # a real result from the installed default Brave browser.
                 hyprctl("dispatch workspace 2")
@@ -201,7 +208,7 @@ pkgs.testers.runNixOSTest {
                 "pgrep -u forge -f '^fuzzel$' >/dev/null",
                 timeout=30
             )
-            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" ] then "True" else "False"}:
                 machine.send_chars("brave")
                 time.sleep(2)
             machine.screenshot("${theme}-launcher.png")

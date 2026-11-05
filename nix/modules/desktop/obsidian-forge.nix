@@ -49,8 +49,10 @@ let
   # Brutalist continue using the shared palette-based foundation.
   isClassic = config.eduardos.theme == "forge-classic";
   isNeon = config.eduardos.theme == "forge-neon";
+  isBrutalist = config.eduardos.theme == "forge-brutalist";
   classicPath = ../../../themes/forge-classic;
   neonPath = ../../../themes/forge-neon;
+  brutalistPath = ../../../themes/forge-brutalist;
   # Bundled high-definition generated image: no wallpaper conversion build.
   wallpaper = classicPath + "/wallpaper.jpg";
 in
@@ -70,32 +72,40 @@ in
     environment.etc."xdg/hypr/hyprland.conf".source =
       if isClassic then classicPath + "/hyprland.conf"
       else if isNeon then neonPath + "/hyprland.conf"
+      else if isBrutalist then brutalistPath + "/hyprland.conf"
       else themed "hyprland.conf" ../../../themes/obsidian-forge/hyprland.conf;
     environment.etc."xdg/waybar/config.jsonc".source =
       if isClassic then classicPath + "/waybar.json"
       else if isNeon then neonPath + "/waybar.json"
+      else if isBrutalist then brutalistPath + "/waybar.json"
       else ../../../themes/obsidian-forge/waybar.json;
     environment.etc."xdg/waybar/style.css".source =
       if isClassic then classicPath + "/waybar.css"
       else if isNeon then neonPath + "/waybar.css"
+      else if isBrutalist then brutalistPath + "/waybar.css"
       else themed "waybar.css" ../../../themes/obsidian-forge/waybar.css;
     environment.etc."xdg/fuzzel/fuzzel.ini".source =
       if isClassic then classicPath + "/fuzzel.ini"
       else if isNeon then neonPath + "/fuzzel.ini"
+      else if isBrutalist then brutalistPath + "/fuzzel.ini"
       else themed "fuzzel.ini" ../../../themes/obsidian-forge/fuzzel.ini;
     environment.etc."xdg/mako/config".source =
       if isClassic then classicPath + "/mako.conf"
       else if isNeon then neonPath + "/mako.conf"
+      else if isBrutalist then brutalistPath + "/mako.conf"
       else themed "mako.conf" ../../../themes/obsidian-forge/mako.conf;
     environment.etc."xdg/ghostty/config".source =
       if isClassic then classicPath + "/ghostty.conf"
       else if isNeon then neonPath + "/ghostty.conf"
+      else if isBrutalist then brutalistPath + "/ghostty.conf"
       else themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
     environment.etc."xdg/eduardos/theme".text = config.eduardos.theme;
     environment.etc."xdg/eduardos/forge-classic-wallpaper.jpg" =
       lib.mkIf isClassic { source = wallpaper; };
     environment.etc."xdg/eduardos/forge-neon-wallpaper.jpg" =
       lib.mkIf isNeon { source = neonPath + "/wallpaper.jpg"; };
+    environment.etc."xdg/eduardos/forge-brutalist-wallpaper.jpg" =
+      lib.mkIf isBrutalist { source = brutalistPath + "/wallpaper.jpg"; };
 
     fonts.packages = with pkgs; [
       dejavu_fonts
@@ -108,6 +118,6 @@ in
       hypridle
       pavucontrol
       brightnessctl
-    ]) ++ lib.optionals (isClassic || isNeon) [ pkgs.swaybg ];
+    ]) ++ lib.optionals (isClassic || isNeon || isBrutalist) [ pkgs.swaybg ];
   };
 }

@@ -1,0 +1,62 @@
+/* Forge Brutalist — monolithic stone, sharp corners, no blur. */
+* {
+  font-family: "JetBrainsMono Nerd Font", "DejaVu Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+window#waybar {
+  color: #e9e6e1;
+  background: #101114;
+  border-bottom: 2px solid #68503b;
+}
+#custom-brand {
+  color: #f0bc79;
+  background: #222124;
+  border-left: 3px solid #e6a04e;
+  padding: 0 15px;
+  margin: 5px 12px 5px 10px;
+  font-weight: 800;
+}
+#workspaces {
+  background: #232327;
+  border: 1px solid #514743;
+  padding: 2px 5px;
+  margin: 5px 0;
+}
+#workspaces button {
+  background: transparent;
+  color: #a8a7a7;
+  padding: 2px 11px;
+  min-width: 15px;
+}
+#workspaces button.active {
+  background: #e6a04e;
+  color: #151316;
+}
+#workspaces button.urgent { color: #ffd18f; }
+#window { color: #aca8a5; padding: 0 14px; font-size: 11px; }
+window#waybar.empty #window { padding: 0; }
+#clock {
+  color: #f1cb94;
+  padding: 4px 18px;
+  background: #252224;
+  border-bottom: 2px solid #e6a04e;
+}
+#pulseaudio, #network, #cpu, #memory, #tray {
+  padding: 4px 12px;
+  margin: 5px 2px;
+  color: #d2ccc6;
+  background: #1c1d20;
+  border: 1px solid #363237;
+}
+#network { color: #d9bd99; }
+#cpu, #memory { color: #e0aa70; }
+#tray { margin-right: 11px; }
+tooltip {
+  background: #16171b;
+  color: #e9e6e1;
+  border: 1px solid #e6a04e;
+}

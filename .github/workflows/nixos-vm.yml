@@ -55,11 +55,11 @@ jobs:
             nix build --out-link "theme-preview-$preset-result" --print-build-logs ".#checks.x86_64-linux.theme-preview-$preset"
             cp -L "theme-preview-$preset-result/forge-$preset-desktop.png" artifacts/theme-previews/
             cp -L "theme-preview-$preset-result/forge-$preset-launcher.png" artifacts/theme-previews/
-            if [ "$preset" = classic ] || [ "$preset" = neon ]; then
+            if [ "$preset" = classic ] || [ "$preset" = neon ] || [ "$preset" = brutalist ]; then
               cp -L "theme-preview-$preset-result/forge-$preset-wallpaper.png" artifacts/theme-previews/
             fi
           done
-          test "$(find artifacts/theme-previews -maxdepth 1 -name '*.png' | wc -l)" -eq 8
+          test "$(find artifacts/theme-previews -maxdepth 1 -name '*.png' | wc -l)" -eq 9
       - name: Upload Forge theme previews
         if: always()
         uses: actions/upload-artifact@v4
