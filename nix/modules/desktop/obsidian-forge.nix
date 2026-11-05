@@ -48,7 +48,9 @@ let
   # Classic receives its own curated visual design while Neon and
   # Brutalist continue using the shared palette-based foundation.
   isClassic = config.eduardos.theme == "forge-classic";
+  isNeon = config.eduardos.theme == "forge-neon";
   classicPath = ../../../themes/forge-classic;
+  neonPath = ../../../themes/forge-neon;
   # Bundled high-definition generated image: no wallpaper conversion build.
   wallpaper = classicPath + "/wallpaper.jpg";
 in
@@ -66,21 +68,34 @@ in
     # System fallback configs: future user setup can select a theme by
     # setting eduardos.theme, while Home Manager overrides remain possible.
     environment.etc."xdg/hypr/hyprland.conf".source =
-      if isClassic then classicPath + "/hyprland.conf" else themed "hyprland.conf" ../../../themes/obsidian-forge/hyprland.conf;
+      if isClassic then classicPath + "/hyprland.conf"
+      else if isNeon then neonPath + "/hyprland.conf"
+      else themed "hyprland.conf" ../../../themes/obsidian-forge/hyprland.conf;
     environment.etc."xdg/waybar/config.jsonc".source =
       if isClassic then classicPath + "/waybar.json"
+      else if isNeon then neonPath + "/waybar.json"
       else ../../../themes/obsidian-forge/waybar.json;
     environment.etc."xdg/waybar/style.css".source =
-      if isClassic then classicPath + "/waybar.css" else themed "waybar.css" ../../../themes/obsidian-forge/waybar.css;
+      if isClassic then classicPath + "/waybar.css"
+      else if isNeon then neonPath + "/waybar.css"
+      else themed "waybar.css" ../../../themes/obsidian-forge/waybar.css;
     environment.etc."xdg/fuzzel/fuzzel.ini".source =
-      if isClassic then classicPath + "/fuzzel.ini" else themed "fuzzel.ini" ../../../themes/obsidian-forge/fuzzel.ini;
+      if isClassic then classicPath + "/fuzzel.ini"
+      else if isNeon then neonPath + "/fuzzel.ini"
+      else themed "fuzzel.ini" ../../../themes/obsidian-forge/fuzzel.ini;
     environment.etc."xdg/mako/config".source =
-      if isClassic then classicPath + "/mako.conf" else themed "mako.conf" ../../../themes/obsidian-forge/mako.conf;
+      if isClassic then classicPath + "/mako.conf"
+      else if isNeon then neonPath + "/mako.conf"
+      else themed "mako.conf" ../../../themes/obsidian-forge/mako.conf;
     environment.etc."xdg/ghostty/config".source =
-      if isClassic then classicPath + "/ghostty.conf" else themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
+      if isClassic then classicPath + "/ghostty.conf"
+      else if isNeon then neonPath + "/ghostty.conf"
+      else themed "ghostty.conf" ../../../themes/obsidian-forge/ghostty.conf;
     environment.etc."xdg/eduardos/theme".text = config.eduardos.theme;
     environment.etc."xdg/eduardos/forge-classic-wallpaper.jpg" =
       lib.mkIf isClassic { source = wallpaper; };
+    environment.etc."xdg/eduardos/forge-neon-wallpaper.jpg" =
+      lib.mkIf isNeon { source = neonPath + "/wallpaper.jpg"; };
 
     fonts.packages = with pkgs; [
       dejavu_fonts
@@ -93,6 +108,6 @@ in
       hypridle
       pavucontrol
       brightnessctl
-    ]) ++ lib.optionals isClassic [ pkgs.swaybg ];
+    ]) ++ lib.optionals (isClassic || isNeon) [ pkgs.swaybg ];
   };
 }
