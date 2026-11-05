@@ -39,9 +39,10 @@
         ];
       };
 
-      packages.${system}.vm =
-        self.nixosConfigurations.eduardos-vm.config.system.build.vm;
-      packages.${system}.storage-provision = storageProvisioner;
+      packages.${system} = {
+        vm = self.nixosConfigurations.eduardos-vm.config.system.build.vm;
+        storage-provision = storageProvisioner;
+      };
 
       checks.${system} = {
         storage-persistence = import ./nix/tests/storage-persistence.nix {
