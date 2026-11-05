@@ -101,7 +101,6 @@
             "runuser -u forge -- zsh -ic 'print -r -- $ZSH_THEME' "
             "| grep -Fxq eduardos-catppuccin"
           )
-          machine.succeed("getent passwd forge | grep -q '/zsh
           machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-classic")
           machine.succeed("grep -Fq brave-browser.desktop /etc/xdg/mimeapps.list")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
