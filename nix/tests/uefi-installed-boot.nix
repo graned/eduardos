@@ -6,8 +6,8 @@ pkgs.testers.runNixOSTest {
   meta.timeout = 1800;
 
   nodes = {
-    installer = { modulesPath, ... }: {
-      imports = [ (modulesPath + "/profiles/installation-device.nix") ];
+    installer = { ... }: {
+      nix.enable = true;
       networking.hostName = "edos-installer-test";
 
       # Only one VM runs at a time; both use this one on-disk image.
@@ -27,7 +27,7 @@ pkgs.testers.runNixOSTest {
       ];
 
       environment.systemPackages = with pkgs; [
-        cryptsetup btrfs-progs parted util-linux
+        cryptsetup btrfs-progs parted util-linux nixos-install-tools
       ];
       boot.supportedFilesystems = [ "btrfs" "vfat" ];
       boot.loader.grub.enable = false;
