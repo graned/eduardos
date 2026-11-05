@@ -129,7 +129,7 @@ pkgs.testers.runNixOSTest {
                     timeout=30
                 )
                 machine.succeed(
-                    "test -s /etc/xdg/eduardos/forge-classic-wallpaper.png"
+                    "test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg"
                 )
                 # A process that exits immediately is not a working wallpaper.
                 time.sleep(3)
