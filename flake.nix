@@ -23,6 +23,13 @@
         home-manager.nixosModules.home-manager
         ./hosts/virtual-machine/user.nix
       ];
+      storageProvisioner = pkgs.writeShellApplication {
+        name = "edos-storage-provision";
+        runtimeInputs = with pkgs; [
+          parted cryptsetup btrfs-progs dosfstools util-linux systemd
+        ];
+        text = builtins.readFile ./nix/storage/provision.sh;
+      };
     in
     {
       nixosConfigurations.eduardos-vm = nixpkgs.lib.nixosSystem {
@@ -32,10 +39,17 @@
         ];
       };
 
-      packages.${system}.vm =
-        self.nixosConfigurations.eduardos-vm.config.system.build.vm;
+      packages.${system} = {
+        vm = self.nixosConfigurations.eduardos-vm.config.system.build.vm;
+        storage-provision = storageProvisioner;
+      };
 
       checks.${system} = {
+        storage-persistence = import ./nix/tests/storage-persistence.nix {
+          inherit pkgs;
+          modules = vmModules;
+          provisioner = storageProvisioner;
+        };
         # Evaluate and build the generated assets of every supported preset.
         # This catches invalid choices or broken recoloring without booting
         # three complete VMs.
