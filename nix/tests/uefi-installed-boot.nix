@@ -99,13 +99,21 @@ pkgs.testers.runNixOSTest {
 
     def boot_and_unlock():
         target.start()
-        # The passphrase prompt is printed without a newline. The test
-        # driver's console matcher consumes completed serial lines and
-        # can therefore time out even though the prompt is visible.
-        # The ttyS0 password agent announces itself on a complete line.
-        target.wait_for_console_text(
-            "Starting password query on /dev/ttyS0", timeout=180
-        )
+        # The prompt may be rendered without a newline and the test
+        # driver's line-oriented matcher can miss it even though QEMU's
+        # serial log has received it. Inspect accumulated serial output
+        # instead; do not bypass the interactive LUKS unlock.
+        import time
+        for attempt in range(180):
+            console = target.get_console_log()
+            if "Starting password query on /dev/ttyS0" in console:
+                break
+            time.sleep(1)
+        else:
+            raise AssertionError(
+                "LUKS serial password agent did not appear; final log:\\n"
+                + target.get_console_log()[-6000:]
+            )
         target.send_console("edos-disposable-test-passphrase\\n")
         target.wait_for_unit("multi-user.target", timeout=180)
         target.succeed("test -e /dev/mapper/edos-crypt")
