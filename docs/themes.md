@@ -74,13 +74,13 @@ and Hyprland graphical-session behavior.
 PRs also boot all three themes in separate QEMU guests, start Hyprland,
 Waybar, Mako and Ghostty, verify that the Super+Return shortcut maps
 another Ghostty window, and invoke Fuzzel through Super+D. The test
-captures two actual VM display screenshots for each theme:
+captures three actual VM display screenshots for each theme:
 
-| Theme | Desktop | Launcher |
-| --- | --- | --- |
-| Classic | `forge-classic-desktop.png` | `forge-classic-launcher.png` |
-| Neon | `forge-neon-desktop.png` | `forge-neon-launcher.png` |
-| Brutalist | `forge-brutalist-desktop.png` | `forge-brutalist-launcher.png` |
+| Theme | Wallpaper | Desktop | Launcher |
+| --- | --- | --- | --- |
+| Classic | `forge-classic-wallpaper.png` | `forge-classic-desktop.png` | `forge-classic-launcher.png` |
+| Neon | `forge-neon-wallpaper.png` | `forge-neon-desktop.png` | `forge-neon-launcher.png` |
+| Brutalist | `forge-brutalist-wallpaper.png` | `forge-brutalist-desktop.png` | `forge-brutalist-launcher.png` |
 
 Download the screenshots from **Actions → successful workflow run →
 Artifacts → `eduardos-theme-previews`**. There are now additional
