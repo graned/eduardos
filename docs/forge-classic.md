@@ -55,3 +55,24 @@ screenshot capture, not visual quality.
 
 No first-boot installer, login screen redesign, Neon/Brutalist artwork,
 audio or visual pixel-diff thresholds are included here.
+
+## Developer shell and translucent Ghostty
+
+eduardOS now installs **Zsh with Oh My Zsh** by default for new
+accounts. Its bundled `eduardos-catppuccin` prompt uses the Catppuccin
+Mocha palette (Peach, Mauve, Blue, Teal and Green) and the built-in
+Oh My Zsh Git plugin. This configuration lives in
+`nix/modules/development/shell.nix` and
+`themes/shell/eduardos-catppuccin.zsh-theme`, without a shell startup
+download or remote installation script. Users may override their own
+shell preferences.
+
+Forge Classic's Ghostty uses Catppuccin Mocha foreground and ANSI colors,
+with `background-opacity = 0.88` so the volcanic wallpaper remains
+subtly visible behind text. Ghostty and Hyprland handle compositor
+blending; no blur daemon is installed. The distinct Neon and Brutalist
+terminal configurations are not restyled in this PR.
+
+The QEMU boot check validates the Zsh login shell, the Oh My Zsh theme
+loaded in an interactive shell and the Ghostty opacity setting. The
+same functional desktop and screenshot tests remain enabled.
