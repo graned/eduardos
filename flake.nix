@@ -110,6 +110,7 @@
           '';
         uefi-installed-boot = import ./nix/tests/uefi-installed-boot.nix {
           inherit pkgs;
+          lib = nixpkgs.lib;
           targetSystem = installedLabSystem;
           formattingSystem = installerFormatSystem;
         };
