@@ -75,7 +75,7 @@
             grep -Fq '#19c6bf' "$neon"
             grep -Fq '#ff8a45' "$brutalist"
             test -s "$neonWallpaper"
-            test "$(head -c 3 "$neonWallpaper" | od -An -tx1 | tr -d ' \\n')" = ffd8ff
+            test "$(head -c 3 "$neonWallpaper" | od -An -tx1 | tr -d '[:space:]')" = ffd8ff
             grep -Fq 'exec-once = swaybg' "$neonHyprland"
             grep -Fq 'background-opacity = 0.88' "$neonGhostty"
             touch "$out"
