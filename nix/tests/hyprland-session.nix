@@ -106,6 +106,13 @@ pkgs.testers.runNixOSTest {
                 f"runuser -u forge -- env {session_env} "
                 f"/run/current-system/sw/bin/hyprctl {command}"
             )
+        # A live compositor can start and map windows even when its
+        # config contains errors (the red warning banner in screenshots).
+        # Treat any parser complaint as a failed graphical smoke test.
+        config_errors = hyprctl("configerrors").strip()
+        assert not config_errors or config_errors.lower() in (
+            "no errors", "no config errors"
+        ), f"Hyprland configuration errors: {config_errors}"
         # Avoid silently passing if no output is configured.
         assert "Monitor " in hyprctl("monitors"), (
             "Hyprland started, but no usable monitor was reported"
