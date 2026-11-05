@@ -123,7 +123,7 @@ pkgs.testers.runNixOSTest {
         import time
         machine.screenshot("obsidian-forge-ghostty-before.png")
         if ${if preview then "True" else "False"}:
-            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" ] then "True" else "False"}:
                 machine.wait_until_succeeds(
                     "pgrep -u forge -f 'swaybg.*${theme}-wallpaper' >/dev/null",
                     timeout=30
@@ -188,7 +188,7 @@ pkgs.testers.runNixOSTest {
             )
         machine.screenshot("obsidian-forge-ghostty-after-shortcut.png")
         if ${if preview then "True" else "False"}:
-            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" ] then "True" else "False"}:
                 # Capture Fuzzel over an unobstructed wallpaper, and show
                 # a real result from the installed default Brave browser.
                 hyprctl("dispatch workspace 2")
@@ -201,7 +201,7 @@ pkgs.testers.runNixOSTest {
                 "pgrep -u forge -f '^fuzzel$' >/dev/null",
                 timeout=30
             )
-            if ${if builtins.elem theme [ "forge-classic" "forge-neon" ] then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" ] then "True" else "False"}:
                 machine.send_chars("brave")
                 time.sleep(2)
             machine.screenshot("${theme}-launcher.png")
