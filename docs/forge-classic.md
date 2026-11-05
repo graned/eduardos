@@ -6,9 +6,7 @@ animated wallpapers, extra agents or new runtime widget frameworks.
 
 ## Visual identity
 
-- **Wallpaper**: original vector landscape (`themes/forge-classic/wallpaper.svg`)
-  with layered obsidian ridges, a winding molten river, atmospheric furnace
-  glow, textured terrain and a restrained forged-anvil eduardOS mark.
+- **Wallpaper**: generated 1920×1080 cinematic volcanic landscape (`themes/forge-classic/wallpaper.jpg`), featuring an obsidian mountain, glowing lava river, atmospheric smoke and the eduardOS emblem. The previous vector concept is retained as an inactive design reference (`wallpaper.svg`).
 - **Waybar**: a dedicated Classic layout with a static eduardOS brand mark,
   styled workspace pills, grouped command-deck modules, warm clock focus
   and responsive spacing.
@@ -18,18 +16,19 @@ animated wallpapers, extra agents or new runtime widget frameworks.
   selection colors and a stronger border.
 - **Mako**: compact industrial notification treatment.
 - **Hyprland**: small refinements to gaps, rounding and focused borders,
-  with a static hyprpaper background on this theme only.
+  with the static `swaybg` wallpaper on this theme only.
 
 ## Lightweight implementation
 
-The wallpaper is stored as editable SVG source, rendered once during the
-**Nix build** into a 1920×1080 PNG using `librsvg`; there is no runtime
-conversion process. The lightweight `swaybg` wallpaper process is installed and started
-only with the Classic preset. The previously used `hyprpaper` crashed
-with SIGSEGV in the software-rendered QEMU test, leaving a blank desktop;
-CI now checks that swaybg remains alive after startup. No animations or
-blur are added, and the user's own Home Manager configuration continues
-to override system fallbacks.
+The actual wallpaper is a bundled high-quality JPEG at **1920×1080**.
+NixOS installs it directly at
+`/etc/xdg/eduardos/forge-classic-wallpaper.jpg` and the existing
+`swaybg` process displays it. There is **no SVG rasterization step,
+runtime image conversion, animated wallpaper or compositor blur**.
+
+We switched from `hyprpaper` after it crashed with SIGSEGV in the
+software-rendered QEMU test; CI requires `swaybg` to remain running.
+Personal Home Manager overrides remain possible.
 
 Forge Neon and Forge Brutalist still use their original palettes and
 configs. They will get independent design work in later PRs.
