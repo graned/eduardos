@@ -70,14 +70,37 @@
                 { eduardos.theme = "forge-neon"; system.stateVersion = "26.05"; }
               ];
             }).config.environment.etc."xdg/ghostty/config".source;
+            brutalistWallpaper = (nixpkgs.lib.nixosSystem {
+              inherit system;
+              modules = vmModules ++ [
+                { eduardos.theme = "forge-brutalist"; system.stateVersion = "26.05"; }
+              ];
+            }).config.environment.etc."xdg/eduardos/forge-brutalist-wallpaper.jpg".source;
+            brutalistHyprland = (nixpkgs.lib.nixosSystem {
+              inherit system;
+              modules = vmModules ++ [
+                { eduardos.theme = "forge-brutalist"; system.stateVersion = "26.05"; }
+              ];
+            }).config.environment.etc."xdg/hypr/hyprland.conf".source;
+            brutalistGhostty = (nixpkgs.lib.nixosSystem {
+              inherit system;
+              modules = vmModules ++ [
+                { eduardos.theme = "forge-brutalist"; system.stateVersion = "26.05"; }
+              ];
+            }).config.environment.etc."xdg/ghostty/config".source;
           } ''
             grep -Fq '#f18a4e' "$classic"
             grep -Fq '#19c6bf' "$neon"
-            grep -Fq '#ff8a45' "$brutalist"
+            grep -Fq '#e6a04e' "$brutalist"
             test -s "$neonWallpaper"
             test "$(head -c 3 "$neonWallpaper" | od -An -tx1 | tr -d '[:space:]')" = ffd8ff
             grep -Fq 'exec-once = swaybg' "$neonHyprland"
             grep -Fq 'background-opacity = 0.88' "$neonGhostty"
+            test -s "$brutalistWallpaper"
+            test "$(head -c 3 "$brutalistWallpaper" | od -An -tx1 | tr -d '[:space:]')" = ffd8ff
+            grep -Fq 'exec-once = swaybg' "$brutalistHyprland"
+            grep -Fq 'col.active_border = rgba(e6a04eff)' "$brutalistHyprland"
+            grep -Fq 'background-opacity = 0.89' "$brutalistGhostty"
             touch "$out"
           '';
         hyprland-session = import ./nix/tests/hyprland-session.nix {
