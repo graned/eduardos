@@ -69,6 +69,17 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
         '';
       };
+      # Lab-only destructive installer, permanently hard-locked to a
+      # disposable QEMU /dev/vda. Not part of live ISO or GUI packages.
+      forgeInstallerLab = pkgs.writeShellApplication {
+        name = "forge-installer-lab";
+        runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_executor_lab.py \
+            --disko-script ${nixpkgs.lib.getExe installerFormatSystem.config.system.build.destroyFormatMount} \
+            --system-closure ${installedLabSystem.config.system.build.toplevel} "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -110,9 +121,19 @@
         storage-provision = storageProvisioner;
         forge-installer = forgeInstaller;
         forge-installer-gui = forgeInstallerGui;
+        forge-installer-lab = forgeInstallerLab;
       };
 
       checks.${system} = {
+        # Fail-closed lab executor unit tests, never touch the runner's disks.
+        forge-installer-lab-tests = pkgs.runCommand "forge-installer-lab-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_executor_lab.py' -v
+          mkdir -p "$out"
+          echo "VM lab executor guard tests passed" > "$out/result"
+        '';
         # Graphical browser wizard and API security fixtures, no ISO build.
         forge-installer-gui-tests = pkgs.runCommand "forge-installer-gui-tests" {
           nativeBuildInputs = [ pkgs.python3 ];
