@@ -3,7 +3,9 @@
 # on Apple Silicon. Only evaluation/client work runs under emulation.
 FROM nixos/nix:latest
 
-RUN nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#openssh
+# nixos/nix already provides the OpenSSH client. Installing another
+# openssh version with nix profile causes a collision on sshd_config.
+RUN command -v ssh >/dev/null && command -v nix >/dev/null
 
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh \
  && printf '%s\n' 'eu.nixbuild.net ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPIQCZc54poJ8vqawd8TraNryQeJnvH1eLpIDgbiqymM' > /root/.ssh/known_hosts \
