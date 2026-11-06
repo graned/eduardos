@@ -37,6 +37,8 @@ jobs:
           git diff --exit-code -- flake.lock
       - name: Evaluate flake
         run: nix flake check --no-build --show-trace
+      - name: Validate live ISO profile (without building ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.live-iso-config
       - name: Validate UEFI storage layout
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-storage-layout
       - name: Validate all three Forge themes
