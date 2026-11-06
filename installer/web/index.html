@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Forge Installer — eduardOS</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="rain" aria-hidden="true"></div>
+  <div class="shell">
+    <aside class="rail">
+      <div class="wordmark"><span class="glyph">✧</span> eduard<span>OS</span></div>
+      <div class="edition">FORGED IN NEON <span>— ALPHA 0.2</span></div>
+      <div class="divider"></div>
+      <nav aria-label="Installer steps">
+        <div class="step active" data-step="0"><span class="number">01</span><span><strong>Welcome</strong><small>The Forge awaits</small></span></div>
+        <div class="step" data-step="1"><span class="number">02</span><span><strong>Hardware</strong><small>System preflight</small></span></div>
+        <div class="step" data-step="2"><span class="number">03</span><span><strong>Storage</strong><small>Select target preview</small></span></div>
+        <div class="step" data-step="3"><span class="number">04</span><span><strong>Review</strong><small>Dry-run summary</small></span></div>
+      </nav>
+      <div class="rail-foot"><div class="status"><span class="dot"></span> READ-ONLY PREVIEW</div><p>YOUR DISKS WILL NOT BE MODIFIED.</p></div>
+    </aside>
+    <main>
+      <header><span class="overline">THE FORGE / SYSTEM SETUP</span><span class="chip">ALPHA BUILD · PREVIEW</span></header>
+      <section class="panel active" id="welcome" aria-labelledby="welcome-title">
+        <div class="sigil" aria-hidden="true"><div class="ring outer"><div class="ring inner"><span>ᛟ</span></div></div></div>
+        <div class="eyebrow">01 / INITIATE THE FORGE</div>
+        <h1 id="welcome-title">A new system<br><em>rises from chaos.</em></h1>
+        <p class="lead">Welcome to the eduardOS installation experience. Discover your hardware, explore the encrypted storage layout, and review a plan without touching your disks.</p>
+        <div class="notice"><span>◈</span><div><strong>Simulation mode</strong><p>Installation is not yet available. This preview cannot partition, format, or erase any storage device.</p></div></div>
+        <button class="primary" id="start">Inspect this machine <span>↗</span></button>
+      </section>
+      <section class="panel" id="hardware" aria-labelledby="hardware-title">
+        <div class="eyebrow">02 / KNOW YOUR MACHINE</div><h2 id="hardware-title">System <em>preflight.</em></h2>
+        <p class="lead compact">The Forge checks the environment before showing any installation candidates.</p>
+        <div id="hardware-grid" class="cards" aria-live="polite"><p>Loading hardware inventory…</p></div>
+        <div id="hardware-alert" class="notice warn hidden" role="alert"></div>
+        <div class="actions"><button class="secondary" data-back>← Back</button><button class="primary" id="to-storage">Explore disks →</button></div>
+      </section>
+      <section class="panel" id="storage" aria-labelledby="storage-title">
+        <div class="eyebrow">03 / SELECT A TARGET TO PREVIEW</div><h2 id="storage-title">Choose a <em>disk.</em></h2>
+        <p class="lead compact">Choose an available drive to preview. This does not erase it. The eventual installer will require a separate explicit confirmation.</p>
+        <div id="disks" class="disk-list" role="radiogroup" aria-label="Disks"></div>
+        <p id="disk-empty" class="empty hidden">No disks were detected. You can still inspect your system, but there is no installation target to preview.</p>
+        <div class="actions"><button class="secondary" data-back>← Back</button><button class="primary" id="to-review" disabled>Review plan →</button></div>
+      </section>
+      <section class="panel" id="review" aria-labelledby="review-title">
+        <div class="eyebrow">04 / READ BEFORE YOU FORGE</div><h2 id="review-title">Installation <em>blueprint.</em></h2>
+        <p class="lead compact">This is what a future installation would propose. No operation will be executed.</p>
+        <div id="summary" aria-live="polite"></div>
+        <div class="notice"><span>◈</span><div><strong>Dry-run only — no changes made</strong><p>No password, passphrase, format action, mounting, or installation is available in this release.</p></div></div>
+        <div class="actions"><button class="secondary" data-back>← Back</button><button class="primary" id="restart">Start over ↻</button></div>
+      </section>
+      <footer><span>EDUARDOS / FORGED IN NEON</span><span>EXPERIMENTAL PREVIEW · V0.2</span></footer>
+    </main>
+  </div>
+</body>
+</html>
