@@ -86,12 +86,15 @@ def make_handler(token: str):
                 if query.get("token") != [token]:
                     return self.reject()
                 return self.serve_asset("index.html", "text/html; charset=utf-8")
-            if self.headers.get("X-Forge-Token") != token:
-                return self.reject()
+            # Browsers do not attach custom request headers when loading
+            # stylesheet and script tags; these fixed assets are public,
+            # but the HTML entrypoint and read-only API remain token-guarded.
             if path == "/style.css":
                 return self.serve_asset("style.css", "text/css; charset=utf-8")
             if path == "/app.js":
                 return self.serve_asset("app.js", "text/javascript; charset=utf-8")
+            if self.headers.get("X-Forge-Token") != token:
+                return self.reject()
             if path == "/api/inventory":
                 try:
                     result = inventory()
@@ -145,7 +148,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Open locally: {url}", flush=True)
     print("Press Ctrl+C to stop.", flush=True)
     if not args.no_browser:
-        threading.Timer(0.6, lambda: webbrowser.open(url)).start()
+        opener = threading.Timer(0.6, lambda: webbrowser.open(url))
+        opener.daemon = True
+        opener.start()
     try:
         server.serve_forever(poll_interval=0.25)
     except KeyboardInterrupt:
