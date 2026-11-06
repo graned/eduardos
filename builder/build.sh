@@ -17,12 +17,8 @@ fi
 mkdir -p "$OUT"
 echo "eduardOS: x86_64 ISO build via nixbuild.net"
 echo "Build environment: container; host system Nix/SSH configuration is untouched."
-echo "Checking remote SSH authentication..."
-# This command uses SSH transport, not an interactive admin shell.
-ssh -T -o ConnectTimeout=20 eu.nixbuild.net true </dev/null >/dev/null || {
-  echo "SSH authentication failed. Check that the mounted private key matches the public key registered at nixbuild.net." >&2
-  exit 3
-}
+# SSH authentication and host-key verification happen as part of the Nix
+# remote builder connection. nixbuild.net does not provide a general shell.
 
 # Disable local derivation execution entirely; this container is the Nix
 # evaluator and result receiver, not an x86_64 builder.
