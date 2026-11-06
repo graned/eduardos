@@ -114,7 +114,7 @@ pkgs.testers.runNixOSTest {
                 "LUKS serial password agent did not appear; final log:\\n"
                 + target.get_console_log()[-6000:]
             )
-        target.send_console("edos-disposable-test-passphrase\\n")
+        target.send_console("edos-disposable-test-passphrase\n")
         target.wait_for_unit("multi-user.target", timeout=180)
         target.succeed("test -e /dev/mapper/edos-crypt")
         target.succeed("findmnt -n -o FSTYPE / | grep -Fx btrfs")
