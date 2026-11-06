@@ -62,6 +62,13 @@
           exec ${pkgs.python3}/bin/python3 ${./installer/forge_installer.py} "$@"
         '';
       };
+      forgeInstallerGui = pkgs.writeShellApplication {
+        name = "forge-installer-gui";
+        runtimeInputs = with pkgs; [ python3 util-linux xdg-utils ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -102,9 +109,20 @@
         live-iso = self.nixosConfigurations.eduardos-live.config.system.build.isoImage;
         storage-provision = storageProvisioner;
         forge-installer = forgeInstaller;
+        forge-installer-gui = forgeInstallerGui;
       };
 
       checks.${system} = {
+        # Graphical browser wizard and API security fixtures, no ISO build.
+        forge-installer-gui-tests = pkgs.runCommand "forge-installer-gui-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_gui.py' -v
+          mkdir -p "$out"
+          echo "Read-only GUI security and API tests passed" > "$out/result"
+        '';
+
         # Read-only installation preflight, tested with synthetic block
         # devices. No ISO build, root privileges or real disks required.
         forge-installer-tests = pkgs.runCommand "forge-installer-tests" {

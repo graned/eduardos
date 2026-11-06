@@ -43,6 +43,8 @@ jobs:
         run: nix flake check --no-build --show-trace
       - name: Validate live ISO profile (without building ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.live-iso-config
+      - name: Validate Forge Neon GUI security and preview API (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-installer-gui-tests
       - name: Validate Forge Installer read-only preflight (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-installer-tests
       - name: Validate UEFI storage layout
