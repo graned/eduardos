@@ -1,0 +1,7 @@
+# Local build artifacts and secrets
+/out/
+/builder/.env
+/builder/*.key
+/result
+/result-*
+/.direnv/

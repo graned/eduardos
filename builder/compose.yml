@@ -1,0 +1,24 @@
+services:
+  iso:
+    build:
+      context: ..
+      dockerfile: builder/Dockerfile
+    # Nix evaluation happens in the container; all x86_64 builds are remote.
+    # Rosetta/QEMU can be slower on an Apple Silicon Mac but requires no host Nix.
+    platform: linux/amd64
+    environment:
+      NIX_CONFIG: |
+        experimental-features = nix-command flakes
+        builders-use-substitutes = true
+        max-jobs = 0
+    volumes:
+      # A named volume retains the Nix client installation and cached results
+      # between invocations; never mount a new empty bind over /nix.
+      - nix-data:/nix
+      - ../:/workspace:ro
+      - ../out:/out
+      - ${NIXBUILD_SSH_KEY:?Set NIXBUILD_SSH_KEY to the absolute path of the registered private key}:/run/secrets/nixbuild_key:ro
+    working_dir: /workspace
+
+volumes:
+  nix-data:

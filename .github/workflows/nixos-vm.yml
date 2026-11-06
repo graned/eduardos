@@ -23,6 +23,10 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+      - name: Validate Docker remote-builder configuration
+        run: |
+          bash -n builder/build.sh
+          NIXBUILD_SSH_KEY=/tmp/placeholder docker compose -f builder/compose.yml config --quiet
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
