@@ -194,6 +194,7 @@
           lib = nixpkgs.lib;
           targetSystem = installedLabSystem;
           formattingSystem = installerFormatSystem;
+          labExecutor = forgeInstallerLab;
         };
         storage-persistence = import ./nix/tests/storage-persistence.nix {
           inherit pkgs;
