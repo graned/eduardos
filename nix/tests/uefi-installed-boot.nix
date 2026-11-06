@@ -1,4 +1,4 @@
-{ pkgs, lib, targetSystem, formattingSystem }:
+{ pkgs, lib, targetSystem, formattingSystem, labExecutor }:
 
 # Install eduardOS onto a throwaway disk; boot that disk via OVMF.
 pkgs.testers.runNixOSTest {
@@ -25,6 +25,7 @@ pkgs.testers.runNixOSTest {
       system.extraDependencies = [
         targetSystem.config.system.build.toplevel
         formattingSystem.config.system.build.destroyFormatMount
+        labExecutor
         pkgs.stdenv
         pkgs.perlPackages.ConfigIniFiles
         pkgs.perlPackages.FileSlurp
@@ -69,9 +70,15 @@ pkgs.testers.runNixOSTest {
             "umask 077; printf 'edos-disposable-test-passphrase' "
             "> /run/edos-test-passphrase"
         )
+        # The lab executor runs Disko and nixos-install only after
+        # checking an explicit QEMU-only marker, target disk state and
+        # an exact human-readable confirmation.
         installer.succeed(
-            "${lib.getExe formattingSystem.config.system.build.destroyFormatMount} "
-            "--yes-wipe-all-disks"
+            "printf 'EDOS-LAB-ONLY' > /run/eduardos-disposable-install-lab"
+        )
+        installer.succeed(
+            "${lib.getExe labExecutor} --execute "
+            "--confirm 'ERASE DISPOSABLE /dev/vda'"
         )
         installer.succeed("cryptsetup isLuks --type luks2 /dev/vda2")
         installer.succeed("findmnt /mnt")
@@ -79,15 +86,10 @@ pkgs.testers.runNixOSTest {
         for p in ["home", "nix", "persist", ".snapshots"]:
             installer.succeed(f"findmnt /mnt/{p}")
 
-    with subtest("Install actual eduardOS UEFI system closure"):
+    with subtest("Verify installed eduardOS UEFI system closure"):
         installer.succeed("mkdir -p /mnt/home/edos-test")
         installer.succeed("printf 'home-survived' > /mnt/home/edos-test/marker")
         installer.succeed("printf 'persist-survived' > /mnt/persist/marker")
-        installer.succeed(
-            "nixos-install --root /mnt "
-            "--system ${targetSystem.config.system.build.toplevel} "
-            "--no-root-passwd < /dev/null >&2"
-        )
         installer.succeed("test -f /mnt/boot/loader/loader.conf")
         installer.succeed("test -d /mnt/boot/EFI")
         installer.succeed("sync")
