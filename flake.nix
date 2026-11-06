@@ -80,6 +80,15 @@
             --system-closure ${installedLabSystem.config.system.build.toplevel} "$@"
         '';
       };
+      # Read-only production disk identity contract. No privileged helper
+      # and no disk writes; it cannot invoke the lab executor.
+      forgeDiskReview = pkgs.writeShellApplication {
+        name = "forge-disk-review";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_disk_identity.py "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -122,9 +131,20 @@
         forge-installer = forgeInstaller;
         forge-installer-gui = forgeInstallerGui;
         forge-installer-lab = forgeInstallerLab;
+        forge-disk-review = forgeDiskReview;
       };
 
       checks.${system} = {
+        # Disk identity and stale-review tests use synthetic devices;
+        # no root access, ISO compilation or actual disks.
+        forge-disk-review-tests = pkgs.runCommand "forge-disk-review-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_disk_identity.py' -v
+          mkdir -p "$out"
+          echo "Read-only disk identity tests passed" > "$out/result"
+        '';
         # Fail-closed lab executor unit tests, never touch the runner's disks.
         forge-installer-lab-tests = pkgs.runCommand "forge-installer-lab-tests" {
           nativeBuildInputs = [ pkgs.python3 ];
