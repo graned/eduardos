@@ -6,14 +6,46 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Cancel superseded PR commits; full disk installation runs separately.
+concurrency:
+  group: eduardos-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-  vm-build-and-boot:
-    name: Build and boot NixOS guest
+  validate:
+    name: Fast evaluation and theme checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            extra-system-features = kvm
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Require committed, unchanged flake lock
+        run: |
+          nix flake metadata --no-write-lock-file --json >/dev/null
+          git diff --exit-code -- flake.lock
+      - name: Evaluate flake
+        run: nix flake check --no-build --show-trace
+      - name: Validate UEFI storage layout
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-storage-layout
+      - name: Validate all three Forge themes
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.theme-presets
+
+  storage-smoke:
+    name: Encrypted data persistence and boot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -27,23 +59,37 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
             extra-system-features = kvm
-      - name: Require committed, unchanged flake lock
-        run: |
-          nix flake metadata --no-write-lock-file --json >/dev/null
-          git diff --exit-code -- flake.lock
-      - name: Evaluate flake
-        run: nix flake check --no-build --show-trace
-      - name: Validate UEFI encrypted storage layout
-        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-storage-layout
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
       - name: Build UEFI installation closure
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-install-config
-      - name: Validate all three Forge theme presets
-        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.theme-presets
-      - name: Validate encrypted persistent disk across QEMU reboot
+      - name: Verify encrypted data survives a QEMU cold boot
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.storage-persistence
-      - name: Boot test in QEMU (systemd, NetworkManager, desktop binaries)
+      - name: Boot existing NixOS system in QEMU
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.boot
-      - name: Test desktop keyboard input and capture screenshots in QEMU
+      - name: Build interactive VM launcher
+        run: nix build --no-link --print-build-logs .#vm
+
+  desktop:
+    name: Hyprland keyboard and three theme previews
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Enable KVM access
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            extra-system-features = kvm
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Test keyboard input and capture actual desktop screenshots
         run: |
           nix build --out-link graphical-test-result --print-build-logs .#checks.x86_64-linux.hyprland-session
           mkdir -p artifacts/screenshots
@@ -63,11 +109,9 @@ jobs:
           mkdir -p artifacts/theme-previews
           for preset in classic neon brutalist; do
             nix build --out-link "theme-preview-$preset-result" --print-build-logs ".#checks.x86_64-linux.theme-preview-$preset"
-            cp -L "theme-preview-$preset-result/forge-$preset-desktop.png" artifacts/theme-previews/
-            cp -L "theme-preview-$preset-result/forge-$preset-launcher.png" artifacts/theme-previews/
-            if [ "$preset" = classic ] || [ "$preset" = neon ] || [ "$preset" = brutalist ]; then
-              cp -L "theme-preview-$preset-result/forge-$preset-wallpaper.png" artifacts/theme-previews/
-            fi
+            for shot in desktop launcher wallpaper; do
+              cp -L "theme-preview-$preset-result/forge-$preset-$shot.png" artifacts/theme-previews/
+            done
           done
           test "$(find artifacts/theme-previews -maxdepth 1 -name '*.png' | wc -l)" -eq 9
       - name: Upload Forge theme previews
@@ -78,5 +122,3 @@ jobs:
           path: artifacts/theme-previews/
           if-no-files-found: warn
           retention-days: 14
-      - name: Build interactive VM launcher
-        run: nix build --no-link --print-build-logs .#vm

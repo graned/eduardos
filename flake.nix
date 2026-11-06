@@ -27,6 +27,34 @@
         home-manager.nixosModules.home-manager
         ./hosts/virtual-machine/user.nix
       ];
+      # The end-to-end installation test uses a QEMU-instrumented instance
+      # of the very same UEFI storage/desktop configuration.
+      installedLabModules = desktopModules ++ [
+        disko.nixosModules.disko
+        ./nix/storage/disko-layout.nix
+        ./hosts/uefi-lab/default.nix
+        ({ modulesPath, ... }: {
+          imports = [
+            (modulesPath + "/testing/test-instrumentation.nix")
+            (modulesPath + "/profiles/qemu-guest.nix")
+          ];
+          boot.loader.systemd-boot.graceful = true;
+          documentation.enable = false;
+        })
+      ];
+      installedLabSystem = nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = installedLabModules;
+      };
+      # Only Disko's *formatting* script reads the ephemeral runtime file.
+      # The installed system still requires interactive unlock at every boot.
+      installerFormatSystem = nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = installedLabModules ++ [
+          { disko.devices.disk.system.content.partitions.encrypted.content.passwordFile =
+              "/run/edos-test-passphrase"; }
+        ];
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -80,6 +108,12 @@
             mkdir -p "$out"
             echo "Validated: GPT/EFI/LUKS2/Btrfs and six mounts" > "$out/result"
           '';
+        uefi-installed-boot = import ./nix/tests/uefi-installed-boot.nix {
+          inherit pkgs;
+          lib = nixpkgs.lib;
+          targetSystem = installedLabSystem;
+          formattingSystem = installerFormatSystem;
+        };
         storage-persistence = import ./nix/tests/storage-persistence.nix {
           inherit pkgs;
           modules = vmModules;

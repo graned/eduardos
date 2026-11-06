@@ -1,0 +1,38 @@
+name: eduardOS full encrypted installation
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Nightly integration check at 03:17 UTC.
+    - cron: "17 3 * * *"
+
+concurrency:
+  group: eduardos-full-install-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  installed-uefi:
+    name: Full Disko install, OVMF unlock and reboot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Enable KVM access
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            extra-system-features = kvm
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Install encrypted eduardOS and boot with OVMF
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-installed-boot
