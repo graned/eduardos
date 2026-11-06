@@ -1,0 +1,48 @@
+name: eduardOS Alpha live ISO
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: eduardos-live-iso-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-iso:
+    name: Build bootable eduardOS Alpha ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Build live ISO (manual, not PR merge gate)
+        run: nix build --out-link result --print-build-logs .#live-iso
+      - name: Split ISO into manageable artifact parts and checksum
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          iso="$(find -L result/iso -maxdepth 1 -type f -name '*.iso' -print -quit)"
+          test -n "$iso"
+          sha256sum "$iso" | sed "s|$iso|eduardos-alpha.iso|" > artifacts/SHA256SUMS
+          split -b 1900M --numeric-suffixes=0 --suffix-length=3 \
+            "$iso" artifacts/eduardos-alpha.iso.part-
+          ls -lh artifacts/
+      - name: Upload ISO parts and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: eduardos-alpha-live-iso
+          path: artifacts/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
