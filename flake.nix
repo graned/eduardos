@@ -75,6 +75,14 @@
         ];
       };
 
+      # Alpha 0.1 is a live ISO only: no Disko, target drive or installer.
+      nixosConfigurations.eduardos-live = nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = desktopModules ++ [
+          ./hosts/live-iso/default.nix
+        ];
+      };
+
       nixosConfigurations.eduardos-vm = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = vmModules ++ [
@@ -84,10 +92,26 @@
 
       packages.${system} = {
         vm = self.nixosConfigurations.eduardos-vm.config.system.build.vm;
+        live-iso = self.nixosConfigurations.eduardos-live.config.system.build.isoImage;
         storage-provision = storageProvisioner;
       };
 
       checks.${system} = {
+        # Evaluate the ISO wiring on every PR without building a multi-GB ISO.
+        live-iso-config =
+          let
+            cfg = self.nixosConfigurations.eduardos-live.config;
+            hasIso = cfg.system.build ? isoImage;
+            neon = cfg.eduardos.theme == "forge-neon";
+            login = cfg.services.greetd.settings.initial_session.user == "forge";
+            network = cfg.networking.networkmanager.enable;
+            noDisko = !(cfg ? disko);
+          in assert hasIso && neon && login && network && noDisko;
+          pkgs.runCommand "eduardos-live-iso-config-check" {} ''
+            mkdir -p "$out"
+            echo "Live ISO configured without Disko" > "$out/result"
+          '';
+
         # Build the NixOS installation closure, including systemd-boot,
         # initrd cryptsetup and generated mount definitions. This is not
         # yet a booted installation test.
