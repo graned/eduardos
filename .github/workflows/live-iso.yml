@@ -19,6 +19,25 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+      - name: Free runner disk space before the Nix build
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::group::Disk space before cleanup"
+          df -h / "$RUNNER_TEMP"
+          echo "::endgroup::"
+
+          # Hosted Ubuntu images contain SDKs unrelated to our x86_64 Nix ISO.
+          # Remove only known runner preinstalls, before installing Nix.
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /usr/local/.ghcup
+
+          echo "::group::Disk space after cleanup"
+          df -h / "$RUNNER_TEMP"
+          echo "::endgroup::"
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -27,7 +46,18 @@ jobs:
       - name: Restore and save Nix build cache
         uses: DeterminateSystems/magic-nix-cache-action@v14
       - name: Build live ISO (manual, not PR merge gate)
-        run: nix build --out-link result --print-build-logs .#live-iso
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::group::Disk capacity available for Nix and ISO output"
+          df -h / /nix/store
+          echo "::endgroup::"
+          nix build --out-link result --print-build-logs .#live-iso
+      - name: Report disk usage after ISO build
+        if: always()
+        run: |
+          df -h / /nix/store
+          du -sh /nix/store 2>/dev/null || true
       - name: Split ISO into manageable artifact parts and checksum
         run: |
           set -euo pipefail
