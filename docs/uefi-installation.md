@@ -67,7 +67,9 @@ The layout check verifies GPT, LUKS, Btrfs and all six mounts
 (`/boot` plus five encrypted subvolumes). The system closure check
 builds the NixOS UEFI profile, including its boot setup and initrd.
 Existing boot, encrypted-data persistence and graphical theme checks
-remain mandatory.
+remain mandatory. The expensive full Disko installation test runs as a
+separate nightly or manual GitHub Actions workflow instead of blocking
+every ordinary pull request.
 
 **Next milestone:** provision a temporary disk with Disko itself,
 install eduardOS onto it with `nixos-install`, boot that installed
@@ -104,3 +106,56 @@ mounting the host's Nix store in place of the installed system. CI uses
 test instrumentation and a disposable password solely to automate
 repeated installation verification. Real disk discovery, backups and
 recovery UX are separate installer milestones.
+
+## How to run the full installation test
+
+The normal PR workflow (`.github/workflows/nixos-vm.yml`) covers fast
+evaluation, encrypted persistence, VM boot, and graphical themes. The
+full encrypted install is isolated in `.github/workflows/full-install.yml`
+and runs nightly on the default branch or manually from GitHub Actions
+once the workflow file is merged to the default branch.
+
+### GitHub Actions (easiest)
+
+1. Once merged, open **Actions → eduardOS full encrypted installation**.
+2. Select **Run workflow** and choose the branch you want to test.
+3. Open the **Full Disko install, OVMF unlock and reboot** job.
+4. A successful run must finish both the first boot/unlock and the second
+   cold boot/persistence checks. A green PR smoke test alone does not prove
+   that a fresh disk installation works.
+
+### Run locally in a disposable VM or Linux host (advanced)
+
+The existing test is **automated, not a bootable installation ISO**. Use
+an x86_64 Linux environment with Nix flakes and QEMU/KVM support. If
+running inside a VM, enable nested virtualization and confirm `/dev/kvm`
+exists. Allocate at least 4 vCPUs, 8 GiB RAM and ~40 GiB of free disk
+space for the test and Nix store; additional capacity may be necessary
+for an uncached build. This will create and destroy only test-owned
+virtual disk images, **not a disk passed through from your host**.
+
+```sh
+git clone https://github.com/graned/eduardos.git
+cd eduardos
+git switch feat/uefi-installed-boot-test
+nix --extra-experimental-features 'nix-command flakes' \
+  flake check --no-build
+nix --extra-experimental-features 'nix-command flakes' \
+  build -L .#checks.x86_64-linux.uefi-installed-boot
+```
+
+Do not redirect the test to a physical disk. The lab profile hardcodes
+`/dev/vda`; it is exclusively for disposable QEMU images. Never run
+its Disko `destroyFormatMount` script against a real device.
+
+### Manual VM UX testing — what is and is not ready
+
+The current `nixosConfigurations.eduardos-uefi-lab` is a **lab-only
+NixOS profile**, not a safe general installer. You can meaningfully
+validate the test's install, encrypted unlock, UEFI boot and persistence
+behavior today through the automated nested-QEMU test. Do not assume
+there is a supported graphical ISO, device picker, recovery flow or
+safe installation procedure for an arbitrary VirtualBox/VMware disk.
+Those are separate milestones. Manual interactive installation should
+wait for a dedicated disposable-VM installer guide and an installable
+image rather than guessing destructive commands.
