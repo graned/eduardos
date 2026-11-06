@@ -1,3 +1,61 @@
+## Graphical Forge Neon wizard — PR #21
+
+The graphical installer is a **responsive, local-only browser UI**, using
+the existing PR #20 `forge_installer.py` disk discovery and safety rules.
+There are no GTK dependencies, no root requirement, and no new services
+enabled on the host or live ISO.
+
+### Start the UI on a Linux desktop with Nix
+
+```sh
+nix run .#forge-installer-gui
+```
+
+The command starts a Python standard-library HTTP server bound to
+`127.0.0.1` on an ephemeral port and opens your browser. If automatic
+browser launching fails, use:
+
+```sh
+nix run .#forge-installer-gui -- --no-browser
+```
+
+Then open the printed local URL in your browser. The browser URL contains
+a random access token; treat it like a local secret and don't share it.
+Press Ctrl+C to shut down the server.
+
+The wizard contains four screens:
+
+1. **Welcome** — release context and explicit dry-run warning.
+2. **Hardware** — x86_64, UEFI, RAM checks.
+3. **Storage** — discovered disk candidates, model, capacity and
+   detailed reasons for blocking unsafe selections.
+4. **Review** — freshly revalidated selected stable device ID and
+   the proposed EFI / LUKS2 / Btrfs layout.
+
+The wizard is a **preview**, not an installer. Only HTTP GET requests
+are supported. No password fields, privilege escalation, partitioning,
+formatting or mount actions are available. The backend uses a
+fixed whitelist of static files, an access token for the read-only API,
+a local bind and Host-header validation. The UI uses `textContent` for
+disk labels to avoid interpreting device metadata as HTML.
+
+### Tests, no ISO
+
+```sh
+nix build --no-link .#checks.x86_64-linux.forge-installer-gui-tests
+```
+
+Fast CI runs loopback API/security tests with synthetic device fixtures:
+the launch token, API token, Host header checks, no write HTTP verbs,
+stable disk identifier selection and fail-closed missing-device checks.
+
+This package is deliberately **not embedded into Alpha 0.1's ISO**.
+We'll integrate it into the release ISO once the execution workflow and
+disposable-VM installation tests are complete, and only then produce
+the Alpha 0.2 ISO. The existing terminal wizard remains available.
+
+---
+
 # Forge Installer — PR #20 (read-only foundation)
 
 **Status: preview / dry-run only. This version never installs eduardOS.**
