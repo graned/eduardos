@@ -43,6 +43,8 @@ jobs:
         run: nix flake check --no-build --show-trace
       - name: Validate live ISO profile (without building ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.live-iso-config
+      - name: Validate one-shot authorization and credential guards (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-authorization-tests
       - name: Validate disk identity and stale-review protection (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-disk-review-tests
       - name: Validate guarded VM-only installation executor (no ISO)
