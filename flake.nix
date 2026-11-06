@@ -55,6 +55,13 @@
               "/run/edos-test-passphrase"; }
         ];
       };
+      forgeInstaller = pkgs.writeShellApplication {
+        name = "forge-installer";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer/forge_installer.py} "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -94,9 +101,20 @@
         vm = self.nixosConfigurations.eduardos-vm.config.system.build.vm;
         live-iso = self.nixosConfigurations.eduardos-live.config.system.build.isoImage;
         storage-provision = storageProvisioner;
+        forge-installer = forgeInstaller;
       };
 
       checks.${system} = {
+        # Read-only installation preflight, tested with synthetic block
+        # devices. No ISO build, root privileges or real disks required.
+        forge-installer-tests = pkgs.runCommand "forge-installer-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_*.py' -v
+          mkdir -p "$out"
+          echo "Installer read-only fixture tests passed" > "$out/result"
+        '';
         # Evaluate the ISO wiring on every PR without building a multi-GB ISO.
         live-iso-config =
           let
