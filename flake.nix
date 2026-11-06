@@ -66,7 +66,7 @@
         name = "forge-installer-gui";
         runtimeInputs = with pkgs; [ python3 util-linux xdg-utils ];
         text = ''
-          exec ${pkgs.python3}/bin/python3 ${./installer/forge_gui.py} "$@"
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
         '';
       };
       storageProvisioner = pkgs.writeShellApplication {
