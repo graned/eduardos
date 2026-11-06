@@ -6,7 +6,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Cancel superseded PR commits instead of running obsolete 1-hour suites.
+# Cancel superseded PR commits; full disk installation runs separately.
 concurrency:
   group: eduardos-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -122,25 +122,3 @@ jobs:
           path: artifacts/theme-previews/
           if-no-files-found: warn
           retention-days: 14
-
-  installed-uefi:
-    name: Full Disko install, OVMF unlock and reboot
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-      - name: Enable KVM access
-        run: |
-          test -e /dev/kvm
-          sudo chmod 666 /dev/kvm
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-            extra-system-features = kvm
-      - name: Restore and save Nix build cache
-        uses: DeterminateSystems/magic-nix-cache-action@v14
-      - name: Install encrypted eduardOS and boot with OVMF
-        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-installed-boot
