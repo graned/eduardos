@@ -21,6 +21,10 @@
     extraGroups = [ "wheel" "networkmanager" "video" "audio" ];
   };
 
+  # The installer CD normally auto-logs into a console. Reserve tty1 for
+  # the graphical greeter instead; keep remaining consoles usable.
+  services.getty.autologinUser = lib.mkForce null;
+
   # Launch the actual Wayland desktop directly from greetd. A fallback
   # greeter remains available if the initial graphical session exits.
   services.greetd = {
@@ -38,7 +42,6 @@
   };
 
   hardware.graphics.enable = true;
-  services.qemuGuest.enable = true;
 
   # Some desktop applications need these in a live, read-only-root environment.
   environment.systemPackages = with pkgs; [
