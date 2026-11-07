@@ -89,6 +89,14 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_disk_identity.py "$@"
         '';
       };
+      # Read-only ephemeral authorization rehearsal. NOT an installer.
+      forgeAuthorization = pkgs.writeShellApplication {
+        name = "forge-authorization";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_authorization.py "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -132,9 +140,19 @@
         forge-installer-gui = forgeInstallerGui;
         forge-installer-lab = forgeInstallerLab;
         forge-disk-review = forgeDiskReview;
+        forge-authorization = forgeAuthorization;
       };
 
       checks.${system} = {
+        # Authorization is read-only and exercised entirely via fixtures.
+        forge-authorization-tests = pkgs.runCommand "forge-authorization-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_authorization.py' -v
+          mkdir -p "$out"
+          echo "Authorization and credential validation fixtures passed" > "$out/result"
+        '';
         # Disk identity and stale-review tests use synthetic devices;
         # no root access, ISO compilation or actual disks.
         forge-disk-review-tests = pkgs.runCommand "forge-disk-review-tests" {
