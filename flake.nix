@@ -97,6 +97,14 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_authorization.py "$@"
         '';
       };
+      # Root-only, read-only protection for active-system backing disks.
+      forgePrivilegedPreflight = pkgs.writeShellApplication {
+        name = "forge-privileged-preflight";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_privileged_guard.py "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -141,9 +149,19 @@
         forge-installer-lab = forgeInstallerLab;
         forge-disk-review = forgeDiskReview;
         forge-authorization = forgeAuthorization;
+        forge-privileged-preflight = forgePrivilegedPreflight;
       };
 
       checks.${system} = {
+        # Synthetic LUKS/RAID and mount graph tests; no real disks or ISO.
+        forge-privileged-preflight-tests = pkgs.runCommand "forge-privileged-preflight-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_privileged_guard.py' -v
+          mkdir -p "$out"
+          echo "Privileged preflight ancestry tests passed" > "$out/result"
+        '';
         # Authorization is read-only and exercised entirely via fixtures.
         forge-authorization-tests = pkgs.runCommand "forge-authorization-tests" {
           nativeBuildInputs = [ pkgs.python3 ];
