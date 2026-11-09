@@ -139,14 +139,16 @@ class SecretHandoffTests(unittest.TestCase):
 
     def test_missing_fd_rejected(self):
         with handoff.sealed_credential_pair(LUKS, ACCOUNT) as fds:
+            saved = os.dup(fds.luks)
             os.close(fds.luks)
-            # The outer context's close cannot close a reopened descriptor;
-            # keep it occupied with /dev/null so the outer close succeeds.
-            rescue = os.open("/dev/null", os.O_RDONLY | os.O_CLOEXEC)
-            self.assertEqual(rescue, fds.luks)
-            with self.assertRaises(handoff.Refused):
-                with handoff.OneShotCredentialReader(fds).consume():
-                    pass
+            try:
+                with self.assertRaises(handoff.Refused):
+                    with handoff.OneShotCredentialReader(fds).consume():
+                        pass
+            finally:
+                # Restore descriptor before the producer context closes it.
+                os.dup2(saved, fds.luks)
+                os.close(saved)
 
     def test_secret_validation_rejects_bad_text(self):
         for invalid in ("short", "line\\ninjection-passphrase", "contains\\x00nul-passphrase"):
@@ -186,7 +188,6 @@ class SecretHandoffTests(unittest.TestCase):
             "grant_root", "authorize_disk", "create_socket", "execute",
         ):
             self.assertFalse(hasattr(handoff, prohibited))
-        self.assertIsNone(handoff.sealed_credential_pair.__module__ if False else None)
 
 
 if __name__ == "__main__":
