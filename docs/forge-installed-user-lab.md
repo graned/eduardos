@@ -24,7 +24,7 @@ QEMU-instrumented instance of `mkInstalledSystem` with:
   no live-ISO demo `forge` account.
 - Home Manager loaded for `/home/testpilot`.
 - `pamtester` installed **only in the QEMU fixture** to test actual
-  PAM password challenges.
+  PAM password challenges with the privileges of the real login daemon.
 
 The physical profile's required by-id identifier, account identity and
 host name validation are not weakened. The original formatter remains
@@ -48,8 +48,9 @@ After Disko has formatted the disposable target, the executor:
 1. Re-runs the real encrypted mount audit for the six expected
    Btrfs/EFI mountpoints and proves their backing device is `/dev/vda`.
 2. Opens the mounted `/mnt` directory without following symlinks.
-3. Compares root and persist directory kernel device numbers against
-   `/proc/self/mountinfo`; requires root ownership.
+3. Verifies root and persist directory **kernel mount IDs** from
+   `/proc/self/fdinfo` match the audited `/proc/self/mountinfo` entries;
+   requires root ownership. This is Btrfs subvolume-safe.
 4. Hashes the password using salted SHA-512-crypt via OpenSSL stdin.
    No password/hash is added to CLI argv, environment variables or Nix
    evaluation, and the hash is not embedded in the store.
@@ -71,13 +72,18 @@ manual/nightly GitHub Actions workflow), the disposable disk is:
 - Cold-booted with OVMF, unlocking LUKS2 interactively.
 - Checked for `testpilot`, active `greetd`, absent `forge`, and a
   nonempty shadow password hash.
-- Authenticated through the PAM **login** stack as non-root using the
-  correct public test credential. A wrong password MUST fail.
+- Authenticated through both the **greetd** and **login** PAM stacks
+  with a privileged PAM caller (as the real greetd/login daemons use).
+  The correct public fixture credential MUST succeed and an incorrect
+  credential MUST fail for each stack. Running the test as `nobody`
+  would trigger `unix_chkpwd`'s cross-account privilege restriction,
+  producing a false failure rather than testing greetd's actual path.
 - Written to as `testpilot`, shut down and cold-booted a second time.
 - Checked for persistence of encrypted user-home files and the account
   password hash after the second boot.
 
-This tests the operating-system password/PAM path; it does **not**
+This tests the operating-system password/PAM path, including a negative
+password challenge; it does **not**
 simulate clicking or typing into the graphical tuigreet interface.
 Actual GUI login automation remains for a future milestone.
 
