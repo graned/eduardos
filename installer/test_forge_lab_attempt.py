@@ -33,6 +33,14 @@ class LabAttemptTests(unittest.TestCase):
             return SimpleNamespace(st_mode=actual.st_mode, st_uid=0)
         return patch.object(lab.os, "fstat", side_effect=root_owned)
 
+    def root_report(self):
+        # The real VM creates the marker as root. Model only the owner
+        # metadata of our temporary regular file in unprivileged unit CI.
+        real = os.lstat(lab.MARKER)
+        mock = SimpleNamespace(st_mode=real.st_mode, st_uid=0)
+        with patch.object(lab.os, "lstat", return_value=mock):
+            return lab.recovery_report()
+
     def test_single_attempt_marker_remains_after_failure_and_blocks_retry(self):
         with patch.object(lab.os, "geteuid", return_value=0), \
              self.root_file_context():
@@ -44,7 +52,7 @@ class LabAttemptTests(unittest.TestCase):
                 lab.mark_format_started()
         self.assertEqual(lab.MARKER.read_bytes(), lab.MARKER_CONTENT)
         self.assertEqual(stat.S_IMODE(lab.MARKER.stat().st_mode), 0o600)
-        report = lab.recovery_report()
+        report = self.root_report()
         self.assertEqual(report["status"], "manual-recovery-required")
         self.assertIs(report["auto_retry_enabled"], False)
         self.assertIs(report["automatic_rollback_enabled"], False)
@@ -91,7 +99,7 @@ class LabAttemptTests(unittest.TestCase):
             except RuntimeError:
                 pass
         self.assertTrue(lab.MARKER.exists())
-        self.assertEqual(lab.recovery_report()["status"],
+        self.assertEqual(self.root_report()["status"],
                          "manual-recovery-required")
 
     def test_no_recovery_writer_or_marker_clear_api(self):
