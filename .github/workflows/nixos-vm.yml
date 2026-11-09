@@ -47,6 +47,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-mount-audit-tests
       - name: Validate guarded backend disk and encrypted-mount attestation (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-backend-tests
+      - name: Validate root consent, reviewed disk and sealed credentials as no-write one-shot (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-execution-rehearsal-tests
       - name: Validate physical disk installation manifest remains non-executable (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-physical-preview-tests
       - name: Validate trusted physical-console root preflight launcher (no ISO)
