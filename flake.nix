@@ -58,6 +58,14 @@
       # Factory for a real installed-system closure. No default target disk,
       # username, or hostname. It only evaluates NixOS; never runs Disko.
       mkInstalledSystem = { diskDevice, username, hostname }:
+        assert builtins.isString diskDevice
+          && builtins.match "/dev/disk/by-id/[a-zA-Z0-9_.:+-]+" diskDevice != null;
+        assert builtins.isString username
+          && builtins.match "[a-z_][a-z0-9_-]{0,30}" username != null
+          && !(builtins.elem username [ "root" "nixbld" "forge" "greeter" ]);
+        assert builtins.isString hostname
+          && builtins.match "[a-z][a-z0-9-]{0,62}" hostname != null
+          && !(nixpkgs.lib.hasSuffix "-" hostname);
         nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = { inherit diskDevice username hostname; };
@@ -215,6 +223,21 @@
               (cfg.security.sudo.wheelNeedsPassword)
               (cfg.home-manager.users.testpilot.home.username == "testpilot")
               (cfg.home-manager.users.testpilot.home.homeDirectory == "/home/testpilot")
+              (!(builtins.tryEval ((mkInstalledSystem {
+                diskDevice = "/dev/vda";
+                username = "testpilot";
+                hostname = "edos-preview";
+              }).config.networking.hostName)).success)
+              (!(builtins.tryEval ((mkInstalledSystem {
+                diskDevice = "/dev/disk/by-id/wwn-0xNONEXISTENT";
+                username = "forge";
+                hostname = "edos-preview";
+              }).config.networking.hostName)).success)
+              (!(builtins.tryEval ((mkInstalledSystem {
+                diskDevice = "/dev/disk/by-id/wwn-0xNONEXISTENT";
+                username = "testpilot";
+                hostname = "INVALID.HOST";
+              }).config.networking.hostName)).success)
             ];
           in assert builtins.all (x: x) checks;
           pkgs.runCommand "eduardos-installed-profile-eval" {} ''
