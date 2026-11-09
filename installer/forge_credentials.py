@@ -182,21 +182,28 @@ def _atomic_new_file(dir_fd: int, name: str, content: bytes, owner: int) -> None
         raise Refused("Credential hash file was not published")
 
 
-@contextmanager
-def sealed_luks_fd(passphrase: str) -> Iterator[int]:
-    """One-use ephemeral LUKS passphrase in a Linux sealed anonymous memfd.
+# Fixed role labels prevent accidentally interchanging LUKS and user
+# credentials. These names are NOT proof of sender identity or authorization.
+LUKS_MEMFD_LABEL = "eduardos-ephemeral-luks"
+ACCOUNT_MEMFD_LABEL = "eduardos-ephemeral-account"
 
-    The future backend may pass this FD to cryptsetup via pass_fds; only
-    an FD number (never the secret) may appear in process arguments.
-    No consumer or destructive disk invocation is provided here.
+
+@contextmanager
+def _sealed_secret_fd(secret: str, role_label: str) -> Iterator[int]:
+    """Create a sealed, CLOEXEC, anonymous read-only secret descriptor.
+
+    The owner controls its lifetime. Caller must NOT pass any FD from an
+    untrusted process to a privileged installer without separate local
+    authentication and consent. Python cannot guarantee full heap erasure.
     """
-    payload = _secret_bytes(passphrase)
+    if role_label not in (LUKS_MEMFD_LABEL, ACCOUNT_MEMFD_LABEL):
+        raise Refused("Unsupported sealed-secret role")
+    payload = _secret_bytes(secret)
     fd: int | None = None
     try:
         try:
             fd = os.memfd_create(
-                "eduardos-ephemeral-luks",
-                os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING,
+                role_label, os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING,
             )
             view = memoryview(payload)
             try:
@@ -204,7 +211,7 @@ def sealed_luks_fd(passphrase: str) -> Iterator[int]:
                 while written < len(payload):
                     count = os.write(fd, view[written:])
                     if count <= 0:
-                        raise OSError("Short LUKS secret write")
+                        raise OSError("Short secret write")
                     written += count
             finally:
                 view.release()
@@ -213,10 +220,28 @@ def sealed_luks_fd(passphrase: str) -> Iterator[int]:
                         fcntl.F_SEAL_WRITE | fcntl.F_SEAL_GROW |
                         fcntl.F_SEAL_SHRINK | fcntl.F_SEAL_SEAL)
         except (OSError, AttributeError):
-            raise Refused("Kernel cannot securely create a sealed LUKS secret FD") from None
+            raise Refused("Kernel cannot securely create a sealed secret FD") from None
         yield fd
     finally:
         if fd is not None:
             os.close(fd)
         for i in range(len(payload)):
             payload[i] = 0
+
+
+@contextmanager
+def sealed_luks_fd(passphrase: str) -> Iterator[int]:
+    """Existing LUKS FD interface; no secret in argv, env or Nix store."""
+    with _sealed_secret_fd(passphrase, LUKS_MEMFD_LABEL) as fd:
+        yield fd
+
+
+@contextmanager
+def sealed_account_fd(password: str) -> Iterator[int]:
+    """Separate, role-labelled sealed FD for an installed account password.
+
+    No hash is generated and no filesystem write is performed here. Only a
+    future independently reviewed, trusted backend can consume this safely.
+    """
+    with _sealed_secret_fd(password, ACCOUNT_MEMFD_LABEL) as fd:
+        yield fd

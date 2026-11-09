@@ -254,6 +254,16 @@
           mkdir -p "$out"
           echo "Forge trusted target backend fixtures passed" > "$out/result"
         '';
+        # Rehearse sealed LUKS/account FD handoff in-process: no root,
+        # privileged transport, disk writes or system-image build.
+        forge-secret-handoff-tests = pkgs.runCommand "forge-secret-handoff-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_secret_handoff.py' -v
+          mkdir -p "$out"
+          echo "Sealed one-shot credential FD handoff tests passed" > "$out/result"
+        '';
         # Secure credential staging and LUKS FD tests use only a temporary
         # filesystem, unprivileged sandbox, and OpenSSL (no real disks/ISO).
         forge-credentials-tests = pkgs.runCommand "forge-credentials-tests" {
