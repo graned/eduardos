@@ -104,7 +104,7 @@ class PhysicalPreviewTests(unittest.TestCase):
         ])
         self.assertEqual(
             set(spec["mountpoints"]),
-            set(backend.TARGET_ROOT + suffix
+            set("/" if suffix == "" else suffix
                 for suffix in backend.TARGET_MOUNTS),
         )
         self.assertEqual(doc["manifest"]["disk_id"], DISK)
