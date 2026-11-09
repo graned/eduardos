@@ -209,7 +209,12 @@ class OneShotRunnerTests(unittest.TestCase):
                               return_value=nullcontext(server)), \
                  patch.object(service.local, "serve_one_connected") as serve:
                 with self.assertRaisesRegex(service.Refused, "exited|running"):
-                    service.run_once(DISK, "testpilot", "host", 1234, "/dev/tty2")
+                    service.run_once(
+                        DISK, "testpilot", "host", 1234, "/dev/tty2",
+                        capture=capture,
+                        listener=lambda: nullcontext(server),
+                        serve=serve,
+                    )
                 close.assert_called_once_with(71)
                 if not pattern[0]:
                     capture.assert_not_called()
