@@ -25,7 +25,7 @@ pkgs.testers.runNixOSTest {
     with subtest("Real-kernel root/non-root installer boundary attacks"):
         machine.succeed(
             "${pkgs.python3}/bin/python3 -B "
-            "${../../installer}/test_forge_vm_adversarial.py",
+            "${../../installer}/forge_vm_adversarial.py",
             timeout=180,
         )
     machine.succeed("test ! -e /run/eduardos/forge-preflight.sock")
