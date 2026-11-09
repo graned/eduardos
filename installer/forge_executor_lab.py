@@ -180,6 +180,16 @@ def read_fixture_password(stream) -> str:
     return password
 
 
+def _fd_mount_id(fd: int) -> str:
+    """Kernel mount identity from fdinfo, independent of Btrfs st_dev."""
+    info = Path(f"/proc/self/fdinfo/{fd}").read_text()
+    values = [line.split(":", 1)[1].strip()
+              for line in info.splitlines() if line.startswith("mnt_id:")]
+    if len(values) != 1 or not values[0].isdecimal():
+        raise Refused("Could not prove kernel mount ID of held directory")
+    return values[0]
+
+
 def stage_lab_account(fd: int, expected_devno: str, password: str) -> None:
     """Write one account HASH only into the already-attested QEMU target."""
     verify_post_format(fd, expected_devno)
@@ -193,19 +203,42 @@ def stage_lab_account(fd: int, expected_devno: str, password: str) -> None:
     flags = os.O_RDONLY | os.O_CLOEXEC | os.O_DIRECTORY | os.O_NOFOLLOW
     root_fd = os.open("/mnt", flags)
     try:
-        root_meta = os.fstat(root_fd)
-        persist_meta = os.stat("persist", dir_fd=root_fd, follow_symlinks=False)
-        if (not stat.S_ISDIR(root_meta.st_mode) or root_meta.st_uid != 0
-                or f"{os.major(root_meta.st_dev)}:{os.minor(root_meta.st_dev)}" != root.devno):
-            raise Refused("Installed root filesystem changed before credential staging")
-        if (not stat.S_ISDIR(persist_meta.st_mode) or persist_meta.st_uid != 0
-                or f"{os.major(persist_meta.st_dev)}:{os.minor(persist_meta.st_dev)}" != persist.devno):
-            raise Refused("Encrypted persist filesystem changed before credential staging")
-        digest = credentials.hash_user_password(password)
-        # Revalidate after hashing and immediately before the only
-        # account write. The same held /dev/vda descriptor remains open.
-        verify_post_format(fd, expected_devno)
-        credentials.write_user_hash(root_fd, LAB_USERNAME, digest, expected_uid=0)
+        persist_fd = os.open("persist", flags, dir_fd=root_fd)
+        try:
+            root_meta = os.fstat(root_fd)
+            persist_meta = os.fstat(persist_fd)
+            # Btrfs subvolumes can report a distinct anonymous st_dev for
+            # each subvolume; it is not guaranteed to equal the underlying
+            # mapper major:minor from mountinfo. Instead prove each opened
+            # directory belongs to the exact kernel mount ID just audited.
+            if (not root.mount_id or not persist.mount_id
+                    or root.mount_id == persist.mount_id
+                    or not stat.S_ISDIR(root_meta.st_mode)
+                    or root_meta.st_uid != 0
+                    or _fd_mount_id(root_fd) != root.mount_id):
+                raise Refused("Installed root filesystem changed before credential staging")
+            if (not stat.S_ISDIR(persist_meta.st_mode)
+                    or persist_meta.st_uid != 0
+                    or _fd_mount_id(persist_fd) != persist.mount_id):
+                raise Refused("Encrypted persist filesystem changed before credential staging")
+            digest = credentials.hash_user_password(password)
+            # Revalidate after hashing and immediately before the only
+            # account write. The same held /dev/vda descriptor remains open.
+            verify_post_format(fd, expected_devno)
+            # Reject changed mounts in the live mount namespace as well as
+            # stale directory handles before allowing the hash file write.
+            current = {m.point: m for m in live_media.mounts_from_mountinfo(
+                Path("/proc/self/mountinfo").read_text())}
+            if (current.get("/mnt") is None
+                    or current.get("/mnt/persist") is None
+                    or current["/mnt"].mount_id != root.mount_id
+                    or current["/mnt/persist"].mount_id != persist.mount_id
+                    or _fd_mount_id(root_fd) != root.mount_id
+                    or _fd_mount_id(persist_fd) != persist.mount_id):
+                raise Refused("Installed target mounts changed while staging credential")
+            credentials.write_user_hash(root_fd, LAB_USERNAME, digest, expected_uid=0)
+        finally:
+            os.close(persist_fd)
     finally:
         os.close(root_fd)
 
