@@ -151,7 +151,7 @@ class SecretHandoffTests(unittest.TestCase):
                 os.close(saved)
 
     def test_secret_validation_rejects_bad_text(self):
-        for invalid in ("short", "line\\ninjection-passphrase", "contains\\x00nul-passphrase"):
+        for invalid in ("short", "line\ninjection-passphrase", "contains\x00nul-passphrase"):
             with self.subTest(invalid=repr(invalid)):
                 with self.assertRaises(credentials.Refused):
                     with handoff.sealed_credential_pair(invalid, ACCOUNT):
