@@ -149,7 +149,7 @@ class IrreversibleBoundaryTests(unittest.TestCase):
                           side_effect=kernel_failure) as kernel, \
              patch.object(executor, "verify_post_format"), \
              patch.object(executor, "stage_lab_account"), \
-             patch.object(executor.subprocess, "run",
+             patch.object(executor.lab_child, "run_child",
                           side_effect=process_failure) as subprocess_run, \
              redirect_stdout(output):
             if review is None or reviewed.disk == "/dev/vda":
