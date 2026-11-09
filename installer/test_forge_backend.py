@@ -232,7 +232,8 @@ class SessionTests(unittest.TestCase):
                 51, "testpilot", "$6$fixture$hash", expected_uid=0,
             )
             self.assertEqual(result["status"], "credential-staged")
-            self.assertFalse(result["write_operations_enabled"])
+            self.assertFalse(result["destructive_disk_operations_enabled"])
+            self.assertEqual(result["filesystem_write_scope"], "new-account-hash-only")
 
     def test_wrong_root_device_prevents_hashing(self):
         session = self.fake_session()
