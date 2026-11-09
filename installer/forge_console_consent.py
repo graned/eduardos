@@ -16,12 +16,11 @@ import struct
 import termios
 import time
 
-import forge_authorization as auth
-
 VT_GETSTATE = 0x5603
 MAX_CONFIRM_BYTES = 512
 MAX_CONSENT_SECONDS = 60.0
 _CONSOLE_RE = re.compile(r"/dev/tty([1-9]|[1-5][0-9]|6[0-3])\Z")
+_CHALLENGE_RE = re.compile(r"ERASE /dev/disk/by-id/[A-Za-z0-9_.:+-]+\Z")
 _FLAGS = os.O_RDWR | os.O_NOCTTY | os.O_NOFOLLOW | os.O_CLOEXEC
 
 
@@ -71,7 +70,7 @@ def request_local_consent(challenge: str, console: str, *,
     Neither confirmation nor errors are logged to stdout/stderr.
     """
     if (not isinstance(challenge, str)
-            or not challenge.startswith("ERASE /dev/disk/by-id/")
+            or not _CHALLENGE_RE.fullmatch(challenge)
             or len(challenge.encode("utf-8")) > MAX_CONFIRM_BYTES
             or not isinstance(timeout, (int, float))
             or isinstance(timeout, bool)
