@@ -100,7 +100,12 @@ def _child_attack(mode, message, ack_read):
         with _connect_client(
             lifecycle.RUNTIME_DIR + "/" + lifecycle.SOCKET_NAME
         ) as conn:
-            if mode == "fds":
+            if mode == "early-refusal":
+                # Wrong kernel PID or denied local consent causes a root
+                # refusal BEFORE any request bytes are read. The client
+                # must not attempt to send data after that rejection.
+                pass
+            elif mode == "fds":
                 with secrets.sealed_credential_pair(
                     LUKS_FIXTURE, ACCOUNT_FIXTURE,
                 ) as fds:
@@ -252,7 +257,7 @@ class RealKernelAdversarialTests(unittest.TestCase):
             # Actual sender is a DIFFERENT root child. Even though both
             # UID and GID are zero, the pinned process ID must match.
             approvals = self.run_case(
-                "malicious", expected_pid=pinned, expected_success=False,
+                "early-refusal", expected_pid=pinned, expected_success=False,
             )
             self.assertEqual(approvals, [])
         finally:
@@ -301,7 +306,7 @@ class RealKernelAdversarialTests(unittest.TestCase):
 
     def test_wrong_local_console_consent_denies_root_client(self):
         self.assertEqual(
-            self.run_case("malicious", consent=False,
+            self.run_case("early-refusal", consent=False,
                           expected_success=False),
             ["ERASE " + DISK],
         )
