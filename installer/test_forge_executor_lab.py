@@ -141,54 +141,62 @@ class LabExecutorTests(unittest.TestCase):
             hold.assert_not_called()
             commands.assert_not_called()
 
-    def test_staging_requires_root_and_persist_mounts_before_hashing(self):
-        def mounted(point, devno):
-            return SimpleNamespace(point=point, devno=devno)
+    def _fake_mounts(self):
+        # Distinct Btrfs mount IDs; anonymous st_dev need not match mountinfo.
+        return [
+            SimpleNamespace(point="/mnt", devno="0:52", mount_id="101"),
+            SimpleNamespace(point="/mnt/persist", devno="0:55", mount_id="102"),
+        ]
 
-        # If the persist mount changed, no account hash is produced.
-        entries = [mounted("/mnt", "0:52"), mounted("/mnt/persist", "0:55")]
-        with patch.object(executor, "verify_post_format") as audit, \
-             patch.object(executor.Path, "read_text", return_value="fixture"), \
+    def test_fd_mount_id_requires_unique_numeric_kernel_value(self):
+        with patch.object(executor.Path, "read_text",
+                          return_value="pos:\\t0\\nmnt_id:\\t102\\n"):
+            self.assertEqual(executor._fd_mount_id(74), "102")
+        for malformed in ("pos: 0", "mnt_id: bogus", "mnt_id: 12\\nmnt_id: 13"):
+            with self.subTest(malformed=malformed), \\
+                 patch.object(executor.Path, "read_text", return_value=malformed):
+                with self.assertRaisesRegex(executor.Refused, "mount ID"):
+                    executor._fd_mount_id(74)
+
+    def test_staging_requires_exact_persist_mount_id(self):
+        entries = self._fake_mounts()
+        with patch.object(executor, "verify_post_format") as audit, \\
+             patch.object(executor.Path, "read_text", return_value="fixture"), \\
              patch.object(executor.live_media, "mounts_from_mountinfo",
-                          return_value=entries), \
-             patch.object(executor.os, "open", return_value=73), \
-             patch.object(executor.os, "close"), \
+                          return_value=entries), \\
+             patch.object(executor.os, "open", side_effect=[73, 74]), \\
+             patch.object(executor.os, "close") as closefd, \\
              patch.object(executor.os, "fstat",
                           return_value=SimpleNamespace(
                               st_mode=stat.S_IFDIR | 0o755, st_uid=0,
-                              st_dev=os.makedev(0, 52))), \
-             patch.object(executor.os, "stat",
-                          return_value=SimpleNamespace(
-                              st_mode=stat.S_IFDIR | 0o755, st_uid=0,
-                              st_dev=os.makedev(0, 99))), \
-             patch.object(executor.credentials, "hash_user_password") as hasher, \
+                              st_dev=os.makedev(0, 99))), \\
+             patch.object(executor, "_fd_mount_id",
+                          side_effect=lambda fd: "101" if fd == 73 else "999"), \\
+             patch.object(executor.credentials, "hash_user_password") as hasher, \\
              patch.object(executor.credentials, "write_user_hash") as writer:
             with self.assertRaisesRegex(executor.Refused, "persist filesystem changed"):
                 executor.stage_lab_account(42, "8:0", "disposable-test-password-1234")
             audit.assert_called_once_with(42, "8:0")
             hasher.assert_not_called()
             writer.assert_not_called()
+            self.assertEqual([x.args[0] for x in closefd.call_args_list], [74, 73])
 
-    def test_valid_attested_staging_writes_one_hash_before_install(self):
-        def mounted(point, devno):
-            return SimpleNamespace(point=point, devno=devno)
-        entries = [mounted("/mnt", "0:52"), mounted("/mnt/persist", "0:55")]
-        with patch.object(executor, "verify_post_format") as audit, \
-             patch.object(executor.Path, "read_text", return_value="fixture"), \
+    def test_valid_mount_ids_allow_different_btrfs_st_dev(self):
+        entries = self._fake_mounts()
+        with patch.object(executor, "verify_post_format") as audit, \\
+             patch.object(executor.Path, "read_text", return_value="fixture"), \\
              patch.object(executor.live_media, "mounts_from_mountinfo",
-                          return_value=entries), \
-             patch.object(executor.os, "open", return_value=73) as openfd, \
-             patch.object(executor.os, "close") as closefd, \
+                          return_value=entries), \\
+             patch.object(executor.os, "open", side_effect=[73, 74]) as openfd, \\
+             patch.object(executor.os, "close") as closefd, \\
              patch.object(executor.os, "fstat",
                           return_value=SimpleNamespace(
                               st_mode=stat.S_IFDIR | 0o755, st_uid=0,
-                              st_dev=os.makedev(0, 52))), \
-             patch.object(executor.os, "stat",
-                          return_value=SimpleNamespace(
-                              st_mode=stat.S_IFDIR | 0o700, st_uid=0,
-                              st_dev=os.makedev(0, 55))), \
+                              st_dev=os.makedev(0, 99))), \\
+             patch.object(executor, "_fd_mount_id",
+                          side_effect=lambda fd: "101" if fd == 73 else "102"), \\
              patch.object(executor.credentials, "hash_user_password",
-                          return_value="$6$fixture$shadow") as hasher, \
+                          return_value="$6$fixture$shadow") as hasher, \\
              patch.object(executor.credentials, "write_user_hash") as writer:
             executor.stage_lab_account(42, "8:0", "disposable-test-password-1234")
             self.assertEqual(audit.call_count, 2)
@@ -196,8 +204,32 @@ class LabExecutorTests(unittest.TestCase):
             writer.assert_called_once_with(
                 73, executor.LAB_USERNAME, "$6$fixture$shadow", expected_uid=0
             )
-            self.assertEqual(openfd.call_args.args[0], "/mnt")
-            closefd.assert_called_once_with(73)
+            self.assertEqual(openfd.call_args_list[0].args[0], "/mnt")
+            self.assertEqual(openfd.call_args_list[1].args[0], "persist")
+            self.assertEqual([x.args[0] for x in closefd.call_args_list], [74, 73])
+
+    def test_changed_live_mount_id_rejects_hash_write(self):
+        initial = self._fake_mounts()
+        remounted = [initial[0], SimpleNamespace(
+            point="/mnt/persist", devno="0:55", mount_id="109"
+        )]
+        with patch.object(executor, "verify_post_format"), \\
+             patch.object(executor.Path, "read_text", return_value="fixture"), \\
+             patch.object(executor.live_media, "mounts_from_mountinfo",
+                          side_effect=[initial, remounted]), \\
+             patch.object(executor.os, "open", side_effect=[73, 74]), \\
+             patch.object(executor.os, "close"), \\
+             patch.object(executor.os, "fstat",
+                          return_value=SimpleNamespace(
+                              st_mode=stat.S_IFDIR | 0o755, st_uid=0)), \\
+             patch.object(executor, "_fd_mount_id",
+                          side_effect=lambda fd: "101" if fd == 73 else "102"), \\
+             patch.object(executor.credentials, "hash_user_password",
+                          return_value="$6$fixture$shadow"), \\
+             patch.object(executor.credentials, "write_user_hash") as writer:
+            with self.assertRaisesRegex(executor.Refused, "mounts changed"):
+                executor.stage_lab_account(42, "8:0", "disposable-test-password-1234")
+            writer.assert_not_called()
 
     def test_postformat_audit_requires_exact_target_and_read_only_evidence(self):
         good = {
