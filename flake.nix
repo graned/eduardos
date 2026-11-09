@@ -205,6 +205,15 @@
       };
 
       checks.${system} = {
+        # Read-only mount audit fixtures, no actual block device opened.
+        forge-mount-audit-tests = pkgs.runCommand "forge-mount-audit-tests" {
+          nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_mount_audit.py' -v
+          mkdir -p "$out"
+          echo "Forge mounted-target auditor fixtures passed" > "$out/result"
+        '';
         # Trust-boundary fixtures: no root, no disk, no ISO or mount actions.
         forge-backend-tests = pkgs.runCommand "forge-backend-tests" {
           nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
