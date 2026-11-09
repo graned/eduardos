@@ -32,7 +32,7 @@ _REQUEST_FIELDS = frozenset({
     "version", "operation", "review", "confirmation", "username", "hostname"
 })
 _REVIEW_FIELDS = frozenset({"snapshot", "sha256", "write_operations_enabled"})
-_STABLE_ID = re.compile(r"/dev/disk/by-id/[A-Za-z0-9_.:+-]+\\Z")
+_STABLE_ID = re.compile(r"/dev/disk/by-id/[A-Za-z0-9_.:+-]+\Z")
 
 
 class Refused(ValueError):
@@ -165,7 +165,7 @@ def main(argv: list[str] | None = None, *, input_stream=None, output_stream=None
             "authorization_to_write": False,
         }
         status = 2
-    output.write(json.dumps(result, sort_keys=True, separators=(",", ":")) + "\\n")
+    output.write(json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n")
     return status
 
 
