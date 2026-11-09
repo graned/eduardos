@@ -16,8 +16,9 @@ from pathlib import Path
 import re
 import stat
 import sys
-from typing import Any
+from typing import Any, Mapping
 
+import forge_live_media as live_media
 import forge_disk_identity as identity
 import forge_installer as inventory
 
@@ -105,12 +106,12 @@ def parse_swap_devices(text: str) -> list[str]:
 
 
 def guard_topology(selected_path: str, data: dict, mountinfo: str,
-                   swaps: str) -> dict:
+                   swaps: str, *, loop_backings: Mapping[str, str] | None = None) -> dict:
     """Fail closed if target can back any active mounted or swap device.
 
-    Also refuse virtual/overlay root because ancestry to physical backing
-    cannot be reliably proven using lsblk alone. Live ISO support is a
-    separate, explicitly reviewed milestone.
+    Overlay root is allowed only when every lowerdir can be traced through
+    squashfs loop devices into physical ISO9660 media; ambiguous sources
+    fail closed. This is evidence, not erasure authorization.
     """
     nodes, parents = block_graph(data)
     selected = [name for name, node in nodes.items()
@@ -120,8 +121,27 @@ def guard_topology(selected_path: str, data: dict, mountinfo: str,
     target = selected[0]
     protected: set[str] = set()
     kernel_mounts = parse_mountinfo(mountinfo)
+    live_provenance = None
     for path, dev in kernel_mounts:
         if dev not in nodes:
+            if path == "/" and loop_backings is not None:
+                try:
+                    proof = live_media.verify_live_overlay(
+                        live_media.mounts_from_mountinfo(mountinfo),
+                        loop_backings, set(nodes),
+                    )
+                except live_media.Refused as exc:
+                    raise Refused(f"Live root provenance is unverified: {exc}") from exc
+                if proof.root_devno != dev:
+                    raise Refused("Overlay root identity changed during inspection")
+                for source in proof.iso_devnos:
+                    ancestors = ancestor_devices(source, parents)
+                    if not any(nodes[key].get("type") in {"disk", "rom"}
+                               for key in ancestors):
+                        raise Refused("Live ISO source has no traceable physical or optical media")
+                    protected.update(ancestors)
+                live_provenance = proof.report()
+                continue
             if path in CRITICAL_MOUNTS:
                 raise Refused(f"Cannot trace critical mount {path} to physical media")
             continue
@@ -147,6 +167,7 @@ def guard_topology(selected_path: str, data: dict, mountinfo: str,
 
     return {"target_path": selected_path, "target_devno": target,
             "protected_devices": sorted(protected),
+            "live_media": live_provenance,
             "write_operations_enabled": False}
 
 
@@ -187,13 +208,17 @@ def privileged_preflight(review: dict, *, euid: int | None = None,
     mounts = (Path("/proc/self/mountinfo").read_text()
               if mountinfo is None else mountinfo)
     swapinfo = Path("/proc/swaps").read_text() if swaps is None else swaps
-    verdict = guard_topology(selected_path, block, mounts, swapinfo)
+    verdict = guard_topology(
+        selected_path, block, mounts, swapinfo,
+        loop_backings=live_media.sysfs_loop_backings(),
+    )
     return {
         "status": "preflight-passed",
         "disk_id": review["snapshot"]["stable_id"],
         "disk_review_sha256": review["sha256"],
         "target_devno": verdict["target_devno"],
         "protected_device_count": len(verdict["protected_devices"]),
+        "live_media": verdict["live_media"],
         "write_operations_enabled": False,
         "note": "No disk write was authorized or performed.",
     }
