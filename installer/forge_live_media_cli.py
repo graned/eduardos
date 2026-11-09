@@ -20,7 +20,11 @@ def inspect() -> dict:
     proof = live.verify_live_overlay(mounts, loops, set(nodes))
     protected = set()
     for source in proof.iso_devnos:
-        protected.update(guard.ancestor_devices(source, parents))
+        ancestors = guard.ancestor_devices(source, parents)
+        if not any(nodes[key].get("type") in {"disk", "rom"}
+                   for key in ancestors):
+            raise live.Refused("ISO source lacks physical or optical backing")
+        protected.update(ancestors)
     return {
         "status": "verified-live-media-provenance",
         "live_media": proof.report(),
