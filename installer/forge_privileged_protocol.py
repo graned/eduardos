@@ -32,6 +32,10 @@ _REQUEST_FIELDS = frozenset({
     "version", "operation", "review", "confirmation", "username", "hostname"
 })
 _REVIEW_FIELDS = frozenset({"snapshot", "sha256", "write_operations_enabled"})
+_SNAPSHOT_FIELDS = frozenset({
+    "schema", "boot_id", "stable_id", "device",
+    "layout", "eligible", "blockers",
+})
 _STABLE_ID = re.compile(r"/dev/disk/by-id/[A-Za-z0-9_.:+-]+\Z")
 
 
@@ -88,8 +92,16 @@ def parse_request(stream) -> Request:
     if review["write_operations_enabled"] is not False:
         raise Refused("A disk review must explicitly prohibit writes")
     snap = review["snapshot"]
-    if not isinstance(snap, dict):
-        raise Refused("Disk review snapshot is malformed")
+    if (not isinstance(snap, dict) or set(snap) != _SNAPSHOT_FIELDS
+            or snap.get("schema") != identity.SCHEMA
+            or snap.get("eligible") is not True or snap.get("blockers") != []
+            or not isinstance(snap.get("device"), dict)
+            or set(snap["device"]) != set(identity.FIELDS)
+            or not isinstance(snap.get("layout"), list)):
+        raise Refused("Disk review snapshot is malformed or ineligible")
+    digest = review.get("sha256")
+    if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise Refused("Disk review digest is malformed")
     disk_id = snap.get("stable_id")
     if not isinstance(disk_id, str) or not _STABLE_ID.fullmatch(disk_id):
         raise Refused("Only exact by-id disk identities are accepted")
