@@ -57,6 +57,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-live-media-tests
       - name: Validate root-only system disk ancestry guards (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-privileged-preflight-tests
+      - name: Validate root-only one-shot preflight request protocol (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-privileged-protocol-tests
       - name: Validate one-shot authorization and credential guards (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-authorization-tests
       - name: Validate disk identity and stale-review protection (no ISO)
