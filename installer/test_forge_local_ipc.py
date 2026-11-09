@@ -187,6 +187,47 @@ class LocalTransportTests(unittest.TestCase):
                         child.kill()
                         child.communicate()
 
+    def test_cross_process_both_credential_fds_and_kernel_identity(self):
+        # Actual AF_UNIX connect happens AFTER fork: SO_PEERCRED pins the
+        # sending child's PID, not merely the creator of a socketpair.
+        # Public fixtures live in test source, never subprocess argv/env.
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "forge-credentials-test.sock")
+            with socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET) as listener:
+                listener.bind(path)
+                os.chmod(path, 0o600)
+                listener.listen(1)
+                listener.settimeout(5)
+                parent_pid = os.getpid()
+                child_pid = os.fork()
+                if child_pid == 0:
+                    try:
+                        listener.close()
+                        with socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET) as client:
+                            client.connect(path)
+                            expected_parent = ipc.PeerIdentity(
+                                parent_pid, os.getuid(), os.getgid(),
+                            )
+                            with handoff.sealed_credential_pair(LUKS, ACCOUNT) as pair:
+                                ipc.OneShotLocalSender(client, expected_parent).send(pair)
+                    except BaseException:
+                        os._exit(42)
+                    os._exit(0)
+                try:
+                    with listener.accept()[0] as conn:
+                        expected_child = ipc.PeerIdentity(
+                            child_pid, os.getuid(), os.getgid(),
+                        )
+                        with ipc.OneShotLocalReceiver(conn, expected_child).consume() as material:
+                            self.assertEqual(bytes(material.luks), LUKS.encode())
+                            self.assertEqual(bytes(material.account), ACCOUNT.encode())
+                        self.assertEqual(bytes(material.luks), bytes(len(LUKS)))
+                        self.assertEqual(bytes(material.account), bytes(len(ACCOUNT)))
+                finally:
+                    _, status = os.waitpid(child_pid, 0)
+                self.assertTrue(os.WIFEXITED(status))
+                self.assertEqual(os.WEXITSTATUS(status), 0)
+
     def test_no_privileged_install_or_network_listener(self):
         for name in (
             "main", "serve", "bind", "listen", "accept",
