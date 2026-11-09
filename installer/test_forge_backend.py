@@ -260,6 +260,44 @@ class SessionTests(unittest.TestCase):
                                            data=DATA, mountinfo=MOUNTS)
             hasher.assert_not_called()
 
+    def test_postformat_hardware_revalidation_allows_partition_change_only(self):
+        # The whole disk acquires partitions after Disko; serial/WWN,
+        # capacity, kernel device number, and boot ID must remain unchanged.
+        session = self.fake_session()
+        with patch.object(backend, "_root_required"), \
+             patch.object(backend, "_assert_disk_handle"), \
+             patch.object(backend, "_same_stable_disk"), \
+             patch.object(backend.identity, "boot_id",
+                          return_value=REVIEW["snapshot"]["boot_id"]):
+            session._fresh_device(DATA)
+            for field, changed in [
+                ("serial", "someone-else"), ("wwn", "different"),
+                ("size", 999), ("maj:min", "8:32"), ("model", "other-model"),
+            ]:
+                tampered = copy.deepcopy(DATA)
+                tampered["blockdevices"][0][field] = changed
+                with self.subTest(field=field), self.assertRaisesRegex(
+                    backend.Refused, "identity changed"
+                ):
+                    session._fresh_device(tampered)
+
+    def test_reject_reboot_or_changed_stable_disk_alias(self):
+        session = self.fake_session()
+        with patch.object(backend, "_root_required"), \
+             patch.object(backend, "_assert_disk_handle"), \
+             patch.object(backend, "_same_stable_disk"), \
+             patch.object(backend.identity, "boot_id", return_value="new-boot"):
+            with self.assertRaisesRegex(backend.Refused, "Boot session"):
+                session._fresh_device(DATA)
+        with patch.object(backend, "_root_required"), \
+             patch.object(backend, "_assert_disk_handle"), \
+             patch.object(backend, "_same_stable_disk",
+                          side_effect=backend.Refused("alias changed")), \
+             patch.object(backend.identity, "boot_id",
+                          return_value=REVIEW["snapshot"]["boot_id"]):
+            with self.assertRaisesRegex(backend.Refused, "alias changed"):
+                session._fresh_device(DATA)
+
     def test_backend_has_no_destructive_api(self):
         for name in ("install", "format_disk", "run_disko", "partition", "wipe"):
             self.assertFalse(hasattr(backend, name))
