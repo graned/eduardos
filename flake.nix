@@ -279,6 +279,18 @@
 
       checks.${system} = {
         edos-cli-tests = edosCli;
+        # Execute the packaged binary, not only Rust unit tests.
+        edos-cli-smoke = pkgs.runCommand "edos-cli-smoke" {} ''
+          ${edosCli}/bin/edos --version | grep -Fx "edos 0.1.0"
+          ${edosCli}/bin/edos help | grep -F "Forged in Neon"
+          ${edosCli}/bin/edos doctor | grep -F "Installer operations: unavailable"
+          ${edosCli}/bin/edos status | grep -F "Mode: read-only"
+          if ${edosCli}/bin/edos install 2>/dev/null; then
+            echo "Unexpected installer command" >&2
+            exit 1
+          fi
+          touch "$out"
+        '';
         # Read-only mount audit fixtures, no actual block device opened.
         forge-mount-audit-tests = pkgs.runCommand "forge-mount-audit-tests" {
           nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
