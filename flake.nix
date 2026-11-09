@@ -181,6 +181,16 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_privileged_protocol.py "$@"
         '';
       };
+      # Manual root/physical-VT-only, ONE-SHOT read-only preflight.
+      # Not installed in the live ISO, no systemd service, no polkit,
+      # no GUI bridge, no credentials, no physical disk writer.
+      forgeConsolePreflight = pkgs.writeShellApplication {
+        name = "forge-console-preflight";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_console_service.py "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -231,6 +241,7 @@
         forge-authorization = forgeAuthorization;
         forge-privileged-preflight = forgePrivilegedPreflight;
         forge-privileged-protocol = forgePrivilegedProtocol;
+        forge-console-preflight = forgeConsolePreflight;
         forge-live-media = forgeLiveMedia;
         forge-mount-audit = forgeMountAuditor;
       };
@@ -253,6 +264,16 @@
           python3 -m unittest discover -p 'test_forge_backend.py' -v
           mkdir -p "$out"
           echo "Forge trusted target backend fixtures passed" > "$out/result"
+        '';
+        # Physical console foreground VT and pidfd-pinned root-only
+        # one-shot read-only launcher. All console/disk operations mocked.
+        forge-console-preflight-tests = pkgs.runCommand "forge-console-preflight-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_console_service.py' -v
+          mkdir -p "$out"
+          echo "Foreground physical VT and pinned local peer tests passed" > "$out/result"
         '';
         # Trusted local read-only session, consent and root-controlled
         # Unix socket lifecycle; never launches a service or writes disks.
