@@ -173,11 +173,11 @@ pkgs.testers.runNixOSTest {
         # This validates actual PAM authentication, unlike root's
         # passwordless su. The fixture password is intentionally public.
         target.succeed(
-            "printf 'edos-QEMU-public-login-fixture-32\\n' "
+            "echo 'edos-QEMU-public-login-fixture-32' "
             "| runuser -u nobody -- pamtester login testpilot authenticate"
         )
         target.fail(
-            "printf 'incorrect-disposable-fixture\\n' "
+            "echo 'incorrect-disposable-fixture' "
             "| runuser -u nobody -- pamtester login testpilot authenticate"
         )
         target.succeed(
