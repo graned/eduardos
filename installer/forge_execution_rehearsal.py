@@ -172,8 +172,9 @@ class OneShotExecutionRehearsal:
             if preflight_conn is credentials_conn:
                 raise Refused("Separate preflight and credential sockets required")
             if (preflight_conn.fileno() < 0
+                    or credentials_conn.fileno() < 0
                     or preflight_conn.fileno() == credentials_conn.fileno()):
-                raise Refused("Invalid or duplicate Unix connections")
+                raise Refused("Invalid, closed or duplicate Unix connections")
             self._assert_binding()
             # Verify both peers BEFORE local consent, a review or receiving
             # any credentials. Neither socket can select its own identity.
