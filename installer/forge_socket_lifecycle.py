@@ -66,11 +66,16 @@ def _private_listener(directory: str, owner_uid: int) -> Iterator[socket.socket]
     socket_identity = None
     try:
         sock.bind(path)
+        created = os.lstat(path)
+        if not stat.S_ISSOCK(created.st_mode):
+            raise Refused("Bound path was not a socket")
+        socket_identity = (created.st_dev, created.st_ino)
         os.chmod(path, SOCKET_MODE)
         actual = os.lstat(path)
         if (not stat.S_ISSOCK(actual.st_mode)
                 or actual.st_uid != owner_uid
-                or stat.S_IMODE(actual.st_mode) != SOCKET_MODE):
+                or stat.S_IMODE(actual.st_mode) != SOCKET_MODE
+                or (actual.st_dev, actual.st_ino) != socket_identity):
             raise Refused("Local socket ownership/mode is unsafe")
         socket_identity = (actual.st_dev, actual.st_ino)
         _private_parent(directory, owner_uid)
