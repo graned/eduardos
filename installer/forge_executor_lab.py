@@ -22,6 +22,7 @@ import forge_installer as preflight
 import forge_install_transaction as transaction
 import forge_lab_command_policy as command_policy
 import forge_lab_attempt as lab_attempt
+import forge_lab_child as lab_child
 import forge_live_media as live_media
 import forge_mount_audit as mount_audit
 import forge_privileged_guard as topology_guard
@@ -318,13 +319,13 @@ def install(disko_script: str, system_closure: str, *, password_stream) -> None:
             # The root-owned /run marker survives subprocess failure and
             # refuses a second invocation during this QEMU installer boot.
             lab_attempt.mark_format_started()
-            subprocess.run([disko_script, "--yes-wipe-all-disks"], check=True)
+            lab_child.run_child([disko_script, "--yes-wipe-all-disks"])
 
         def install_disposable() -> None:
-            subprocess.run([
+            lab_child.run_child([
                 "nixos-install", "--root", "/mnt", "--system",
                 system_closure, "--no-root-passwd",
-            ], check=True, stdin=subprocess.DEVNULL)
+            ])
 
         # Fail closed and never retry/rollback a partially formatted disk.
         # Progress events carry fixed phase names, no secrets or paths.
@@ -373,7 +374,8 @@ def main(argv: list[str] | None = None) -> int:
             Refused, mount_audit.Refused, topology_guard.Refused,
             OSError, ValueError, TypeError, KeyError,
             credentials.Refused, authorization.Refused,
-            command_policy.Refused, lab_attempt.Refused) as exc:
+            command_policy.Refused, lab_attempt.Refused,
+            lab_child.Cancelled) as exc:
         print(f"Installation aborted: {exc}", file=sys.stderr)
         return 3
     print("Disposable VM installation complete; no physical device was supported.")
