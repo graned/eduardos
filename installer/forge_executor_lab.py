@@ -20,6 +20,7 @@ import forge_credentials as credentials
 import forge_disk_identity as identity
 import forge_installer as preflight
 import forge_install_transaction as transaction
+import forge_lab_command_policy as command_policy
 import forge_live_media as live_media
 import forge_mount_audit as mount_audit
 import forge_privileged_guard as topology_guard
@@ -136,6 +137,28 @@ def hold_lab_disk():
         yield fd, expected
     finally:
         os.close(fd)
+
+
+def audit_irreversible_boundary(fd: int, expected_devno: str) -> None:
+    """Recheck live kernel mount/swap ancestry immediately before QEMU Disko.
+
+    No report can authorize writing. The independent disposable QEMU,
+    root, marker and exact-confirmation gates still apply.
+    """
+    _assert_held_target(fd, expected_devno)
+    report = command_policy.review_kernel_boundary(
+        expected_devno,
+        data=identity.probe(),
+        mountinfo=Path("/proc/self/mountinfo").read_text(),
+        swaps=Path("/proc/swaps").read_text(),
+        loop_backings=live_media.sysfs_loop_backings(),
+    )
+    if (report.get("status") != "lab-boundary-reviewed-read-only"
+            or report.get("target_devno") != expected_devno
+            or report.get("write_operations_enabled") is not False
+            or report.get("authorization_to_write") is not False):
+        raise Refused("Disposable disk irreversible-boundary audit refused")
+    _assert_held_target(fd, expected_devno)
 
 
 _EXPECTED_MOUNTS = sorted([
@@ -259,6 +282,20 @@ def install(disko_script: str, system_closure: str, *, password_stream) -> None:
     # Reject missing/invalid user credentials BEFORE Disko can erase the
     # disposable disk. No password or hash appears in argv, env or logs.
     account_password = read_fixture_password(password_stream)
+    # Independently verify the two fixed existing commands. This review
+    # is non-executable and grants no disk-write authority.
+    reviewed = command_policy.review_commands(disko_script, system_closure)
+    if (reviewed.disk != TARGET
+            or reviewed.write_operations_enabled is not False
+            or reviewed.authorization_to_write is not False
+            or reviewed.format_step.executable is not False
+            or reviewed.install_step.executable is not False
+            or reviewed.format_step.arguments !=
+            (disko_script, "--yes-wipe-all-disks")
+            or reviewed.install_step.arguments !=
+            ("nixos-install", "--root", "/mnt", "--system",
+             system_closure, "--no-root-passwd")):
+        raise Refused("Disposable command allowlist contract refused")
 
     with hold_lab_disk() as (fd, devno):
         def preformat_gate() -> None:
@@ -269,8 +306,10 @@ def install(disko_script: str, system_closure: str, *, password_stream) -> None:
             _assert_held_target(fd, devno)
 
         def format_disposable() -> None:
-            # Only this existing QEMU-only path can call Disko. The
-            # transaction module contains no actual disk operation.
+            # This runs AFTER the transaction has entered format-started.
+            # Re-probe mounts, swaps, boot ancestry and held devno
+            # immediately before the irreversible Disko command.
+            audit_irreversible_boundary(fd, devno)
             subprocess.run([disko_script, "--yes-wipe-all-disks"], check=True)
 
         def install_disposable() -> None:
@@ -325,7 +364,8 @@ def main(argv: list[str] | None = None) -> int:
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
             Refused, mount_audit.Refused, topology_guard.Refused,
             OSError, ValueError, TypeError, KeyError,
-            credentials.Refused, authorization.Refused) as exc:
+            credentials.Refused, authorization.Refused,
+            command_policy.Refused) as exc:
         print(f"Installation aborted: {exc}", file=sys.stderr)
         return 3
     print("Disposable VM installation complete; no physical device was supported.")
