@@ -63,6 +63,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-authorization-tests
       - name: Validate disk identity and stale-review protection (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-disk-review-tests
+      - name: Validate one-shot installation transaction and fault handling (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-install-transaction-tests
       - name: Validate guarded VM-only installation executor (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-installer-lab-tests
       - name: Validate Forge Neon GUI security and preview API (no ISO)
