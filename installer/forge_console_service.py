@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import select
 import socket
 import sys
@@ -47,7 +48,7 @@ def run_once(disk_id: str, username: str, hostname: str,
             or client_pid == os.getpid()):
         raise Refused("A separate trusted local client PID is mandatory")
     if (not isinstance(disk_id, str)
-            or not identity.re.fullmatch(
+            or not re.fullmatch(
                 r"/dev/disk/by-id/[A-Za-z0-9_.:+-]+", disk_id)):
         raise Refused("Explicit stable disk identity required")
     if not console._CONSOLE_RE.fullmatch(console_tty):
