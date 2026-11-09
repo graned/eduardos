@@ -23,6 +23,14 @@ SYSTEM = "/nix/store/fake-installed"
 
 
 class IrreversibleBoundaryTests(unittest.TestCase):
+    def setUp(self):
+        # These suites mock all subprocess/disk operations. The real
+        # same-boot attempt marker is tested separately in a QEMU guest.
+        for name in ("require_new_attempt", "mark_format_started"):
+            patcher = patch.object(executor.lab_attempt, name)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def test_fresh_kernel_sources_rechecked_while_fd_is_held(self):
         disk_graph = {"blockdevices": [{"path": "/dev/vda", "type": "disk"}]}
         with patch.object(executor, "_assert_held_target") as held, \
