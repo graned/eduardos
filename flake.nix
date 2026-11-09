@@ -195,6 +195,17 @@
       };
 
       checks.${system} = {
+        # Secure credential staging and LUKS FD tests use only a temporary
+        # filesystem, unprivileged sandbox, and OpenSSL (no real disks/ISO).
+        forge-credentials-tests = pkgs.runCommand "forge-credentials-tests" {
+          nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_credentials.py' -v
+          mkdir -p "$out"
+          echo "Credential provisioning fixtures passed" > "$out/result"
+        '';
+
         # Evaluate the real installed-system module using a deliberately
         # non-existent by-id fixture; no disk writes or closure/ISO builds.
         installed-profile-config =
@@ -303,7 +314,7 @@
         # Read-only installation preflight, tested with synthetic block
         # devices. No ISO build, root privileges or real disks required.
         forge-installer-tests = pkgs.runCommand "forge-installer-tests" {
-          nativeBuildInputs = [ pkgs.python3 ];
+          nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
         } ''
           cd ${./installer}
           python3 -m unittest discover -p 'test_*.py' -v
