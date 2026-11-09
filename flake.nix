@@ -387,6 +387,16 @@
           mkdir -p "$out"
           echo "Read-only disk identity tests passed" > "$out/result"
         '';
+        # Pure one-shot transaction sequencing and failure injection.
+        # No formatter, root privileges, mounted disks or ISO build.
+        forge-install-transaction-tests = pkgs.runCommand "forge-install-transaction-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_install_transaction.py' -v
+          mkdir -p "$out"
+          echo "One-shot install transaction and failure gates passed" > "$out/result"
+        '';
         # Fail-closed lab executor unit tests, never touch the runner's disks.
         forge-installer-lab-tests = pkgs.runCommand "forge-installer-lab-tests" {
           nativeBuildInputs = [ pkgs.python3 ];
