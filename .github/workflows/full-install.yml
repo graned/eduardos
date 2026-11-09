@@ -8,6 +8,8 @@ on:
   pull_request:
     paths:
       - "installer/forge_executor_lab.py"
+      - "installer/forge_lab_attempt.py"
+      - "nix/tests/forge-lab-failure-recovery.nix"
       - "installer/forge_install_transaction.py"
       - "installer/forge_credentials.py"
       - "installer/forge_lab_command_policy.py"
@@ -49,3 +51,25 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v14
       - name: Install encrypted eduardOS and boot with OVMF
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-installed-boot
+
+  partial-format:
+    name: QEMU partial GPT failure and blocked repeat attempt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Enable KVM access
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            extra-system-features = kvm
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Simulate failed partial GPT and refuse destructive retry in disposable VM
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-lab-failure-recovery
