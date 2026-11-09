@@ -66,7 +66,7 @@ pkgs.testers.runNixOSTest {
         "${executor} --disko-script ${partialDisko} "
         "--system-closure ${fakeSystem} --execute "
         "--confirm 'ERASE DISPOSABLE /dev/vda' "
-        "--user-password-stdin </run/edos-public-recovery-password"
+        "--user-password-stdin </run/edos-public-recovery-password 2>&1"
     )
 
     with subtest("Actual disposable disk receives partial GPT before intentional failure"):
