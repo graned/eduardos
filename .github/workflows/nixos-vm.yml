@@ -47,6 +47,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-mount-audit-tests
       - name: Validate guarded backend disk and encrypted-mount attestation (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-backend-tests
+      - name: Validate trusted physical-console root preflight launcher (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-console-preflight-tests
       - name: Validate one-shot root local preflight session and socket lifecycle (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-local-service-tests
       - name: Validate kernel-authenticated local credential transport (no ISO)
