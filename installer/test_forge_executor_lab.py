@@ -49,6 +49,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk",
                           return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format") as audit, \
              patch.object(executor, "stage_lab_account") as stage, \
              patch.object(executor.subprocess, "run") as run:
@@ -58,7 +59,8 @@ class LabExecutorTests(unittest.TestCase):
             self.assertEqual(run.call_args_list[0].args[0],
                              ["/nix/store/fake/bin/disko", "--yes-wipe-all-disks"])
             self.assertEqual(run.call_args_list[1].args[0][0], "nixos-install")
-            audit.assert_called_once_with(42, "8:0")
+            self.assertEqual(audit.call_count, 2)
+            audit.assert_any_call(42, "8:0")
             stage.assert_called_once_with(42, "8:0", "disposable-test-password-1234")
             self.assertTrue(all(call.kwargs["check"] for call in run.call_args_list))
 
@@ -105,6 +107,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk",
                           return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format",
                           side_effect=executor.Refused("wrong mounted disk")), \
              patch.object(executor.subprocess, "run") as run:
@@ -113,6 +116,61 @@ class LabExecutorTests(unittest.TestCase):
                                  password_stream=io.BytesIO(b"disposable-test-password-1234"))
             self.assertEqual(run.call_count, 1)
             self.assertEqual(run.call_args.args[0][-1], "--yes-wipe-all-disks")
+
+    def test_second_guard_failure_refuses_before_disko(self):
+        with patch.object(executor.Path, "is_file", return_value=True), \
+             patch.object(executor.Path, "is_dir", return_value=True), \
+             patch.object(executor, "check_lab_guard",
+                          side_effect=[[], ["disk now mounted"]]), \
+             patch.object(executor, "hold_lab_disk",
+                          return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "_assert_held_target") as assert_fd, \
+             patch.object(executor.subprocess, "run") as run, \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            with self.assertRaisesRegex(executor.Refused, "changed"):
+                executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
+                                 password_stream=io.BytesIO(b"disposable-test-password-1234"))
+            assert_fd.assert_not_called()
+            run.assert_not_called()
+            self.assertIn("FORGE_QEMU_PHASE=halted-before-format", output.getvalue())
+            self.assertNotIn("disposable-test-password-1234", output.getvalue())
+
+    def test_credential_failure_never_reaches_nixos_install(self):
+        with patch.object(executor.Path, "is_file", return_value=True), \
+             patch.object(executor.Path, "is_dir", return_value=True), \
+             patch.object(executor, "check_lab_guard", return_value=[]), \
+             patch.object(executor, "hold_lab_disk",
+                          return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "_assert_held_target"), \
+             patch.object(executor, "verify_post_format") as audit, \
+             patch.object(executor, "stage_lab_account",
+                          side_effect=executor.Refused("bad persist mount")), \
+             patch.object(executor.subprocess, "run") as run, \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            with self.assertRaisesRegex(executor.Refused, "bad persist"):
+                executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
+                                 password_stream=io.BytesIO(b"disposable-test-password-1234"))
+            self.assertEqual(run.call_count, 1)  # Disko only
+            audit.assert_called_once_with(42, "8:0")
+            self.assertIn("FORGE_QEMU_PHASE=halted-after-format-started", output.getvalue())
+
+    def test_reaudit_failure_blocks_nixos_install(self):
+        with patch.object(executor.Path, "is_file", return_value=True), \
+             patch.object(executor.Path, "is_dir", return_value=True), \
+             patch.object(executor, "check_lab_guard", return_value=[]), \
+             patch.object(executor, "hold_lab_disk",
+                          return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "_assert_held_target"), \
+             patch.object(executor, "verify_post_format",
+                          side_effect=[None, executor.Refused("mount changed")]) as audit, \
+             patch.object(executor, "stage_lab_account") as stage, \
+             patch.object(executor.subprocess, "run") as run:
+            with self.assertRaisesRegex(executor.Refused, "mount changed"):
+                executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
+                                 password_stream=io.BytesIO(b"disposable-test-password-1234"))
+            self.assertEqual(run.call_count, 1)  # Disko only
+            self.assertEqual(audit.call_count, 2)
+            stage.assert_called_once()
 
     def test_execute_requires_explicit_stdin_password_mode(self):
         with patch.object(executor, "check_lab_guard") as guard, \
