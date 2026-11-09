@@ -90,7 +90,7 @@ def request_local_consent(challenge: str, console: str, *,
         try:
             termios.tcsetattr(fd, termios.TCSAFLUSH, updated)
             question = (
-                "\r\neduardOS FORGE — READ-ONLY disk review\r\n"
+                "\r\neduardOS FORGE - READ-ONLY disk review\r\n"
                 "This does not erase, format or install anything.\r\n"
                 "Type the full disk challenge to authorize one preflight:\r\n"
                 + challenge + "\r\n> "
