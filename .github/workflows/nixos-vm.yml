@@ -84,6 +84,28 @@ jobs:
       - name: Validate all three Forge themes
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.theme-presets
 
+  adversarial:
+    name: Installer root/non-root adversarial QEMU
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Enable KVM access
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            extra-system-features = kvm
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Attack root-only Forge IPC from disposable NixOS VM
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-local-adversarial
+
   storage-smoke:
     name: Encrypted data persistence and boot
     runs-on: ubuntu-24.04

@@ -513,6 +513,11 @@
             mkdir -p "$out"
             echo "Validated: GPT/EFI/LUKS2/Btrfs and six mounts" > "$out/result"
           '';
+        # Real-kernel adversarial root/non-root IPC test in a minimal
+        # disposable NixOS VM. Runs in a separate parallel CI job.
+        forge-local-adversarial = import ./nix/tests/forge-local-adversarial.nix {
+          inherit pkgs;
+        };
         uefi-installed-boot = import ./nix/tests/uefi-installed-boot.nix {
           inherit pkgs;
           lib = nixpkgs.lib;
