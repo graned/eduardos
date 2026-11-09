@@ -21,6 +21,7 @@ import forge_disk_identity as identity
 import forge_installer as preflight
 import forge_install_transaction as transaction
 import forge_lab_command_policy as command_policy
+import forge_lab_attempt as lab_attempt
 import forge_live_media as live_media
 import forge_mount_audit as mount_audit
 import forge_privileged_guard as topology_guard
@@ -282,6 +283,9 @@ def install(disko_script: str, system_closure: str, *, password_stream) -> None:
     # Reject missing/invalid user credentials BEFORE Disko can erase the
     # disposable disk. No password or hash appears in argv, env or logs.
     account_password = read_fixture_password(password_stream)
+    # A previous invocation may already have partially formatted /dev/vda.
+    # Block same-boot reruns even with a fresh consent string and PID.
+    lab_attempt.require_new_attempt()
     # Independently verify the two fixed existing commands. This review
     # is non-executable and grants no disk-write authority.
     reviewed = command_policy.review_commands(disko_script, system_closure)
@@ -310,6 +314,10 @@ def install(disko_script: str, system_closure: str, *, password_stream) -> None:
             # Re-probe mounts, swaps, boot ancestry and held devno
             # immediately before the irreversible Disko command.
             audit_irreversible_boundary(fd, devno)
+            # Record terminal attempt state before irreversible disk writes.
+            # The root-owned /run marker survives subprocess failure and
+            # refuses a second invocation during this QEMU installer boot.
+            lab_attempt.mark_format_started()
             subprocess.run([disko_script, "--yes-wipe-all-disks"], check=True)
 
         def install_disposable() -> None:
@@ -365,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
             Refused, mount_audit.Refused, topology_guard.Refused,
             OSError, ValueError, TypeError, KeyError,
             credentials.Refused, authorization.Refused,
-            command_policy.Refused) as exc:
+            command_policy.Refused, lab_attempt.Refused) as exc:
         print(f"Installation aborted: {exc}", file=sys.stderr)
         return 3
     print("Disposable VM installation complete; no physical device was supported.")
