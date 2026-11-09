@@ -34,6 +34,10 @@ class Mount:
     superopts: str
     # Kernel mount root: Btrfs subvolume path; "/" for ordinary mounts.
     root: str = "/"
+    # Unique kernel mount ID from /proc/self/mountinfo. Unlike st_dev or
+    # a block-device major:minor, this identifies the specific mountpoint
+    # even for multiple Btrfs subvolume mounts of one encrypted mapper.
+    mount_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -67,7 +71,7 @@ def mounts_from_mountinfo(text: str) -> list[Mount]:
         mounts.append(Mount(
             _unescape(fields[4]), fields[2], after[0],
             _unescape(after[1]), _unescape(after[2]),
-            _unescape(fields[3]),
+            _unescape(fields[3]), fields[0],
         ))
     if not mounts:
         raise Refused("Mount table is empty")
