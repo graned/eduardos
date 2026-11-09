@@ -167,8 +167,8 @@ class HeldTarget:
 
     def _fresh_device(self, data: dict) -> None:
         _root_required()
-        if self.used or time.monotonic() >= self.deadline:
-            raise Refused("Prepared installation target expired or was already consumed")
+        if time.monotonic() >= self.deadline:
+            raise Refused("Prepared installation target expired")
         _assert_disk_handle(self.fd, self.devno)
         snap = self.review["snapshot"]
         if identity.boot_id() != snap["boot_id"]:
@@ -197,12 +197,7 @@ class HeldTarget:
         if time.monotonic() >= self.deadline:
             raise Refused("Installation session expired")
         block = identity.probe() if data is None else data
-        # Allow the above one-shot change only within _fresh_device.
-        self.used = False
-        try:
-            self._fresh_device(block)
-        finally:
-            self.used = True
+        self._fresh_device(block)
 
         info = (Path("/proc/self/mountinfo").read_text()
                 if mountinfo is None else mountinfo)
@@ -221,6 +216,9 @@ class HeldTarget:
                 raise Refused("Encrypted persist mount changed after attestation")
 
             digest = credentials.hash_user_password(password)
+            # The device path can be reattached while hashing takes place.
+            _assert_disk_handle(self.fd, self.devno)
+            _same_stable_disk(self.review["snapshot"]["stable_id"], self.fd)
             name = credentials.write_user_hash(
                 root_fd, self.username, digest, expected_uid=0,
             )
@@ -248,9 +246,11 @@ def prepare_target(review: dict, confirmation: str, *,
     if not isinstance(review, dict) or not isinstance(review.get("snapshot"), dict):
         raise Refused("Invalid untrusted disk review")
     stable_id = review["snapshot"].get("stable_id")
-    if not isinstance(stable_id, str) or not secrets.compare_digest(
-        confirmation, auth.confirm_text(stable_id),
-    ):
+    if (not isinstance(stable_id, str)
+            or not isinstance(confirmation, str)
+            or not secrets.compare_digest(
+                confirmation, auth.confirm_text(stable_id),
+            )):
         raise Refused("Exact stable-disk confirmation required")
     proof = guard.privileged_preflight(review)
     if proof.get("status") != "preflight-passed" or proof.get(
