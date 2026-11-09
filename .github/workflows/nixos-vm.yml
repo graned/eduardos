@@ -77,6 +77,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-disk-review-tests
       - name: Validate one-shot installation transaction and fault handling (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-install-transaction-tests
+      - name: Validate QEMU command allowlist and read-only irreversible disk boundary (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-lab-command-contract-tests
       - name: Validate guarded VM-only installation executor (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-installer-lab-tests
       - name: Validate Forge Neon GUI security and preview API (no ISO)
