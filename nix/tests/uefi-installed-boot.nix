@@ -95,11 +95,27 @@ pkgs.testers.runNixOSTest {
             "--user-password-stdin </dev/null"
         )
         installer.succeed("test ! -e /dev/vda1")
-        installer.succeed(
+        install_log = installer.succeed(
             "${lib.getExe labExecutor} --execute "
             "--confirm 'ERASE DISPOSABLE /dev/vda' --user-password-stdin "
             "</run/edos-public-user-password"
         )
+        # The one-shot transaction must pass every gated phase in order.
+        # Progress events contain only fixed vocabulary, never passwords,
+        # hashes, disk identifiers, or arbitrary executor commands.
+        stages = [
+            "guarded", "format-started", "formatted",
+            "mounted-attested", "credential-staged", "re-attested",
+            "install-started", "installed",
+        ]
+        positions = [install_log.find("FORGE_QEMU_PHASE=" + s) for s in stages]
+        assert all(pos >= 0 for pos in positions), (
+            "A guarded installation phase was missing from the VM run"
+        )
+        assert positions == sorted(positions), (
+            "Installation phase sequence was not monotonic"
+        )
+        assert "FORGE_QEMU_PHASE=halted-" not in install_log
         installer.succeed("rm /run/edos-public-user-password")
         installer.succeed("test -s /mnt/persist/eduardos/credentials/testpilot.hash")
         installer.succeed(
