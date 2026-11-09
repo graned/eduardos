@@ -97,6 +97,15 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_authorization.py "$@"
         '';
       };
+      # Read-only live ISO backing chain audit. It is intentionally
+      # separate from the installer and cannot enable disk writes.
+      forgeLiveMedia = pkgs.writeShellApplication {
+        name = "forge-live-media";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_live_media_cli.py "$@"
+        '';
+      };
       # Root-only, read-only protection for active-system backing disks.
       forgePrivilegedPreflight = pkgs.writeShellApplication {
         name = "forge-privileged-preflight";
@@ -150,9 +159,19 @@
         forge-disk-review = forgeDiskReview;
         forge-authorization = forgeAuthorization;
         forge-privileged-preflight = forgePrivilegedPreflight;
+        forge-live-media = forgeLiveMedia;
       };
 
       checks.${system} = {
+        # Pure Python kernel mount/loop provenance fixtures, no ISO build.
+        forge-live-media-tests = pkgs.runCommand "forge-live-media-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_live_media.py' -v
+          mkdir -p "$out"
+          echo "Forge live media safety fixtures passed" > "$out/result"
+        '';
         # Synthetic LUKS/RAID and mount graph tests; no real disks or ISO.
         forge-privileged-preflight-tests = pkgs.runCommand "forge-privileged-preflight-tests" {
           nativeBuildInputs = [ pkgs.python3 ];
