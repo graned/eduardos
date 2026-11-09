@@ -390,6 +390,7 @@
           targetSystem = installedLabSystem;
           formattingSystem = installerFormatSystem;
           labExecutor = forgeInstallerLab;
+          mountAuditor = forgeMountAuditor;
         };
         storage-persistence = import ./nix/tests/storage-persistence.nix {
           inherit pkgs;
