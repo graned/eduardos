@@ -55,6 +55,26 @@
               "/run/edos-test-passphrase"; }
         ];
       };
+      # Factory for a real installed-system closure. No default target disk,
+      # username, or hostname. It only evaluates NixOS; never runs Disko.
+      mkInstalledSystem = { diskDevice, username, hostname }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit diskDevice username hostname; };
+          modules = desktopModules ++ [
+            disko.nixosModules.disko
+            home-manager.nixosModules.home-manager
+            ./nix/storage/disko-layout.nix
+            ./hosts/installed/default.nix
+          ];
+        };
+      # A non-existent by-id path is ONLY used for pure evaluation.
+      # This is not an installer target and must never be provisioned.
+      installedFixture = mkInstalledSystem {
+        diskDevice = "/dev/disk/by-id/wwn-0xEDOS-NONEXISTENT-FIXTURE";
+        username = "testpilot";
+        hostname = "edos-installed-preview";
+      };
       forgeInstaller = pkgs.writeShellApplication {
         name = "forge-installer";
         runtimeInputs = with pkgs; [ python3 util-linux ];
@@ -123,6 +143,10 @@
       };
     in
     {
+      # Public parameterized constructor for future installer integration;
+      # no preselected target disk or shared demo credentials.
+      lib.${system}.mkInstalledSystem = mkInstalledSystem;
+
       # Lab-only configuration: fully declarative UEFI + encrypted Btrfs.
       # Never point this at a real disk: device=/dev/vda is a QEMU fixture.
       nixosConfigurations.eduardos-uefi-lab = nixpkgs.lib.nixosSystem {
@@ -163,6 +187,40 @@
       };
 
       checks.${system} = {
+        # Evaluate the real installed-system module using a deliberately
+        # non-existent by-id fixture; no disk writes or closure/ISO builds.
+        installed-profile-config =
+          let
+            cfg = installedFixture.config;
+            user = cfg.users.users.testpilot;
+            mounts = [ "/" "/boot" "/home" "/nix" "/persist" "/.snapshots" ];
+            disk = cfg.disko.devices.disk.system;
+            checks = [
+              (cfg.networking.hostName == "edos-installed-preview")
+              (disk.device == "/dev/disk/by-id/wwn-0xEDOS-NONEXISTENT-FIXTURE")
+              (cfg.eduardos.storage.allowUnstableDeviceName == false)
+              (builtins.all (p: builtins.hasAttr p cfg.fileSystems) mounts)
+              (disk.content.partitions.encrypted.content.type == "luks")
+              (disk.content.partitions.encrypted.content.content.type == "btrfs")
+              (cfg.boot.loader.systemd-boot.enable)
+              (cfg.boot.initrd.systemd.enable)
+              (!cfg.users.mutableUsers)
+              (user.hashedPasswordFile == "/persist/eduardos/credentials/testpilot.hash")
+              (user.initialPassword == null)
+              (user.hashedPassword == null)
+              (cfg.users.users.root.hashedPassword == "!")
+              (!(builtins.hasAttr "forge" cfg.users.users))
+              (cfg.services.greetd.enable)
+              (cfg.services.greetd.settings.default_session.user == "greeter")
+              (cfg.security.sudo.wheelNeedsPassword)
+              (cfg.home-manager.users.testpilot.home.username == "testpilot")
+              (cfg.home-manager.users.testpilot.home.homeDirectory == "/home/testpilot")
+            ];
+          in assert builtins.all (x: x) checks;
+          pkgs.runCommand "eduardos-installed-profile-eval" {} ''
+            mkdir -p "$out"
+            echo "Installed target profile evaluated without any real disk" > "$out/result"
+          '';
         # Pure Python kernel mount/loop provenance fixtures, no ISO build.
         forge-live-media-tests = pkgs.runCommand "forge-live-media-tests" {
           nativeBuildInputs = [ pkgs.python3 ];
