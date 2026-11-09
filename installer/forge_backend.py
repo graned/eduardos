@@ -228,8 +228,9 @@ class HeldTarget:
             "status": "credential-staged",
             "account_hash_path": name,
             "attestation": verdict["status"],
-            "write_operations_enabled": False,
-            "note": "Credential file only; no disk partitioning or OS installation.",
+            "destructive_disk_operations_enabled": False,
+            "filesystem_write_scope": "new-account-hash-only",
+            "note": "One account hash was written; no partitioning or OS installation.",
         }
 
 
