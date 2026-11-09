@@ -116,6 +116,34 @@ class LiveBootTests(unittest.TestCase):
         with self.assertRaises(media.Refused):
             media.mounts_from_mountinfo("")
 
+    def test_iso_mounted_from_untraceable_loop_is_rejected(self):
+        # A mounted ISO9660 filesystem is insufficient if the ISO image
+        # itself lives on an untracked loop device.
+        data = {"blockdevices": [
+            node("loop1", "7:1", "loop", mount="/iso"),
+            node("loop0", "7:0", "loop", mount="/nix/.ro-store"),
+            node("sdb", "8:16"),
+        ]}
+        mounts = ISO.replace("8:1 / /iso", "7:1 / /iso").replace(
+            "/dev/sda1 ro", "/dev/loop1 ro"
+        )
+        self.assert_refused(mountinfo=mounts, data=data)
+
+    def test_sysfs_loop_backing_reader_and_mount_escape(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            device = root / "loop2"
+            (device / "loop").mkdir(parents=True)
+            (device / "dev").write_text("7:2\\n")
+            (device / "loop" / "backing_file").write_text("/iso/nix-store.squashfs\\n")
+            self.assertEqual(media.sysfs_loop_backings(root),
+                             {"7:2": "/iso/nix-store.squashfs"})
+        escaped = ISO.replace("/iso ro,relatime", "/iso\\\\040media ro,relatime")
+        parsed = media.mounts_from_mountinfo(escaped)
+        self.assertIn("/iso media", [m.point for m in parsed])
+
     def test_ordinary_overlay_with_other_backing_is_not_assumed_safe(self):
         no_iso = ISO.replace("iso9660 /dev/sda1", "ext4 /dev/sda1")
         self.assert_refused(mountinfo=no_iso)
