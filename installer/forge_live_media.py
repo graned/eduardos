@@ -32,6 +32,8 @@ class Mount:
     fstype: str
     source: str
     superopts: str
+    # Kernel mount root: Btrfs subvolume path; "/" for ordinary mounts.
+    root: str = "/"
 
 
 @dataclass(frozen=True)
@@ -65,6 +67,7 @@ def mounts_from_mountinfo(text: str) -> list[Mount]:
         mounts.append(Mount(
             _unescape(fields[4]), fields[2], after[0],
             _unescape(after[1]), _unescape(after[2]),
+            _unescape(fields[3]),
         ))
     if not mounts:
         raise Refused("Mount table is empty")
