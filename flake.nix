@@ -590,7 +590,12 @@
             login = cfg.services.greetd.settings.initial_session.user == "forge";
             network = cfg.networking.networkmanager.enable;
             noDisko = !(cfg ? disko);
-          in assert hasIso && neon && login && network && noDisko;
+            serialProbe = cfg.systemd.services.edos-live-boot-probe.wantedBy
+              == [ "multi-user.target" ];
+            rustCli = builtins.any (pkg: (pkg.pname or "") == "edos")
+              cfg.environment.systemPackages;
+          in assert hasIso && neon && login && network && noDisko
+            && serialProbe && rustCli;
           pkgs.runCommand "eduardos-live-iso-config-check" {} ''
             mkdir -p "$out"
             echo "Live ISO configured without Disko" > "$out/result"
