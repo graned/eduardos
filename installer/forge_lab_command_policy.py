@@ -16,6 +16,8 @@ import os
 from pathlib import Path
 import re
 
+import forge_privileged_guard as topology_guard
+
 SCHEMA = "eduardos.forge.command-review.v1"
 TARGET = "/dev/vda"  # disposable QEMU only
 STORE_PATH = re.compile(r"/nix/store/[a-zA-Z0-9+._-]+(?:/[a-zA-Z0-9+._-]+)*\Z")
@@ -85,3 +87,39 @@ def review_commands(disko_script: str, system_closure: str) -> LabCommandReview:
                        system, "--no-root-passwd"),
         ),
     )
+
+
+def review_kernel_boundary(expected_devno: str, *, data: dict,
+                           mountinfo: str, swaps: str,
+                           loop_backings: dict[str, str]) -> dict:
+    """Read-only, fixed /dev/vda ancestry check for the irreversible gate.
+
+    The caller MUST also hold and recheck its O_RDONLY block descriptor,
+    prove the disposable QEMU environment, and repeat all kernel probes
+    immediately before ANY future write. This returns NO authority.
+    """
+    if (not isinstance(expected_devno, str)
+            or not re.fullmatch(r"[0-9]+:[0-9]+", expected_devno)
+            or not isinstance(data, dict)
+            or not isinstance(mountinfo, str)
+            or not isinstance(swaps, str)
+            or not isinstance(loop_backings, dict)):
+        raise Refused("Missing trusted kernel block or mount evidence")
+    try:
+        report = topology_guard.guard_topology(
+            TARGET, data, mountinfo, swaps, loop_backings=loop_backings,
+        )
+    except topology_guard.Refused as exc:
+        raise Refused("Kernel mount/swap/boot ancestry audit refused") from exc
+    if (not isinstance(report, dict)
+            or report.get("target_devno") != expected_devno
+            or report.get("target_path") != TARGET
+            or report.get("write_operations_enabled") is not False):
+        raise Refused("Fixed QEMU disk identity or write prohibition changed")
+    return {
+        "version": SCHEMA,
+        "status": "lab-boundary-reviewed-read-only",
+        "target_devno": expected_devno,
+        "write_operations_enabled": False,
+        "authorization_to_write": False,
+    }
