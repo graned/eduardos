@@ -195,6 +195,15 @@
       };
 
       checks.${system} = {
+        # Trust-boundary fixtures: no root, no disk, no ISO or mount actions.
+        forge-backend-tests = pkgs.runCommand "forge-backend-tests" {
+          nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_backend.py' -v
+          mkdir -p "$out"
+          echo "Forge trusted target backend fixtures passed" > "$out/result"
+        '';
         # Secure credential staging and LUKS FD tests use only a temporary
         # filesystem, unprivileged sandbox, and OpenSSL (no real disks/ISO).
         forge-credentials-tests = pkgs.runCommand "forge-credentials-tests" {
