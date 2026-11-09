@@ -6,7 +6,6 @@ installation, disk writes, privilege escalation or persistent daemon.
 from __future__ import annotations
 
 from array import array
-from contextlib import contextmanager
 import os
 import socket
 import subprocess
@@ -91,7 +90,8 @@ class LocalTransportTests(unittest.TestCase):
                 ipc.PeerIdentity(*bad)
 
     def test_stream_or_tcp_transport_is_forbidden(self):
-        with socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM) as (a, b):
+        a, b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        with a, b:
             with handoff.sealed_credential_pair(LUKS, ACCOUNT) as fds:
                 with self.assertRaisesRegex(ipc.Refused, "seqpacket"):
                     ipc.OneShotLocalSender(a, self.peer).send(fds)
