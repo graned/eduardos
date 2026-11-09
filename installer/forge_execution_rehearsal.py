@@ -110,25 +110,47 @@ class OneShotExecutionRehearsal:
                        for flag in _NO_WRITE_FLAGS)):
             raise Refused("Read-only physical manifest was not approved")
         manifest = report.get("manifest")
+        required_manifest = {
+            "version", "kind", "disk_id", "target_devno", "boot_id",
+            "disk_review_sha256", "account", "hostname",
+            "storage_intent", "intended_phases", *_NO_WRITE_FLAGS,
+        }
         if (not isinstance(manifest, dict)
+                or set(manifest) != required_manifest
+                or manifest.get("version") != preview.SCHEMA
                 or manifest.get("kind") != "non-executable-installation-preview"
                 or any(manifest.get(flag) is not False
                        for flag in _NO_WRITE_FLAGS)):
             raise Refused("Physical manifest has unexpected permissions")
         snap = self._review["snapshot"]
         if (manifest.get("disk_id") != snap["stable_id"]
+                or manifest.get("target_devno") != snap["device"]["maj:min"]
                 or manifest.get("boot_id") != snap["boot_id"]
                 or manifest.get("disk_review_sha256") != self._review["sha256"]
                 or manifest.get("account") != self._username
                 or manifest.get("hostname") != self._hostname):
             raise Refused("Physical manifest differs from trusted root selection")
         phases = manifest.get("intended_phases")
+        expected_storage = {
+            "partition_table": "gpt",
+            "esp_size_mib": 1024,
+            "esp_filesystem": "vfat",
+            "encryption": "luks2",
+            "encrypted_filesystem": "btrfs",
+            "subvolumes": list(preview._SUBVOLUMES),
+            "mountpoints": list(preview._MOUNTPOINTS),
+        }
+        if manifest.get("storage_intent") != expected_storage:
+            raise Refused("Physical storage layout differs from audited intent")
         if (not isinstance(phases, list)
                 or len(phases) != len(_EXPECTED_PHASE_IDS)
-                or tuple(item.get("id") if isinstance(item, dict) else None
-                         for item in phases) != _EXPECTED_PHASE_IDS
-                or any(item.get("executable") is not False
-                       for item in phases)):
+                or any(
+                    not isinstance(item, dict)
+                    or set(item) != {"id", "description", "executable"}
+                    or item.get("executable") is not False
+                    or (item.get("id"), item.get("description")) != expected
+                    for item, expected in zip(phases, preview._INTENDED_PHASES)
+                )):
             raise Refused("Physical installation phases are not read-only")
         digest = report.get("manifest_sha256")
         if (not isinstance(digest, str)
