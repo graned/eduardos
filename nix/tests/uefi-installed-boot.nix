@@ -65,6 +65,10 @@ pkgs.testers.runNixOSTest {
     installer.wait_for_unit("multi-user.target")
     installer.wait_until_succeeds("test -b /dev/vda && test -b /dev/vdb")
     installer.succeed("lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS")
+    # qemu-vm.nix serializes its root disk as "root": stable by-id identity.
+    # /dev/vda is only the disposable VM disk, never a physical target.
+    installer.succeed("test -L /dev/disk/by-id/virtio-root")
+    installer.succeed("test \"$(readlink -f /dev/disk/by-id/virtio-root)\" = /dev/vda")
 
     with subtest("Partition through the real Disko layout"):
         installer.succeed(
@@ -77,9 +81,32 @@ pkgs.testers.runNixOSTest {
         installer.succeed(
             "printf 'EDOS-LAB-ONLY' > /run/eduardos-disposable-install-lab"
         )
+        # This string is PUBLIC, disposable test-only data, never a real
+        # password. It lives under the test guest's /run tmpfs and is
+        # supplied through stdin, never a process argument to the helper.
+        installer.succeed(
+            "umask 077; printf 'edos-QEMU-public-login-fixture-32' "
+            "> /run/edos-public-user-password"
+        )
+        # Reject missing password input BEFORE Disko erases the test disk.
+        installer.fail(
+            "${lib.getExe labExecutor} --execute "
+            "--confirm 'ERASE DISPOSABLE /dev/vda' "
+            "--user-password-stdin </dev/null"
+        )
+        installer.succeed("test ! -e /dev/vda1")
         installer.succeed(
             "${lib.getExe labExecutor} --execute "
-            "--confirm 'ERASE DISPOSABLE /dev/vda'"
+            "--confirm 'ERASE DISPOSABLE /dev/vda' --user-password-stdin "
+            "</run/edos-public-user-password"
+        )
+        installer.succeed("rm /run/edos-public-user-password")
+        installer.succeed("test -s /mnt/persist/eduardos/credentials/testpilot.hash")
+        installer.succeed(
+            "test \"$(stat -c %a /mnt/persist/eduardos/credentials/testpilot.hash)\" = 600"
+        )
+        installer.succeed(
+            "test \"$(stat -c %a /mnt/persist/eduardos/credentials)\" = 700"
         )
         installer.succeed("cryptsetup isLuks --type luks2 /dev/vda2")
         # The lab executor now performs the mount audit BEFORE nixos-install.
@@ -97,6 +124,7 @@ pkgs.testers.runNixOSTest {
         installer.succeed("printf 'persist-survived' > /mnt/persist/marker")
         installer.succeed("test -f /mnt/boot/loader/loader.conf")
         installer.succeed("test -d /mnt/boot/EFI")
+        installer.succeed("test ! -e /mnt/persist/eduardos/credentials/forge.hash")
         installer.succeed("sync")
         installer.succeed("umount -R /mnt")
         installer.fail("${lib.getExe mountAuditor} --disk /dev/vda")
@@ -131,11 +159,31 @@ pkgs.testers.runNixOSTest {
         target.succeed("test -x /run/current-system/sw/bin/ghostty")
         target.succeed("systemctl is-active NetworkManager.service")
         target.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
+        target.succeed("getent passwd testpilot")
+        target.fail("getent passwd forge")
+        target.succeed("systemctl is-active greetd.service")
+        target.succeed("test -d /home/testpilot")
+        target.succeed("test -s /persist/eduardos/credentials/testpilot.hash")
+        target.succeed("grep -q '^testpilot:[$]6[$]' /etc/shadow")
 
     with subtest("Boot installed system via OVMF and unlock LUKS"):
         boot_and_unlock()
         target.succeed("grep -Fxq home-survived /home/edos-test/marker")
         target.succeed("grep -Fxq persist-survived /persist/marker")
+        # This validates actual PAM authentication, unlike root's
+        # passwordless su. The fixture password is intentionally public.
+        target.succeed(
+            "printf 'edos-QEMU-public-login-fixture-32\\n' "
+            "| runuser -u nobody -- pamtester login testpilot authenticate"
+        )
+        target.fail(
+            "printf 'incorrect-disposable-fixture\\n' "
+            "| runuser -u nobody -- pamtester login testpilot authenticate"
+        )
+        target.succeed(
+            "runuser -u testpilot -- sh -c "
+            "'printf user-data-retained > /home/testpilot/.edos-login-marker'"
+        )
         target.succeed("printf 'second-boot' > /home/edos-test/second-marker")
         target.shutdown()
 
@@ -144,5 +192,9 @@ pkgs.testers.runNixOSTest {
         target.succeed("grep -Fxq home-survived /home/edos-test/marker")
         target.succeed("grep -Fxq second-boot /home/edos-test/second-marker")
         target.succeed("grep -Fxq persist-survived /persist/marker")
+        target.succeed(
+            "grep -Fxq user-data-retained /home/testpilot/.edos-login-marker"
+        )
+        target.succeed("test -s /persist/eduardos/credentials/testpilot.hash")
   '';
 }
