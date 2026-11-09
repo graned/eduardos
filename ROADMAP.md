@@ -46,10 +46,13 @@ then validate recovery from representative failures.
 - [x] Specify and CI-enforce the existing disposable QEMU Disko /
   NixOS command allowlist and irreversible-boundary read-only
   mount/swap policy (PR #42 merged).
-- [ ] Integrate that allowlist with the **actual guarded disposable-QEMU**
-  formatter and repeat read-only kernel mount/swap and held-device
-  identity checks immediately before Disko. Require the **full encrypted
-  installation, cold-boot and login** workflow (**PR #43 in review**).
+- [x] Integrate the reviewed command allowlist with the **actual
+  guarded disposable-QEMU** formatter, repeat kernel mount/swap/device
+  checks immediately before Disko, and pass the full encrypted
+  installation/cold-boot/user-login workflow (PR #43 merged).
+- [ ] Prove partial-format terminal failure with a **real disposable QEMU
+  GPT write**, block same-boot retries and expose safe read-only recovery
+  guidance (**PR #44 in review**).
 - [ ] Design and implement an *independently authorized*, narrowly
   allowlisted physical execution boundary. It must recheck the exact
   selected disk at the irreversible format boundary, never rely
@@ -116,10 +119,10 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #43:** expand disposable-QEMU destructive-path
-failure/cancellation/recovery cases, then independently review a
-privilege-separated physical execution service. None of the QEMU
-lab's `/dev/vda` authority or public fixture credentials may be
-repurposed for real-hardware installation.
+**Next after PR #44:** test unexpected interruption, cancellation
+and storage hotplug in disposable QEMU; design a separately reviewed
+physical execution service with a durable recovery policy. The
+same-boot QEMU attempt marker is *not* durable across reboot and
+must never be repurposed as physical-disk authorization.
 
 ⚡ **eduardOS — Forged in Neon.**

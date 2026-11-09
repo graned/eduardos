@@ -11,6 +11,14 @@ import forge_executor_lab as executor
 
 
 class LabExecutorTests(unittest.TestCase):
+    def setUp(self):
+        # These suites mock all subprocess/disk operations. The real
+        # same-boot attempt marker is tested separately in a QEMU guest.
+        for name in ("require_new_attempt", "mark_format_started"):
+            patcher = patch.object(executor.lab_attempt, name)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def args(self, *extra):
         return ["--disko-script", "/nix/store/fake-disko/bin/disko",
                 "--system-closure", "/nix/store/fake-system", *extra]
