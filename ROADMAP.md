@@ -35,12 +35,13 @@ carefully testing a real computer.
 
 ### Development checkpoint — Rust CLI and refreshed live ISO
 
-- [ ] Add dependency-light Rust `edos` CLI to live/VM/installed desktop,
+- [x] Add dependency-light Rust `edos` CLI to live/VM/installed desktop,
   with read-only diagnostics and Nix CI while keeping Python Forge
-  safety tooling intact (**PR #46 in review**).
-- [ ] Build and boot a **new Alpha 0.1 preview ISO**; inspect live
-  branding, Hyprland, Ghostty, theme and `edos` CLI before further
-  physical-installer integration.
+  safety tooling intact (PR #46 merged).
+- [ ] Build and boot a **new Alpha 0.1 preview ISO** (PR #47:
+  manual ISO workflow, diskless serial boot test, artifact checksum and
+  live Rust CLI wiring in review). Actual ISO build and visual review
+  must still be completed before checking this milestone.
 
 ### Alpha 0.2 — first installable ISO
 
@@ -131,10 +132,11 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #46:** build and boot a fresh preview ISO, then extend
-QEMU acceptance to cancellation, mount changes and storage hotplug;
-design a separately reviewed
-physical execution service with a durable recovery policy. The
+**Next after PR #47:** run the manual ISO workflow, download and
+visually inspect the refreshed preview with Hyprland/Ghostty/edos.
+Record issues before returning to destructive QEMU interruption,
+mount-change and storage-hotplug acceptance, and the independently
+authorized physical execution service with a durable recovery policy. The
 same-boot QEMU attempt marker is *not* durable across reboot and
 must never be repurposed as physical-disk authorization.
 
