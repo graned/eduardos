@@ -140,6 +140,11 @@ def attest_target_mounts(
                         row.devno, selected_devno, nodes, parents
                     )):
                 raise Refused("EFI mount is not a partition on selected disk")
+            # EFI and LUKS must occupy distinct partitions. Merely
+            # requiring the same physical disk would let an alleged EFI
+            # mount point at the encrypted partition pass a forged audit.
+            if row.devno in guard.ancestor_devices(crypt[0], parents):
+                raise Refused("EFI partition overlaps the encrypted storage ancestry")
             if row.source not in {boot.get("path"), boot.get("name"),
                                   "/dev/" + str(boot.get("name"))}:
                 raise Refused("EFI mount source does not match the selected partition")
