@@ -51,6 +51,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-credentials-tests
       - name: Evaluate installed target profile without a disk or ISO
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.installed-profile-config
+      - name: Validate real-user disposable VM profile (no ISO or closure build)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.installed-user-lab-config
       - name: Validate live ISO backing-media provenance (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-live-media-tests
       - name: Validate root-only system disk ancestry guards (no ISO)

@@ -57,7 +57,7 @@
       };
       # Factory for a real installed-system closure. No default target disk,
       # username, or hostname. It only evaluates NixOS; never runs Disko.
-      mkInstalledSystem = { diskDevice, username, hostname }:
+      mkInstalledSystem = { diskDevice, username, hostname, extraModules ? [] }:
         assert builtins.isString diskDevice
           && builtins.match "/dev/disk/by-id/[a-zA-Z0-9_.:+-]+" diskDevice != null;
         assert builtins.isString username
@@ -74,7 +74,7 @@
             home-manager.nixosModules.home-manager
             ./nix/storage/disko-layout.nix
             ./hosts/installed/default.nix
-          ];
+          ] ++ extraModules;
         };
       # A non-existent by-id path is ONLY used for pure evaluation.
       # This is not an installer target and must never be provisioned.
@@ -82,6 +82,26 @@
         diskDevice = "/dev/disk/by-id/wwn-0xEDOS-NONEXISTENT-FIXTURE";
         username = "testpilot";
         hostname = "edos-installed-preview";
+      };
+      # Disposable-VM-only exercise of the SAME installed profile factory.
+      # The QEMU root block disk has serial "root" and thus the by-id
+      # alias /dev/disk/by-id/virtio-root. Never use this on hardware.
+      installedUserLabSystem = mkInstalledSystem {
+        diskDevice = "/dev/disk/by-id/virtio-root";
+        username = "testpilot";
+        hostname = "edos-installed-lab";
+        extraModules = [
+          ({ modulesPath, ... }: {
+            imports = [
+              (modulesPath + "/testing/test-instrumentation.nix")
+              (modulesPath + "/profiles/qemu-guest.nix")
+            ];
+            boot.loader.systemd-boot.graceful = true;
+            documentation.enable = false;
+            # PAM validation runs *inside* the installed disposable system.
+            environment.systemPackages = [ pkgs.pamtester ];
+          })
+        ];
       };
       forgeInstaller = pkgs.writeShellApplication {
         name = "forge-installer";
@@ -101,11 +121,11 @@
       # disposable QEMU /dev/vda. Not part of live ISO or GUI packages.
       forgeInstallerLab = pkgs.writeShellApplication {
         name = "forge-installer-lab";
-        runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools ];
+        runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
         text = ''
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_executor_lab.py \
             --disko-script ${nixpkgs.lib.getExe installerFormatSystem.config.system.build.destroyFormatMount} \
-            --system-closure ${installedLabSystem.config.system.build.toplevel} "$@"
+            --system-closure ${installedUserLabSystem.config.system.build.toplevel} "$@"
         '';
       };
       # Read-only production disk identity contract. No privileged helper
@@ -234,6 +254,31 @@
           echo "Credential provisioning fixtures passed" > "$out/result"
         '';
 
+        # Evaluate the actual user-profile closure for disposable QEMU only.
+        # This does not build the closure or allocate a disk.
+        installed-user-lab-config =
+          let
+            cfg = installedUserLabSystem.config;
+            user = cfg.users.users.testpilot;
+          in assert builtins.all (x: x) [
+            (cfg.networking.hostName == "edos-installed-lab")
+            (cfg.disko.devices.disk.system.device == "/dev/disk/by-id/virtio-root")
+            (cfg.fileSystems."/persist".neededForBoot)
+            (!cfg.users.mutableUsers)
+            (cfg.users.users.root.hashedPassword == "!")
+            (user.hashedPasswordFile == "/persist/eduardos/credentials/testpilot.hash")
+            (user.initialPassword == null)
+            (!(builtins.hasAttr "forge" cfg.users.users))
+            (cfg.services.greetd.enable)
+            (cfg.services.greetd.settings.default_session.user == "greeter")
+            (cfg.security.sudo.wheelNeedsPassword)
+            (cfg.home-manager.users.testpilot.home.homeDirectory == "/home/testpilot")
+            (builtins.elem pkgs.pamtester cfg.environment.systemPackages)
+          ];
+          pkgs.runCommand "edos-installed-user-lab-config" {} ''
+            mkdir -p "$out"
+            echo "Real installed profile configured on disposable QEMU by-id only" > "$out/result"
+          '';
         # Evaluate the real installed-system module using a deliberately
         # non-existent by-id fixture; no disk writes or closure/ISO builds.
         installed-profile-config =
@@ -247,6 +292,7 @@
               (disk.device == "/dev/disk/by-id/wwn-0xEDOS-NONEXISTENT-FIXTURE")
               (cfg.eduardos.storage.allowUnstableDeviceName == false)
               (builtins.all (p: builtins.hasAttr p cfg.fileSystems) mounts)
+              (cfg.fileSystems."/persist".neededForBoot)
               (disk.content.partitions.encrypted.content.type == "luks")
               (disk.content.partitions.encrypted.content.content.type == "btrfs")
               (cfg.boot.loader.systemd-boot.enable)
@@ -387,7 +433,7 @@
         uefi-installed-boot = import ./nix/tests/uefi-installed-boot.nix {
           inherit pkgs;
           lib = nixpkgs.lib;
-          targetSystem = installedLabSystem;
+          targetSystem = installedUserLabSystem;
           formattingSystem = installerFormatSystem;
           labExecutor = forgeInstallerLab;
           mountAuditor = forgeMountAuditor;
