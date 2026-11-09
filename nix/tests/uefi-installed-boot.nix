@@ -170,15 +170,29 @@ pkgs.testers.runNixOSTest {
         boot_and_unlock()
         target.succeed("grep -Fxq home-survived /home/edos-test/marker")
         target.succeed("grep -Fxq persist-survived /persist/marker")
-        # This validates actual PAM authentication, unlike root's
-        # passwordless su. The fixture password is intentionally public.
+        # greetd is a privileged login daemon. Test its actual PAM
+        # service as root, just as greetd invokes PAM, rather than as
+        # 'nobody': linux-pam's unix_chkpwd cannot authenticate another
+        # account when the calling process is unprivileged, and reports
+        # "user unknown" even with a valid installed password hash.
+        # pamtester explicitly performs the password challenge; this is
+        # NOT root's passwordless 'su'. The credential is PUBLIC test data.
         target.succeed(
             "echo 'edos-QEMU-public-login-fixture-32' "
-            "| runuser -u nobody -- pamtester login testpilot authenticate"
+            "| pamtester greetd testpilot authenticate"
         )
         target.fail(
             "echo 'incorrect-disposable-fixture' "
-            "| runuser -u nobody -- pamtester login testpilot authenticate"
+            "| pamtester greetd testpilot authenticate"
+        )
+        # Also exercise the traditional console login PAM policy.
+        target.succeed(
+            "echo 'edos-QEMU-public-login-fixture-32' "
+            "| pamtester login testpilot authenticate"
+        )
+        target.fail(
+            "echo 'incorrect-disposable-fixture' "
+            "| pamtester login testpilot authenticate"
         )
         target.succeed(
             "runuser -u testpilot -- sh -c "
