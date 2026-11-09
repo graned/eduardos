@@ -141,7 +141,7 @@ class CredentialTests(unittest.TestCase):
     def test_reject_malformed_hash_and_unsafe_username(self):
         fd = self.root_fd()
         for username in ("../../etc", "forge", "root", "BAD", "a" * 40):
-            with self.subTest(username=username), self.assertRaises(Exception):
+            with self.subTest(username=username), self.assertRaises(credentials.Refused):
                 credentials.write_user_hash(fd, username, self.make_hash(),
                                             expected_uid=self.uid)
         for malformed in ("plaintext", "$y$not-supported", self.make_hash() + "\n"):
@@ -170,7 +170,7 @@ class CredentialTests(unittest.TestCase):
 
     def test_luks_rejects_short_and_newline_secrets(self):
         for item in ("short", "longpassphrase\ninjected", "password\0injected"):
-            with self.subTest(secret=repr(item)), self.assertRaises(Exception):
+            with self.subTest(secret=repr(item)), self.assertRaises(credentials.Refused):
                 with credentials.sealed_luks_fd(item):
                     pass
 
