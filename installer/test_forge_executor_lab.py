@@ -150,29 +150,29 @@ class LabExecutorTests(unittest.TestCase):
 
     def test_fd_mount_id_requires_unique_numeric_kernel_value(self):
         with patch.object(executor.Path, "read_text",
-                          return_value="pos:\\t0\\nmnt_id:\\t102\\n"):
+                          return_value="pos:\t0\nmnt_id:\t102\n"):
             self.assertEqual(executor._fd_mount_id(74), "102")
-        for malformed in ("pos: 0", "mnt_id: bogus", "mnt_id: 12\\nmnt_id: 13"):
-            with self.subTest(malformed=malformed), \\
+        for malformed in ("pos: 0", "mnt_id: bogus", "mnt_id: 12\nmnt_id: 13"):
+            with self.subTest(malformed=malformed), \
                  patch.object(executor.Path, "read_text", return_value=malformed):
                 with self.assertRaisesRegex(executor.Refused, "mount ID"):
                     executor._fd_mount_id(74)
 
     def test_staging_requires_exact_persist_mount_id(self):
         entries = self._fake_mounts()
-        with patch.object(executor, "verify_post_format") as audit, \\
-             patch.object(executor.Path, "read_text", return_value="fixture"), \\
+        with patch.object(executor, "verify_post_format") as audit, \
+             patch.object(executor.Path, "read_text", return_value="fixture"), \
              patch.object(executor.live_media, "mounts_from_mountinfo",
-                          return_value=entries), \\
-             patch.object(executor.os, "open", side_effect=[73, 74]), \\
-             patch.object(executor.os, "close") as closefd, \\
+                          return_value=entries), \
+             patch.object(executor.os, "open", side_effect=[73, 74]), \
+             patch.object(executor.os, "close") as closefd, \
              patch.object(executor.os, "fstat",
                           return_value=SimpleNamespace(
                               st_mode=stat.S_IFDIR | 0o755, st_uid=0,
-                              st_dev=os.makedev(0, 99))), \\
+                              st_dev=os.makedev(0, 99))), \
              patch.object(executor, "_fd_mount_id",
-                          side_effect=lambda fd: "101" if fd == 73 else "999"), \\
-             patch.object(executor.credentials, "hash_user_password") as hasher, \\
+                          side_effect=lambda fd: "101" if fd == 73 else "999"), \
+             patch.object(executor.credentials, "hash_user_password") as hasher, \
              patch.object(executor.credentials, "write_user_hash") as writer:
             with self.assertRaisesRegex(executor.Refused, "persist filesystem changed"):
                 executor.stage_lab_account(42, "8:0", "disposable-test-password-1234")
@@ -183,20 +183,20 @@ class LabExecutorTests(unittest.TestCase):
 
     def test_valid_mount_ids_allow_different_btrfs_st_dev(self):
         entries = self._fake_mounts()
-        with patch.object(executor, "verify_post_format") as audit, \\
-             patch.object(executor.Path, "read_text", return_value="fixture"), \\
+        with patch.object(executor, "verify_post_format") as audit, \
+             patch.object(executor.Path, "read_text", return_value="fixture"), \
              patch.object(executor.live_media, "mounts_from_mountinfo",
-                          return_value=entries), \\
-             patch.object(executor.os, "open", side_effect=[73, 74]) as openfd, \\
-             patch.object(executor.os, "close") as closefd, \\
+                          return_value=entries), \
+             patch.object(executor.os, "open", side_effect=[73, 74]) as openfd, \
+             patch.object(executor.os, "close") as closefd, \
              patch.object(executor.os, "fstat",
                           return_value=SimpleNamespace(
                               st_mode=stat.S_IFDIR | 0o755, st_uid=0,
-                              st_dev=os.makedev(0, 99))), \\
+                              st_dev=os.makedev(0, 99))), \
              patch.object(executor, "_fd_mount_id",
-                          side_effect=lambda fd: "101" if fd == 73 else "102"), \\
+                          side_effect=lambda fd: "101" if fd == 73 else "102"), \
              patch.object(executor.credentials, "hash_user_password",
-                          return_value="$6$fixture$shadow") as hasher, \\
+                          return_value="$6$fixture$shadow") as hasher, \
              patch.object(executor.credentials, "write_user_hash") as writer:
             executor.stage_lab_account(42, "8:0", "disposable-test-password-1234")
             self.assertEqual(audit.call_count, 2)
@@ -213,19 +213,19 @@ class LabExecutorTests(unittest.TestCase):
         remounted = [initial[0], SimpleNamespace(
             point="/mnt/persist", devno="0:55", mount_id="109"
         )]
-        with patch.object(executor, "verify_post_format"), \\
-             patch.object(executor.Path, "read_text", return_value="fixture"), \\
+        with patch.object(executor, "verify_post_format"), \
+             patch.object(executor.Path, "read_text", return_value="fixture"), \
              patch.object(executor.live_media, "mounts_from_mountinfo",
-                          side_effect=[initial, remounted]), \\
-             patch.object(executor.os, "open", side_effect=[73, 74]), \\
-             patch.object(executor.os, "close"), \\
+                          side_effect=[initial, remounted]), \
+             patch.object(executor.os, "open", side_effect=[73, 74]), \
+             patch.object(executor.os, "close"), \
              patch.object(executor.os, "fstat",
                           return_value=SimpleNamespace(
-                              st_mode=stat.S_IFDIR | 0o755, st_uid=0)), \\
+                              st_mode=stat.S_IFDIR | 0o755, st_uid=0)), \
              patch.object(executor, "_fd_mount_id",
-                          side_effect=lambda fd: "101" if fd == 73 else "102"), \\
+                          side_effect=lambda fd: "101" if fd == 73 else "102"), \
              patch.object(executor.credentials, "hash_user_password",
-                          return_value="$6$fixture$shadow"), \\
+                          return_value="$6$fixture$shadow"), \
              patch.object(executor.credentials, "write_user_hash") as writer:
             with self.assertRaisesRegex(executor.Refused, "mounts changed"):
                 executor.stage_lab_account(42, "8:0", "disposable-test-password-1234")
