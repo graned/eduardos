@@ -134,6 +134,15 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_live_media_cli.py "$@"
         '';
       };
+      # Read-only audit of an ALREADY mounted encrypted target; no formatting
+      # or account-credential staging. Used in disposable QEMU integration.
+      forgeMountAuditor = pkgs.writeShellApplication {
+        name = "forge-mount-audit";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_mount_audit.py "$@"
+        '';
+      };
       # Root-only, read-only protection for active-system backing disks.
       forgePrivilegedPreflight = pkgs.writeShellApplication {
         name = "forge-privileged-preflight";
@@ -192,9 +201,19 @@
         forge-authorization = forgeAuthorization;
         forge-privileged-preflight = forgePrivilegedPreflight;
         forge-live-media = forgeLiveMedia;
+        forge-mount-audit = forgeMountAuditor;
       };
 
       checks.${system} = {
+        # Read-only mount audit fixtures, no actual block device opened.
+        forge-mount-audit-tests = pkgs.runCommand "forge-mount-audit-tests" {
+          nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_mount_audit.py' -v
+          mkdir -p "$out"
+          echo "Forge mounted-target auditor fixtures passed" > "$out/result"
+        '';
         # Trust-boundary fixtures: no root, no disk, no ISO or mount actions.
         forge-backend-tests = pkgs.runCommand "forge-backend-tests" {
           nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
@@ -376,6 +395,7 @@
           inherit pkgs;
           modules = vmModules;
           provisioner = storageProvisioner;
+          mountAuditor = forgeMountAuditor;
         };
         # Evaluate and build the generated assets of every supported preset.
         # This catches invalid choices or broken recoloring without booting

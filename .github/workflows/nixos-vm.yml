@@ -43,6 +43,8 @@ jobs:
         run: nix flake check --no-build --show-trace
       - name: Validate live ISO profile (without building ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.live-iso-config
+      - name: Validate mounted-target auditor safety fixtures (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-mount-audit-tests
       - name: Validate guarded backend disk and encrypted-mount attestation (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-backend-tests
       - name: Validate credential staging and sealed LUKS FD (no ISO)
