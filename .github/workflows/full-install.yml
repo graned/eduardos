@@ -2,6 +2,19 @@ name: eduardOS full encrypted installation
 
 on:
   workflow_dispatch:
+  # Run full destructive installation only when guarded execution,
+  # credentials, storage layout or boot acceptance tests change.
+  # This avoids imposing the 30+ minute installation on theme/docs PRs.
+  pull_request:
+    paths:
+      - "installer/forge_executor_lab.py"
+      - "installer/forge_install_transaction.py"
+      - "installer/forge_credentials.py"
+      - "installer/forge_lab_command_policy.py"
+      - "nix/storage/disko-layout.nix"
+      - "nix/tests/uefi-installed-boot.nix"
+      - "hosts/uefi-lab/**"
+      - ".github/workflows/full-install.yml"
   schedule:
     # Nightly integration check at 03:17 UTC.
     - cron: "17 3 * * *"

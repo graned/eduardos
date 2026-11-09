@@ -489,6 +489,16 @@
           mkdir -p "$out"
           echo "One-shot install transaction and failure gates passed" > "$out/result"
         '';
+        # Fresh, read-only kernel mount/swap/device audit immediately
+        # before QEMU-only Disko; mock all disk and subprocess operations.
+        forge-irreversible-gate-tests = pkgs.runCommand "forge-irreversible-gate-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_irreversible_gate.py' -v
+          mkdir -p "$out"
+          echo "Disposable QEMU irreversible-boundary fail-closed tests passed" > "$out/result"
+        '';
         # Fail-closed lab executor unit tests, never touch the runner's disks.
         forge-installer-lab-tests = pkgs.runCommand "forge-installer-lab-tests" {
           nativeBuildInputs = [ pkgs.python3 ];

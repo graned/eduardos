@@ -43,9 +43,13 @@ then validate recovery from representative failures.
 - [x] Integrate local consent, read-only disk review and two sealed
   credentials into a single bounded **non-destructive rehearsal**
   (PR #41 merged).
-- [ ] Specify and CI-enforce the existing disposable QEMU Disko /
+- [x] Specify and CI-enforce the existing disposable QEMU Disko /
   NixOS command allowlist and irreversible-boundary read-only
-  mount/swap policy (**PR #42 in review**).
+  mount/swap policy (PR #42 merged).
+- [ ] Integrate that allowlist with the **actual guarded disposable-QEMU**
+  formatter and repeat read-only kernel mount/swap and held-device
+  identity checks immediately before Disko. Require the **full encrypted
+  installation, cold-boot and login** workflow (**PR #43 in review**).
 - [ ] Design and implement an *independently authorized*, narrowly
   allowlisted physical execution boundary. It must recheck the exact
   selected disk at the irreversible format boundary, never rely
@@ -112,9 +116,10 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #42:** attach an independently audited, freshly probed
-irreversible-boundary guard to the **actual** QEMU-only execution path,
-then run the separate full destructive QEMU installation workflow.
-Only after these tests should we design the physical writer.
+**Next after PR #43:** expand disposable-QEMU destructive-path
+failure/cancellation/recovery cases, then independently review a
+privilege-separated physical execution service. None of the QEMU
+lab's `/dev/vda` authority or public fixture credentials may be
+repurposed for real-hardware installation.
 
 ⚡ **eduardOS — Forged in Neon.**

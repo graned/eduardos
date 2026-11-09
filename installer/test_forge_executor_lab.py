@@ -49,6 +49,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk",
                           return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "audit_irreversible_boundary"), \
              patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format") as audit, \
              patch.object(executor, "stage_lab_account") as stage, \
@@ -107,6 +108,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk",
                           return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "audit_irreversible_boundary"), \
              patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format",
                           side_effect=executor.Refused("wrong mounted disk")), \
@@ -124,6 +126,7 @@ class LabExecutorTests(unittest.TestCase):
                           side_effect=[[], ["disk now mounted"]]), \
              patch.object(executor, "hold_lab_disk",
                           return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "audit_irreversible_boundary"), \
              patch.object(executor, "_assert_held_target") as assert_fd, \
              patch.object(executor.subprocess, "run") as run, \
              contextlib.redirect_stdout(io.StringIO()) as output:
@@ -141,6 +144,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk",
                           return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "audit_irreversible_boundary"), \
              patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format") as audit, \
              patch.object(executor, "stage_lab_account",
@@ -160,6 +164,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk",
                           return_value=contextlib.nullcontext((42, "8:0"))), \
+             patch.object(executor, "audit_irreversible_boundary"), \
              patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format",
                           side_effect=[None, executor.Refused("mount changed")]) as audit, \
@@ -297,7 +302,8 @@ class LabExecutorTests(unittest.TestCase):
             "destructive_disk_operations_enabled": False,
             "credential_writes_enabled": False,
         }
-        with patch.object(executor, "_assert_held_target") as check, \
+        with patch.object(executor, "audit_irreversible_boundary"), \
+             patch.object(executor, "_assert_held_target") as check, \
              patch.object(executor.mount_audit, "audit", return_value=good) as audit:
             executor.verify_post_format(42, "8:0")
             audit.assert_called_once_with("/dev/vda")
@@ -312,7 +318,8 @@ class LabExecutorTests(unittest.TestCase):
         for key, invalid in changes:
             with self.subTest(key=key):
                 forged = {**good, key: invalid}
-                with patch.object(executor, "_assert_held_target"), \
+                with patch.object(executor, "audit_irreversible_boundary"), \
+             patch.object(executor, "_assert_held_target"), \
                      patch.object(executor.mount_audit, "audit",
                                   return_value=forged):
                     with self.assertRaisesRegex(executor.Refused, "audit failed"):
@@ -329,6 +336,7 @@ class LabExecutorTests(unittest.TestCase):
                           return_value="fixture-mounts"), \
              patch.object(executor.os, "open", return_value=42) as openfd, \
              patch.object(executor.os, "close") as closefd, \
+             patch.object(executor, "audit_irreversible_boundary"), \
              patch.object(executor, "_assert_held_target") as check:
             with self.assertRaisesRegex(RuntimeError, "consumer failed"):
                 with executor.hold_lab_disk() as (fd, devno):
