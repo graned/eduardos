@@ -22,7 +22,27 @@
         ./nix/modules/development/shell.nix
         ./nix/modules/development/opencode.nix
         ./nix/modules/development/isenguard.nix
+        ({ ... }: { environment.systemPackages = [ edosCli ]; })
       ];
+      # Rust CLI is read-only and standalone; Python Forge remains intact.
+      # Restrict Cargo's build context so desktop/theme changes do not
+      # invalidate the CLI derivation or increase CI disk usage.
+      edosCli = pkgs.rustPlatform.buildRustPackage {
+        pname = "edos";
+        version = "0.1.0";
+        src = pkgs.lib.fileset.toSource {
+          root = ./.;
+          fileset = pkgs.lib.fileset.unions [
+            ./Cargo.toml
+            ./Cargo.lock
+            ./crates/edos
+          ];
+        };
+        cargoLock.lockFile = ./Cargo.lock;
+        cargoBuildFlags = [ "-p" "edos" ];
+        cargoTestFlags = [ "-p" "edos" ];
+        doCheck = true;
+      };
       vmModules = desktopModules ++ [
         home-manager.nixosModules.home-manager
         ./hosts/virtual-machine/user.nix
@@ -240,6 +260,7 @@
       };
 
       packages.${system} = {
+        edos = edosCli;
         vm = self.nixosConfigurations.eduardos-vm.config.system.build.vm;
         live-iso = self.nixosConfigurations.eduardos-live.config.system.build.isoImage;
         storage-provision = storageProvisioner;
@@ -257,6 +278,7 @@
       };
 
       checks.${system} = {
+        edos-cli-tests = edosCli;
         # Read-only mount audit fixtures, no actual block device opened.
         forge-mount-audit-tests = pkgs.runCommand "forge-mount-audit-tests" {
           nativeBuildInputs = [ pkgs.python3 pkgs.openssl ];
