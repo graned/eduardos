@@ -136,11 +136,11 @@ class LiveBootTests(unittest.TestCase):
             root = Path(tmp)
             device = root / "loop2"
             (device / "loop").mkdir(parents=True)
-            (device / "dev").write_text("7:2\\n")
-            (device / "loop" / "backing_file").write_text("/iso/nix-store.squashfs\\n")
+            (device / "dev").write_text("7:2\n")
+            (device / "loop" / "backing_file").write_text("/iso/nix-store.squashfs\n")
             self.assertEqual(media.sysfs_loop_backings(root),
                              {"7:2": "/iso/nix-store.squashfs"})
-        escaped = ISO.replace("/iso ro,relatime", "/iso\\\\040media ro,relatime")
+        escaped = ISO.replace("/iso ro,relatime", "/iso\\040media ro,relatime")
         parsed = media.mounts_from_mountinfo(escaped)
         self.assertIn("/iso media", [m.point for m in parsed])
 
