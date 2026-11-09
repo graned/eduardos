@@ -181,6 +181,15 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_privileged_protocol.py "$@"
         '';
       };
+      # Root-held, double-audited NON-EXECUTABLE physical install manifest.
+      # No device writes, privileged writer, GUI bridge, or live ISO hook.
+      forgePhysicalPreview = pkgs.writeShellApplication {
+        name = "forge-physical-preview";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_physical_preview.py "$@"
+        '';
+      };
       # Manual root/physical-VT-only, ONE-SHOT read-only preflight.
       # Not installed in the live ISO, no systemd service, no polkit,
       # no GUI bridge, no credentials, no physical disk writer.
@@ -242,6 +251,7 @@
         forge-privileged-preflight = forgePrivilegedPreflight;
         forge-privileged-protocol = forgePrivilegedProtocol;
         forge-console-preflight = forgeConsolePreflight;
+        forge-physical-preview = forgePhysicalPreview;
         forge-live-media = forgeLiveMedia;
         forge-mount-audit = forgeMountAuditor;
       };
@@ -264,6 +274,16 @@
           python3 -m unittest discover -p 'test_forge_backend.py' -v
           mkdir -p "$out"
           echo "Forge trusted target backend fixtures passed" > "$out/result"
+        '';
+        # Read-only physical execution intent, double disk topology
+        # audit and denied write/format authorization; no root or ISO build.
+        forge-physical-preview-tests = pkgs.runCommand "forge-physical-preview-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_physical_preview.py' -v
+          mkdir -p "$out"
+          echo "Physical installation preview denies all writes" > "$out/result"
         '';
         # Physical console foreground VT and pidfd-pinned root-only
         # one-shot read-only launcher. All console/disk operations mocked.
