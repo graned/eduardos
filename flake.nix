@@ -254,6 +254,17 @@
           mkdir -p "$out"
           echo "Forge trusted target backend fixtures passed" > "$out/result"
         '';
+        # Exercise connected AF_UNIX SO_PEERCRED + SCM_RIGHTS handoff
+        # with ephemeral sockets, an unprivileged child and Linux memfds.
+        # No privileged daemon, physical disks, NixOS or ISO build.
+        forge-local-ipc-tests = pkgs.runCommand "forge-local-ipc-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_local_ipc.py' -v
+          mkdir -p "$out"
+          echo "Kernel authenticated local credential FD boundary passed" > "$out/result"
+        '';
         # Rehearse sealed LUKS/account FD handoff in-process: no root,
         # privileged transport, disk writes or system-image build.
         forge-secret-handoff-tests = pkgs.runCommand "forge-secret-handoff-tests" {
