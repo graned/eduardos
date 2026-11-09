@@ -384,26 +384,36 @@ class ExecutionRehearsalTests(unittest.TestCase):
         for mutation in ("writer", "extra-phase-key", "different-disk",
                          "forged-digest", "different-layout"):
             with self.subTest(mutation=mutation):
-                intent = self.trusted()
-                report = preview_report()
-                if mutation == "writer":
-                    report["manifest"]["authorization_to_write"] = True
-                elif mutation == "extra-phase-key":
-                    report["manifest"]["intended_phases"][0]["command"] = "sh"
-                elif mutation == "different-disk":
-                    report["manifest"]["target_devno"] = "8:32"
-                elif mutation == "forged-digest":
-                    report["manifest_sha256"] = "f" * 64
-                else:
-                    report["manifest"]["storage_intent"]["esp_size_mib"] = 999
-                self.send_preflight()
-                self.send_credentials()
-                outcome, _, call = self.execute(intent, previews=[report])
-                self.assertEqual(outcome["status"], "refused")
-                self.assertEqual(call.call_count, 1)
-                # Fresh sockets for following subtest (avoid stale packet).
-                self.tearDown()
-                self.setUp()
+                # Each case owns fresh sockets; no stale frames can leak
+                # into the next refusal test.
+                pclient, pserver = socket.socketpair(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+                cclient, cserver = socket.socketpair(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+                with pclient, pserver, cclient, cserver, \
+                     handoff.sealed_credential_pair(LUKS, ACCOUNT) as fds:
+                    pclient.send(identity.canonical(request()))
+                    ipc.OneShotLocalSender(cclient, self.peer).send(fds)
+                    intent = self.trusted()
+                    report = preview_report()
+                    if mutation == "writer":
+                        report["manifest"]["authorization_to_write"] = True
+                    elif mutation == "extra-phase-key":
+                        report["manifest"]["intended_phases"][0]["command"] = "sh"
+                    elif mutation == "different-disk":
+                        report["manifest"]["target_devno"] = "8:32"
+                    elif mutation == "forged-digest":
+                        report["manifest_sha256"] = "f" * 64
+                    else:
+                        report["manifest"]["storage_intent"]["esp_size_mib"] = 999
+                    with patch.object(session.os, "geteuid", return_value=0), \
+                         patch.object(local.protocol, "handle_request",
+                                      return_value={"status": "attested-read-only"}), \
+                         patch.object(preview, "preview_request",
+                                      side_effect=[report]) as stages:
+                        outcome = session.OneShotExecutionRehearsal(intent).run(
+                            pserver, cserver,
+                        )
+                    self.assertEqual(outcome["status"], "refused")
+                    stages.assert_called_once()
 
     def test_disk_hotplug_after_receiving_secrets_refuses(self):
         intent = self.trusted()
