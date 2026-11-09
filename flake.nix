@@ -479,6 +479,16 @@
           mkdir -p "$out"
           echo "Read-only disk identity tests passed" > "$out/result"
         '';
+        # Same-boot one-shot lab format marker and read-only recovery
+        # classification. Unit fixtures use only ephemeral ordinary files.
+        forge-lab-attempt-tests = pkgs.runCommand "forge-lab-attempt-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_lab_attempt.py' -v
+          mkdir -p "$out"
+          echo "QEMU format attempt and read-only recovery fixtures passed" > "$out/result"
+        '';
         # Pure one-shot transaction sequencing and failure injection.
         # No formatter, root privileges, mounted disks or ISO build.
         forge-install-transaction-tests = pkgs.runCommand "forge-install-transaction-tests" {
@@ -566,6 +576,11 @@
         # Real-kernel adversarial root/non-root IPC test in a minimal
         # disposable NixOS VM. Runs in a separate parallel CI job.
         forge-local-adversarial = import ./nix/tests/forge-local-adversarial.nix {
+          inherit pkgs;
+        };
+        # Real disposable QEMU disk: inject partial GPT write failure,
+        # require terminal marker and refuse a second install invocation.
+        forge-lab-failure-recovery = import ./nix/tests/forge-lab-failure-recovery.nix {
           inherit pkgs;
         };
         uefi-installed-boot = import ./nix/tests/uefi-installed-boot.nix {
