@@ -19,6 +19,7 @@ import stat
 import subprocess
 from collections.abc import Iterator
 
+from forge_authorization import Refused as AuthorizationRefused
 from forge_authorization import validate_secret_pair, validate_user_settings
 
 _O_DIR = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
@@ -32,7 +33,10 @@ class Refused(ValueError):
 
 
 def account_hash_path(username: str) -> str:
-    validate_user_settings(username, "eduardos")
+    try:
+        validate_user_settings(username, "eduardos")
+    except (AuthorizationRefused, TypeError):
+        raise Refused("Invalid or reserved installed account name") from None
     return f"/persist/eduardos/credentials/{username}.hash"
 
 
@@ -40,7 +44,10 @@ def _secret_bytes(secret: str) -> bytearray:
     if not isinstance(secret, str):
         raise Refused("Secret must be supplied directly in process memory")
     # Reject line-break and NUL; account hashing uses OpenSSL's stdin mode.
-    validate_secret_pair(secret, secret, kind="Credential")
+    try:
+        validate_secret_pair(secret, secret, kind="Credential")
+    except AuthorizationRefused as exc:
+        raise Refused(str(exc)) from None
     payload = bytearray(secret.encode("utf-8"))
     if not payload or len(payload) > MAX_SECRET_BYTES:
         for i in range(len(payload)):
