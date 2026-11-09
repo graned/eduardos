@@ -1,4 +1,4 @@
-{ pkgs, lib, targetSystem, formattingSystem, labExecutor }:
+{ pkgs, lib, targetSystem, formattingSystem, labExecutor, mountAuditor }:
 
 # Install eduardOS onto a throwaway disk; boot that disk via OVMF.
 pkgs.testers.runNixOSTest {
@@ -26,6 +26,7 @@ pkgs.testers.runNixOSTest {
         targetSystem.config.system.build.toplevel
         formattingSystem.config.system.build.destroyFormatMount
         labExecutor
+        mountAuditor
         pkgs.stdenv
         pkgs.perlPackages.ConfigIniFiles
         pkgs.perlPackages.FileSlurp
@@ -81,6 +82,10 @@ pkgs.testers.runNixOSTest {
             "--confirm 'ERASE DISPOSABLE /dev/vda'"
         )
         installer.succeed("cryptsetup isLuks --type luks2 /dev/vda2")
+        # The lab executor now performs the mount audit BEFORE nixos-install.
+        # Re-run it explicitly against live kernel topology for evidence.
+        installer.succeed("${lib.getExe mountAuditor} --disk /dev/vda")
+        installer.fail("${lib.getExe mountAuditor} --disk /dev/vdb")
         installer.succeed("findmnt /mnt")
         installer.succeed("findmnt /mnt/boot")
         for p in ["home", "nix", "persist", ".snapshots"]:
@@ -94,6 +99,7 @@ pkgs.testers.runNixOSTest {
         installer.succeed("test -d /mnt/boot/EFI")
         installer.succeed("sync")
         installer.succeed("umount -R /mnt")
+        installer.fail("${lib.getExe mountAuditor} --disk /dev/vda")
         installer.shutdown()
 
     # Exactly the same qcow2 now booted using firmware, not a direct kernel.
