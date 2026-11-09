@@ -19,6 +19,7 @@ import forge_authorization as authorization
 import forge_credentials as credentials
 import forge_disk_identity as identity
 import forge_installer as preflight
+import forge_install_transaction as transaction
 import forge_live_media as live_media
 import forge_mount_audit as mount_audit
 import forge_privileged_guard as topology_guard
@@ -260,15 +261,37 @@ def install(disko_script: str, system_closure: str, *, password_stream) -> None:
     account_password = read_fixture_password(password_stream)
 
     with hold_lab_disk() as (fd, devno):
-        # The only destructive operation remains the existing, VM-only
-        # Disko script. We do NOT add an installer for physical disks.
-        subprocess.run([disko_script, "--yes-wipe-all-disks"], check=True)
-        # PR #30: prove all six real mounted filesystem sources before
-        # proceeding to copy/activate the system closure.
-        verify_post_format(fd, devno)
-        stage_lab_account(fd, devno, account_password)
-        subprocess.run(["nixos-install", "--root", "/mnt", "--system", system_closure,
-                        "--no-root-passwd"], check=True, stdin=subprocess.DEVNULL)
+        def preformat_gate() -> None:
+            # This is a SECOND safety check inside the held descriptor's
+            # lifetime, immediately before the irreversible formatter call.
+            if check_lab_guard():
+                raise Refused("Disposable VM safety changed before formatting")
+            _assert_held_target(fd, devno)
+
+        def format_disposable() -> None:
+            # Only this existing QEMU-only path can call Disko. The
+            # transaction module contains no actual disk operation.
+            subprocess.run([disko_script, "--yes-wipe-all-disks"], check=True)
+
+        def install_disposable() -> None:
+            subprocess.run([
+                "nixos-install", "--root", "/mnt", "--system",
+                system_closure, "--no-root-passwd",
+            ], check=True, stdin=subprocess.DEVNULL)
+
+        # Fail closed and never retry/rollback a partially formatted disk.
+        # Progress events carry fixed phase names, no secrets or paths.
+        tx = transaction.InstallationTransaction(
+            preflight=preformat_gate,
+            format_disk=format_disposable,
+            audit_mounted_target=lambda: verify_post_format(fd, devno),
+            stage_credential_hash=lambda: stage_lab_account(
+                fd, devno, account_password,
+            ),
+            install_system=install_disposable,
+            emit=lambda phase: print(f"FORGE_QEMU_PHASE={phase}", flush=True),
+        )
+        tx.run()
 
 
 def main(argv: list[str] | None = None) -> int:
