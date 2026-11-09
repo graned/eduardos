@@ -124,9 +124,19 @@ def _child_attack(mode, message, ack_read):
                     or response.get("write_operations_enabled") is not False
                     or response.get("destructive_disk_operations_enabled") is not False):
                 return 4
-            expected = ("attested-read-only" if mode == "valid"
-                        else "refused")
+            expected = ("attested-read-only"
+                        if mode in ("valid", "replay") else "refused")
             code = 0 if response["status"] == expected else 5
+            if code == 0 and mode == "replay":
+                # The server must close this socket after the first
+                # request; a second successful preflight is forbidden.
+                try:
+                    conn.send(json.dumps(message).encode())
+                    replay = conn.recv(4096)
+                    if replay:
+                        code = 7
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
     except BaseException:
         code = 6
     finally:
@@ -163,7 +173,8 @@ class RealKernelAdversarialTests(unittest.TestCase):
                  timeout_override=None):
         """One real root child connects to a real root-owned socket."""
         if expected_success is None:
-            expected_success = mode == "valid" and consent and expected_pid is None
+            expected_success = (mode in ("valid", "replay") and consent
+                                and expected_pid is None)
         request = make_message(self.review) if message is None else message
         rfd, wfd = os.pipe()
         pid = os.fork()
@@ -224,6 +235,32 @@ class RealKernelAdversarialTests(unittest.TestCase):
     def test_genuine_root_client_preflight_is_read_only(self):
         consent = self.run_case("valid")
         self.assertEqual(consent, ["ERASE " + DISK])
+
+    def test_one_connection_cannot_replay_preflight(self):
+        self.run_case("replay")
+    
+    def test_different_root_client_pid_is_denied_before_consent(self):
+        hold_read, hold_write = os.pipe()
+        pinned = os.fork()
+        if pinned == 0:
+            os.close(hold_write)
+            os.read(hold_read, 1)
+            os.close(hold_read)
+            os._exit(0)
+        os.close(hold_read)
+        try:
+            # Actual sender is a DIFFERENT root child. Even though both
+            # UID and GID are zero, the pinned process ID must match.
+            approvals = self.run_case(
+                "malicious", expected_pid=pinned, expected_success=False,
+            )
+            self.assertEqual(approvals, [])
+        finally:
+            os.write(hold_write, b"x")
+            os.close(hold_write)
+            _, status = os.waitpid(pinned, 0)
+            self.assertTrue(os.WIFEXITED(status))
+            self.assertEqual(os.WEXITSTATUS(status), 0)
 
     def test_malicious_root_client_wrong_operation(self):
         message = make_message(self.review)
