@@ -51,7 +51,7 @@
     serviceConfig.Type = "oneshot";
     script = ''
       if [ -c /dev/ttyS0 ]; then
-        printf '%s\\n' 'EDOS_LIVE_BOOT_OK=alpha-0.1-preview' > /dev/ttyS0
+        printf '%s\n' 'EDOS_LIVE_BOOT_OK=alpha-0.1-preview' > /dev/ttyS0
       fi
     '';
   };
