@@ -27,6 +27,12 @@
   networking.hostName = hostname;
   system.stateVersion = "26.05";
 
+  # NixOS creates immutable users during initrd activation, before
+  # ordinary stage-2 mounts. hashedPasswordFile MUST already exist.
+  # Mount encrypted @persist during initrd so activation can read the
+  # salted account hash; without this, the account is created locked.
+  fileSystems."/persist".neededForBoot = true;
+
   # The exact same declarative Disko layout is used by the lab profile;
   # the installed target does NOT accept unstable /dev/sdX or /dev/vdX names.
   eduardos.storage.device = diskDevice;
