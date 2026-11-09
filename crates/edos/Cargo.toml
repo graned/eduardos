@@ -1,0 +1,10 @@
+[package]
+name = "edos"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Read-only system diagnostics CLI for eduardOS"
+
+[[bin]]
+name = "edos"
+path = "src/main.rs"

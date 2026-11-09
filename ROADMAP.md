@@ -33,6 +33,15 @@ carefully testing a real computer.
 - [x] Double-audited, non-executable physical installation manifest
   (PR #40)
 
+### Development checkpoint — Rust CLI and refreshed live ISO
+
+- [ ] Add dependency-light Rust `edos` CLI to live/VM/installed desktop,
+  with read-only diagnostics and Nix CI while keeping Python Forge
+  safety tooling intact (**PR #46 in review**).
+- [ ] Build and boot a **new Alpha 0.1 preview ISO**; inspect live
+  branding, Hyprland, Ghostty, theme and `edos` CLI before further
+  physical-installer integration.
+
 ### Alpha 0.2 — first installable ISO
 
 **Release exit criteria:** Boot a production ISO, pick an eligible
@@ -53,9 +62,9 @@ then validate recovery from representative failures.
 - [x] Prove partial-format terminal failure with a **real disposable QEMU
   GPT write**, block same-boot retries and expose safe read-only recovery
   guidance (PR #44 merged).
-- [ ] Ensure QEMU Disko/nixos-install child process groups stop on
+- [x] Ensure QEMU Disko/nixos-install child process groups stop on
   SIGTERM/SIGINT; verify interruption using harmless processes and
-  repeat full-install acceptance (**PR #45 in review**).
+  repeat full-install acceptance (PR #45 merged).
 - [ ] Design and implement an *independently authorized*, narrowly
   allowlisted physical execution boundary. It must recheck the exact
   selected disk at the irreversible format boundary, never rely
@@ -122,8 +131,9 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #45:** extend destructive QEMU acceptance to cancellation,
-mount changes and storage hotplug; design a separately reviewed
+**Next after PR #46:** build and boot a fresh preview ISO, then extend
+QEMU acceptance to cancellation, mount changes and storage hotplug;
+design a separately reviewed
 physical execution service with a durable recovery policy. The
 same-boot QEMU attempt marker is *not* durable across reboot and
 must never be repurposed as physical-disk authorization.
