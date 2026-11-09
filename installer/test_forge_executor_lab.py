@@ -61,7 +61,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format") as audit, \
              patch.object(executor, "stage_lab_account") as stage, \
-             patch.object(executor.subprocess, "run") as run:
+             patch.object(executor.lab_child, "run_child") as run:
             executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
                              password_stream=io.BytesIO(b"disposable-test-password-1234"))
             self.assertEqual(run.call_count, 2)
@@ -71,7 +71,7 @@ class LabExecutorTests(unittest.TestCase):
             self.assertEqual(audit.call_count, 2)
             audit.assert_any_call(42, "8:0")
             stage.assert_called_once_with(42, "8:0", "disposable-test-password-1234")
-            self.assertTrue(all(call.kwargs["check"] for call in run.call_args_list))
+            self.assertTrue(all(not call.kwargs for call in run.call_args_list))
 
     def test_refuses_nonstore_executables(self):
         with self.assertRaises(executor.Refused):
@@ -91,7 +91,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard",
                           return_value=["missing disposable marker"]), \
              patch.object(executor, "hold_lab_disk") as hold, \
-             patch.object(executor.subprocess, "run") as run:
+             patch.object(executor.lab_child, "run_child") as run:
             with self.assertRaisesRegex(executor.Refused, "safety"):
                 executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
                                  password_stream=io.BytesIO(b"disposable-test-password-1234"))
@@ -104,7 +104,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk",
                           side_effect=executor.Refused("running disk")), \
-             patch.object(executor.subprocess, "run") as run:
+             patch.object(executor.lab_child, "run_child") as run:
             with self.assertRaisesRegex(executor.Refused, "running disk"):
                 executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
                                  password_stream=io.BytesIO(b"disposable-test-password-1234"))
@@ -120,7 +120,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "_assert_held_target"), \
              patch.object(executor, "verify_post_format",
                           side_effect=executor.Refused("wrong mounted disk")), \
-             patch.object(executor.subprocess, "run") as run:
+             patch.object(executor.lab_child, "run_child") as run:
             with self.assertRaisesRegex(executor.Refused, "mounted disk"):
                 executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
                                  password_stream=io.BytesIO(b"disposable-test-password-1234"))
@@ -136,7 +136,7 @@ class LabExecutorTests(unittest.TestCase):
                           return_value=contextlib.nullcontext((42, "8:0"))), \
              patch.object(executor, "audit_irreversible_boundary"), \
              patch.object(executor, "_assert_held_target") as assert_fd, \
-             patch.object(executor.subprocess, "run") as run, \
+             patch.object(executor.lab_child, "run_child") as run, \
              contextlib.redirect_stdout(io.StringIO()) as output:
             with self.assertRaisesRegex(executor.Refused, "changed"):
                 executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
@@ -157,7 +157,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "verify_post_format") as audit, \
              patch.object(executor, "stage_lab_account",
                           side_effect=executor.Refused("bad persist mount")), \
-             patch.object(executor.subprocess, "run") as run, \
+             patch.object(executor.lab_child, "run_child") as run, \
              contextlib.redirect_stdout(io.StringIO()) as output:
             with self.assertRaisesRegex(executor.Refused, "bad persist"):
                 executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
@@ -177,7 +177,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor, "verify_post_format",
                           side_effect=[None, executor.Refused("mount changed")]) as audit, \
              patch.object(executor, "stage_lab_account") as stage, \
-             patch.object(executor.subprocess, "run") as run:
+             patch.object(executor.lab_child, "run_child") as run:
             with self.assertRaisesRegex(executor.Refused, "mount changed"):
                 executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
                                  password_stream=io.BytesIO(b"disposable-test-password-1234"))
@@ -205,7 +205,7 @@ class LabExecutorTests(unittest.TestCase):
              patch.object(executor.Path, "is_dir", return_value=True), \
              patch.object(executor, "check_lab_guard", return_value=[]), \
              patch.object(executor, "hold_lab_disk") as hold, \
-             patch.object(executor.subprocess, "run") as commands:
+             patch.object(executor.lab_child, "run_child") as commands:
             with self.assertRaises(executor.Refused):
                 executor.install("/nix/store/fake/bin/disko", "/nix/store/fake-system",
                                  password_stream=io.BytesIO(b""))

@@ -479,6 +479,15 @@
           mkdir -p "$out"
           echo "Read-only disk identity tests passed" > "$out/result"
         '';
+        # Real harmless subprocess cancellation, no disk/ISO required.
+        forge-lab-child-tests = pkgs.runCommand "forge-lab-child-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_lab_child.py' -v
+          mkdir -p "$out"
+          echo "QEMU child cancellation fixtures passed" > "$out/result"
+        '';
         # Same-boot one-shot lab format marker and read-only recovery
         # classification. Unit fixtures use only ephemeral ordinary files.
         forge-lab-attempt-tests = pkgs.runCommand "forge-lab-attempt-tests" {

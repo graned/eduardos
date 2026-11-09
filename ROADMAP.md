@@ -50,9 +50,12 @@ then validate recovery from representative failures.
   guarded disposable-QEMU** formatter, repeat kernel mount/swap/device
   checks immediately before Disko, and pass the full encrypted
   installation/cold-boot/user-login workflow (PR #43 merged).
-- [ ] Prove partial-format terminal failure with a **real disposable QEMU
+- [x] Prove partial-format terminal failure with a **real disposable QEMU
   GPT write**, block same-boot retries and expose safe read-only recovery
-  guidance (**PR #44 in review**).
+  guidance (PR #44 merged).
+- [ ] Ensure QEMU Disko/nixos-install child process groups stop on
+  SIGTERM/SIGINT; verify interruption using harmless processes and
+  repeat full-install acceptance (**PR #45 in review**).
 - [ ] Design and implement an *independently authorized*, narrowly
   allowlisted physical execution boundary. It must recheck the exact
   selected disk at the irreversible format boundary, never rely
@@ -119,8 +122,8 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #44:** test unexpected interruption, cancellation
-and storage hotplug in disposable QEMU; design a separately reviewed
+**Next after PR #45:** extend destructive QEMU acceptance to cancellation,
+mount changes and storage hotplug; design a separately reviewed
 physical execution service with a durable recovery policy. The
 same-boot QEMU attempt marker is *not* durable across reboot and
 must never be repurposed as physical-disk authorization.

@@ -9,6 +9,7 @@ on:
     paths:
       - "installer/forge_executor_lab.py"
       - "installer/forge_lab_attempt.py"
+      - "installer/forge_lab_child.py"
       - "nix/tests/forge-lab-failure-recovery.nix"
       - "installer/forge_install_transaction.py"
       - "installer/forge_credentials.py"

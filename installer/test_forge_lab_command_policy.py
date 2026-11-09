@@ -80,7 +80,7 @@ class CommandPolicyTests(unittest.TestCase):
 
     def test_live_qemu_runner_uses_exact_reviewed_argv(self):
         # Safety tripwire: any future change to the actual QEMU runner's
-        # subprocess argv fails this build until the execution contract
+        # supervised child argv fails this build until the execution contract
         # and its threat-model documentation are separately reviewed.
         tree = ast.parse(inspect.getsource(executor.install))
         def runs(func_name):
@@ -95,8 +95,8 @@ class CommandPolicyTests(unittest.TestCase):
                 if isinstance(node, ast.Call)
                 and isinstance(node.func, ast.Attribute)
                 and isinstance(node.func.value, ast.Name)
-                and node.func.value.id == "subprocess"
-                and node.func.attr == "run"
+                and node.func.value.id == "lab_child"
+                and node.func.attr == "run_child"
             ]
             self.assertEqual(len(calls), 1)
             self.assertTrue(isinstance(calls[0].args[0], ast.List))
@@ -107,8 +107,7 @@ class CommandPolicyTests(unittest.TestCase):
                     values.append(named[node.id])
                 else:
                     values.append(ast.literal_eval(node))
-            kwargs = {arg.arg: arg.value for arg in calls[0].keywords}
-            self.assertIs(ast.literal_eval(kwargs["check"]), True)
+            self.assertEqual(calls[0].keywords, [])
             return tuple(values)
         review = self.review()
         self.assertEqual(runs("format_disposable"), review.format_step.arguments)
