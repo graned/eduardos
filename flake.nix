@@ -171,6 +171,16 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_privileged_guard.py "$@"
         '';
       };
+      # One-shot ROOT-ONLY read-only physical-target attestation contract.
+      # Deliberately NOT in the live ISO, GUI or installer executable:
+      # no daemon, privilege escalation, disk write or installation API.
+      forgePrivilegedProtocol = pkgs.writeShellApplication {
+        name = "forge-privileged-protocol";
+        runtimeInputs = with pkgs; [ python3 util-linux ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_privileged_protocol.py "$@"
+        '';
+      };
       storageProvisioner = pkgs.writeShellApplication {
         name = "edos-storage-provision";
         runtimeInputs = with pkgs; [
@@ -220,6 +230,7 @@
         forge-disk-review = forgeDiskReview;
         forge-authorization = forgeAuthorization;
         forge-privileged-preflight = forgePrivilegedPreflight;
+        forge-privileged-protocol = forgePrivilegedProtocol;
         forge-live-media = forgeLiveMedia;
         forge-mount-audit = forgeMountAuditor;
       };
@@ -346,6 +357,16 @@
           python3 -m unittest discover -p 'test_forge_privileged_guard.py' -v
           mkdir -p "$out"
           echo "Privileged preflight ancestry tests passed" > "$out/result"
+        '';
+        # Strict one-shot root-side JSON request protocol. All tests are
+        # in-memory fixtures: no root, device handles, formatting or ISO.
+        forge-privileged-protocol-tests = pkgs.runCommand "forge-privileged-protocol-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_privileged_protocol.py' -v
+          mkdir -p "$out"
+          echo "Versioned privileged request contract remains read-only" > "$out/result"
         '';
         # Authorization is read-only and exercised entirely via fixtures.
         forge-authorization-tests = pkgs.runCommand "forge-authorization-tests" {
