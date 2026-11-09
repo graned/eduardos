@@ -13,6 +13,7 @@ credentials are accepted on this channel; those remain separate.
 from __future__ import annotations
 
 from array import array
+import copy
 from dataclasses import dataclass, field
 import io
 import json
@@ -67,13 +68,19 @@ class TrustedIntent:
                     "snapshot", "sha256", "write_operations_enabled",
                 } or self.review["write_operations_enabled"] is not False):
             raise Refused("Trusted review envelope is invalid")
+        # Copy caller-owned dictionaries so later mutation cannot silently
+        # redirect an already-confirmed local session to another disk.
+        self.review = copy.deepcopy(self.review)
         snapshot = self.review["snapshot"]
         if (not isinstance(snapshot, dict)
+                or set(snapshot) != protocol._SNAPSHOT_FIELDS
                 or snapshot.get("schema") != identity.SCHEMA
                 or snapshot.get("eligible") is not True
                 or snapshot.get("blockers") != []
                 or not isinstance(snapshot.get("stable_id"), str)
-                or not snapshot["stable_id"].startswith(identity.ID_PREFIX)
+                or not protocol._STABLE_ID.fullmatch(snapshot["stable_id"])
+                or not isinstance(snapshot.get("device"), dict)
+                or set(snapshot["device"]) != set(identity.FIELDS)
                 or not isinstance(snapshot.get("boot_id"), str)
                 or self.review["sha256"] != identity.fingerprint(snapshot)):
             raise Refused("Trusted disk review is invalid")
@@ -108,6 +115,8 @@ class TrustedIntent:
         if (not isinstance(spoken, str)
                 or not secrets.compare_digest(spoken, phrase)):
             raise Refused("Trusted local disk confirmation refused")
+        if self.clock() >= self.deadline or identity.boot_id() != snap["boot_id"]:
+            raise Refused("Local consent expired or boot changed")
 
 
 def _receive_request(conn: socket.socket) -> bytes:
