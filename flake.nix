@@ -263,6 +263,7 @@
           in assert builtins.all (x: x) [
             (cfg.networking.hostName == "edos-installed-lab")
             (cfg.disko.devices.disk.system.device == "/dev/disk/by-id/virtio-root")
+            (cfg.fileSystems."/persist".neededForBoot)
             (!cfg.users.mutableUsers)
             (cfg.users.users.root.hashedPassword == "!")
             (user.hashedPasswordFile == "/persist/eduardos/credentials/testpilot.hash")
@@ -291,6 +292,7 @@
               (disk.device == "/dev/disk/by-id/wwn-0xEDOS-NONEXISTENT-FIXTURE")
               (cfg.eduardos.storage.allowUnstableDeviceName == false)
               (builtins.all (p: builtins.hasAttr p cfg.fileSystems) mounts)
+              (cfg.fileSystems."/persist".neededForBoot)
               (disk.content.partitions.encrypted.content.type == "luks")
               (disk.content.partitions.encrypted.content.content.type == "btrfs")
               (cfg.boot.loader.systemd-boot.enable)
