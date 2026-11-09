@@ -275,6 +275,16 @@
           mkdir -p "$out"
           echo "Forge trusted target backend fixtures passed" > "$out/result"
         '';
+        # One-shot root-consent + audited physical plan + two sealed
+        # role-separated credential FDs. No daemon, writes, ISO or disk.
+        forge-execution-rehearsal-tests = pkgs.runCommand "forge-execution-rehearsal-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_execution_rehearsal.py' -v
+          mkdir -p "$out"
+          echo "One-shot no-write execution and sealed FD integration passed" > "$out/result"
+        '';
         # Read-only physical execution intent, double disk topology
         # audit and denied write/format authorization; no root or ISO build.
         forge-physical-preview-tests = pkgs.runCommand "forge-physical-preview-tests" {
