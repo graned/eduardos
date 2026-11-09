@@ -14,6 +14,11 @@ QEMU-instrumented instance of `mkInstalledSystem` with:
 - Hostname: `edos-installed-lab`
 - Disk ID: `/dev/disk/by-id/virtio-root`, provided by NixOS QEMU's
   root-drive serial `root`.
+- Encrypted `/@persist` mounted during initrd via
+  `fileSystems."/persist".neededForBoot = true`, because NixOS immutable
+  user activation reads `hashedPasswordFile` before ordinary stage-2 mounts.
+  This avoids creating a locked account when the hash file is present
+  on disk but unavailable during early activation.
 - A local interactive `greetd` greeter; **no auto-login**.
 - Root password login disabled, sudo requiring the user's password,
   no live-ISO demo `forge` account.
