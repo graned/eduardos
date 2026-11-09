@@ -254,6 +254,16 @@
           mkdir -p "$out"
           echo "Forge trusted target backend fixtures passed" > "$out/result"
         '';
+        # Trusted local read-only session, consent and root-controlled
+        # Unix socket lifecycle; never launches a service or writes disks.
+        forge-local-service-tests = pkgs.runCommand "forge-local-service-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_local_service.py' -v
+          mkdir -p "$out"
+          echo "One-shot read-only service policy and private socket tests passed" > "$out/result"
+        '';
         # Exercise connected AF_UNIX SO_PEERCRED + SCM_RIGHTS handoff
         # with ephemeral sockets, an unprivileged child and Linux memfds.
         # No privileged daemon, physical disks, NixOS or ISO build.
