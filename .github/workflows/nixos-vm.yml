@@ -75,6 +75,8 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-authorization-tests
       - name: Validate disk identity and stale-review protection (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-disk-review-tests
+      - name: Verify QEMU child cancellation stops running formatters (no disk or ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-lab-child-tests
       - name: Validate one-shot QEMU format-attempt interlock and read-only recovery (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-lab-attempt-tests
       - name: Validate one-shot installation transaction and fault handling (no ISO)
