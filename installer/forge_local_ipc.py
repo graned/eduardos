@@ -156,16 +156,19 @@ class OneShotLocalReceiver:
 
             # Always collect the returned FDs before validating message
             # shape, so malformed frames cannot leak descriptors.
+            bad_ancillary = False
             for level, kind, payload in ancillary:
                 if level == socket.SOL_SOCKET and kind == socket.SCM_RIGHTS:
                     if len(payload) % _FD_SIZE != 0:
-                        raise Refused("Malformed ancillary descriptor payload")
+                        bad_ancillary = True
+                        continue
                     integers = array("i")
                     integers.frombytes(payload)
                     received.extend(integers)
                 else:
-                    raise Refused("Unexpected local ancillary message")
-            if (flags & (socket.MSG_CTRUNC | socket.MSG_TRUNC)
+                    bad_ancillary = True
+            if (bad_ancillary
+                    or flags & (socket.MSG_CTRUNC | socket.MSG_TRUNC)
                     or packet != PROTOCOL_MARKER
                     or len(ancillary) != 1
                     or len(received) != 2):
