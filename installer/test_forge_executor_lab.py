@@ -125,8 +125,8 @@ class LabExecutorTests(unittest.TestCase):
             install.assert_not_called()
 
     def test_refuse_missing_or_unsafe_fixture_password_before_disko(self):
-        for raw in (b"", b"short", b"newline\\ninjected", b"nul\\x00injected",
-                    b"bad\\xffencoding", b"a" * (executor.credentials.MAX_SECRET_BYTES + 1)):
+        for raw in (b"", b"short", b"newline\ninjected", b"nul\x00injected",
+                    b"bad\xffencoding", b"a" * (executor.credentials.MAX_SECRET_BYTES + 1)):
             with self.subTest(length=len(raw)):
                 with self.assertRaises(executor.Refused):
                     executor.read_fixture_password(io.BytesIO(raw))
