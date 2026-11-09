@@ -183,6 +183,9 @@ def serve_one_connected(conn: socket.socket, trusted: TrustedIntent) -> bool:
         # MUST succeed before reading any request bytes.
         trusted.consume(conn)
         raw = _receive_request(conn)
+        if (trusted.clock() >= trusted.deadline
+                or identity.boot_id() != trusted.review["snapshot"]["boot_id"]):
+            raise Refused("Trusted local approval expired or boot changed")
         request = protocol.parse_request(io.BytesIO(raw))
         snap = trusted.review["snapshot"]
         # Review must match the independently root-side selected disk,
