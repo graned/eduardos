@@ -135,7 +135,11 @@ def guard_topology(selected_path: str, data: dict, mountinfo: str,
                 if proof.root_devno != dev:
                     raise Refused("Overlay root identity changed during inspection")
                 for source in proof.iso_devnos:
-                    protected.update(ancestor_devices(source, parents))
+                    ancestors = ancestor_devices(source, parents)
+                    if not any(nodes[key].get("type") in {"disk", "rom"}
+                               for key in ancestors):
+                        raise Refused("Live ISO source has no traceable physical or optical media")
+                    protected.update(ancestors)
                 live_provenance = proof.report()
                 continue
             if path in CRITICAL_MOUNTS:
