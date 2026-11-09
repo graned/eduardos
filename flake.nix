@@ -275,6 +275,16 @@
           mkdir -p "$out"
           echo "Forge trusted target backend fixtures passed" > "$out/result"
         '';
+        # Static disposable-QEMU command allowlist and read-only
+        # kernel mount/swap ancestry contract; no shell or disk writes.
+        forge-lab-command-contract-tests = pkgs.runCommand "forge-lab-command-contract-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${./installer}
+          python3 -m unittest discover -p 'test_forge_lab_command_policy.py' -v
+          mkdir -p "$out"
+          echo "QEMU command contract and read-only irreversible-gate tests passed" > "$out/result"
+        '';
         # One-shot root-consent + audited physical plan + two sealed
         # role-separated credential FDs. No daemon, writes, ISO or disk.
         forge-execution-rehearsal-tests = pkgs.runCommand "forge-execution-rehearsal-tests" {
