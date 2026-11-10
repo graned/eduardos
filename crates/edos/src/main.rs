@@ -4,6 +4,7 @@
 use std::{env, fs, path::Path, process::ExitCode};
 
 mod diagnostics;
+mod dev_inspect;
 
 const RELEASE: &str = "/etc/eduardos/live-release";
 const OS_RELEASE: &str = "/etc/os-release";
@@ -13,6 +14,7 @@ enum Command {
     Version,
     Status,
     Doctor,
+    DevInspect(String),
     Shortcuts,
     Help,
 }
@@ -24,6 +26,8 @@ fn parse(args: &[String]) -> Result<Command, &'static str> {
         [arg] if arg == "--version" || arg == "-V" || arg == "version" => Ok(Command::Version),
         [arg] if arg == "status" => Ok(Command::Status),
         [arg] if arg == "doctor" => Ok(Command::Doctor),
+        [dev, inspect] if dev == "dev" && inspect == "inspect" => Ok(Command::DevInspect(".".to_owned())),
+        [dev, inspect, path] if dev == "dev" && inspect == "inspect" => Ok(Command::DevInspect(path.clone())),
         [arg] if arg == "shortcuts" => Ok(Command::Shortcuts),
         _ => Err("unknown command or unexpected arguments"),
     }
@@ -51,7 +55,7 @@ fn status(release: Option<&str>, os_release: Option<&str>) -> String {
 }
 
 fn usage() -> &'static str {
-    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
+    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  dev inspect [path]  Detect project manifests offline\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
 }
 
 fn shortcuts() -> &'static str {
@@ -68,6 +72,15 @@ fn main() -> ExitCode {
             let release = fs::read_to_string(Path::new(RELEASE)).ok();
             let os_release = fs::read_to_string(Path::new(OS_RELEASE)).ok();
             print!("{}", status(release.as_deref(), os_release.as_deref()));
+        }
+        Ok(Command::DevInspect(path)) => {
+            match dev_inspect::inspect(Path::new(&path)) {
+                Ok(report) => print!("{report}"),
+                Err(error) => {
+                    eprintln!("edos: {}", dev_inspect::message(&error));
+                    return ExitCode::from(1);
+                }
+            }
         }
         Ok(Command::Doctor) => {
             print!("{}", diagnostics::doctor(Path::new(RELEASE), Path::new(OS_RELEASE), Path::new("/run/current-system")));
@@ -94,6 +107,9 @@ mod tests {
         assert_eq!(parse(&words(&["--version"])), Ok(Command::Version));
         assert_eq!(parse(&words(&["status"])), Ok(Command::Status));
         assert_eq!(parse(&words(&["doctor"])), Ok(Command::Doctor));
+        assert_eq!(parse(&words(&["dev", "inspect"])), Ok(Command::DevInspect(".".to_owned())));
+        assert_eq!(parse(&words(&["dev", "inspect", "project"])), Ok(Command::DevInspect("project".to_owned())));
+        assert!(parse(&words(&["dev", "inspect", "project", "extra"])).is_err());
         assert_eq!(parse(&words(&["shortcuts"])), Ok(Command::Shortcuts));
         assert!(parse(&words(&["status", "--execute"])).is_err());
         assert!(parse(&words(&["install"])).is_err());
