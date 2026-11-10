@@ -841,7 +841,7 @@
           machine.succeed("test -r /etc/xdg/waybar/style.css")
           machine.succeed("test -r /etc/xdg/ghostty/config")
           machine.succeed("grep -Fqx 'background-opacity = 0.88' /etc/xdg/ghostty/config")
-          machine.succeed("grep -Fqx 'background = #1e1e2e' /etc/xdg/ghostty/config")
+          machine.succeed("grep -Fqx 'background = #110c11' /etc/xdg/ghostty/config")
           machine.succeed("test -r /etc/xdg/fuzzel/fuzzel.ini")
           machine.succeed("test -r /etc/xdg/mako/config")
         '';
