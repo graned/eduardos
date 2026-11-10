@@ -12,8 +12,9 @@ Update this file when completing a milestone or changing its scope.
 eduardOS ISO **and** developer-first Rust tooling that we validate
 in disposable QEMU before carefully testing a real computer.
 
-**Execution baseline:** [Full Alpha 0.2 delivery plan: PR #49–#68](docs/alpha-0.2-delivery-plan.md).
-The numbers after #50 are proposed PR slots, **not** already-created PRs.
+**Execution baseline:** [Full Alpha 0.2 delivery plan: PR #49–#70](docs/alpha-0.2-delivery-plan.md).
+PRs #51 (Forge Eclipse) and #52 (branded boot) are open;
+#53–#70 are proposed planning slots, **not** yet-created PRs.
 That document specifies deliverables, dependencies and release gates;
 this overview tracks higher-level milestones.
 
@@ -61,7 +62,7 @@ and diagnostic CLI. Deliver real `edos doctor` checks, offline
 integration. The executable must not run untrusted project scripts,
 Nix flakes, Compose files or AI tools without informed consent.
 
-- [ ] Rust developer engine completed and tested (proposed PRs #51–#57).
+- [ ] Rust developer engine completed and tested (proposed PRs #53–#59).
 - [ ] Release-facing Rust + Python + Nix integration documented, with
   no unnecessary Python rewrite and no privileged Rust service.
 
@@ -156,10 +157,10 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next:** finish pending PR #49's mounted-target QEMU check; merge
-the standalone roadmap PR #50 when approved. Then execute proposed
-PRs #51–#68 as described in the delivery plan, adjusting numbering
-and dependencies as actual findings require. The same-boot QEMU
+**Next:** review roadmap PR #50, validate Eclipse theme PR #51,
+then branded live-boot and safe installer preview PR #52. Follow with
+Rust developer engine PRs #53–#59 and installer/release PRs #60–#70,
+adjusting numbers and dependencies when findings require. The same-boot QEMU
 attempt marker is *not* durable across reboot and must never be
 repurposed as physical-disk authorization.
 
