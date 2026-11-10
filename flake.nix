@@ -668,6 +668,18 @@
             neon = themeStyles "forge-neon";
             brutalist = themeStyles "forge-brutalist";
             eclipse = themeStyles "forge-eclipse";
+            eclipseWallpaper = (nixpkgs.lib.nixosSystem {
+              inherit system;
+              modules = vmModules ++ [
+                { eduardos.theme = "forge-eclipse"; system.stateVersion = "26.05"; }
+              ];
+            }).config.environment.etc."xdg/eduardos/forge-eclipse-wallpaper.png".source;
+            eclipseHyprland = (nixpkgs.lib.nixosSystem {
+              inherit system;
+              modules = vmModules ++ [
+                { eduardos.theme = "forge-eclipse"; system.stateVersion = "26.05"; }
+              ];
+            }).config.environment.etc."xdg/hypr/hyprland.conf".source;
             neonWallpaper = (nixpkgs.lib.nixosSystem {
               inherit system;
               modules = vmModules ++ [
@@ -708,6 +720,9 @@
             grep -Fq '#f18a4e' "$classic"
             grep -Fq '#19c6bf' "$neon"
             grep -Fq '#e6a04e' "$brutalist"
+            test -s "$eclipseWallpaper"
+            test "$(head -c 4 "$eclipseWallpaper" | od -An -tx1 | tr -d '[:space:]')" = 89504e47
+            grep -Fq 'forge-eclipse-wallpaper.png' "$eclipseHyprland"
             test -s "$neonWallpaper"
             test "$(head -c 3 "$neonWallpaper" | od -An -tx1 | tr -d '[:space:]')" = ffd8ff
             grep -Fq 'exec-once = swaybg' "$neonHyprland"
