@@ -105,6 +105,17 @@
     };
   };
 
+  # The live preview opens Forge on first graphical login, not the default
+  # NixOS text installer. This runs as the unprivileged 'forge' user and
+  # exposes ONLY the read-only preview; no disk-writing endpoint exists.
+  # Closing the browser leaves the live desktop usable.
+  environment.etc."xdg/hypr/hyprland.conf".source = lib.mkForce (
+    pkgs.writeText "eduardos-live-hyprland.conf" (
+      builtins.readFile ../../themes/forge-eclipse/hyprland.conf
+      + "\nexec-once = sh -c 'sleep 3; forge-installer-gui'\n"
+    )
+  );
+
   # Diskless QEMU acceptance observes this over the emulated serial port.
   # This runs only in the disposable live ISO after multi-user.target starts.
   # It grants no installer authority and touches no storage devices.
