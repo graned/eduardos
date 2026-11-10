@@ -1,0 +1,37 @@
+name: eduardOS after-review storage race
+
+on:
+  pull_request:
+    paths:
+      - "nix/tests/forge-lab-after-review-mount-race.nix"
+      - ".github/workflows/storage-race.yml"
+      - "installer/forge_executor_lab.py"
+      - "installer/forge_lab_command_policy.py"
+      - "installer/forge_privileged_guard.py"
+  workflow_dispatch:
+
+concurrency:
+  group: edos-storage-race-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mount-race:
+    name: Disposable QEMU after-review mount refusal
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable KVM
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            extra-system-features = kvm
+      - name: Run disposable disk after-review mount test
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-lab-after-review-mount-race
