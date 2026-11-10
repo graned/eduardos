@@ -11,6 +11,7 @@ on:
       - "installer/forge_lab_attempt.py"
       - "installer/forge_lab_child.py"
       - "nix/tests/forge-lab-failure-recovery.nix"
+      - "nix/tests/forge-lab-mounted-target-refusal.nix"
       - "installer/forge_install_transaction.py"
       - "installer/forge_credentials.py"
       - "installer/forge_lab_command_policy.py"
@@ -74,3 +75,25 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v14
       - name: Simulate failed partial GPT and refuse destructive retry in disposable VM
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-lab-failure-recovery
+
+  mounted-target:
+    name: QEMU mounted target refused before Disko
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Enable KVM access
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            extra-system-features = kvm
+      - name: Restore and save Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Reject mounted disposable target before any formatter call
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-lab-mounted-target-refusal

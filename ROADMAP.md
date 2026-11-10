@@ -102,6 +102,10 @@ then validate recovery from representative failures.
 - [ ] Prove failure, cancellation, unexpected mounts, changed boot,
   hotplug, partial-format and recovery handling in **destructive
   disposable-QEMU integration tests**.
+  - [x] Boot disposable QEMU, mount the exact selected /dev/vda, and
+    prove Forge refuses before any Disko invocation (PR #49 merged).
+    This covers an already-mounted target; after-review mount changes
+    and storage hotplug remain outstanding.
 - [ ] Connect the Forge graphical installer to the audited root
   service without granting the GUI unrestricted root access.
 - [ ] Add clear progress, refusal, cancellation and recovery UX.

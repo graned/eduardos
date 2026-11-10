@@ -631,6 +631,12 @@
         forge-lab-failure-recovery = import ./nix/tests/forge-lab-failure-recovery.nix {
           inherit pkgs;
         };
+        # Real disposable QEMU mount intrusion: an active /dev/vda
+        # filesystem must block the formatter before any disk write.
+        forge-lab-mounted-target-refusal =
+          import ./nix/tests/forge-lab-mounted-target-refusal.nix {
+            inherit pkgs;
+          };
         uefi-installed-boot = import ./nix/tests/uefi-installed-boot.nix {
           inherit pkgs;
           lib = nixpkgs.lib;
