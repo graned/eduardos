@@ -12,13 +12,12 @@ services:
         builders-use-substitutes = true
         max-jobs = 0
     volumes:
-      # A named volume retains the Nix client installation and cached results
-      # between invocations; never mount a new empty bind over /nix.
-      - nix-data:/nix
+      # Do not mount over /nix: the nixos/nix image itself contains the
+      # runtime shell and Nix CLI in /nix/store. A stale named volume can
+      # hide the current image's interpreter and make ENTRYPOINT fail with
+      # "no such file or directory" before the build script starts.
       - ../:/workspace:ro
       - ../out:/out
       - ${NIXBUILD_SSH_KEY:?Set NIXBUILD_SSH_KEY to the absolute path of the registered private key}:/run/secrets/nixbuild_key:ro
     working_dir: /workspace
 
-volumes:
-  nix-data:
