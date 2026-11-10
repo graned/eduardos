@@ -50,14 +50,6 @@ fn status(release: Option<&str>, os_release: Option<&str>) -> String {
     format!("eduardOS system status\nSystem: {name}\nCLI: {}\nMode: read-only\n", env!("CARGO_PKG_VERSION"))
 }
 
-fn legacy_doctor_summary(release_present: bool, os_release_present: bool) -> String {
-    let release = if release_present { "present" } else { "not present" };
-    let os = if os_release_present { "present" } else { "not present" };
-    format!(
-        "eduardOS diagnostics (read-only)\nLive release marker: {release}\nOS release metadata: {os}\nInstaller operations: unavailable\n"
-    )
-}
-
 fn usage() -> &'static str {
     "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
 }
@@ -124,7 +116,11 @@ mod tests {
 
     #[test]
     fn diagnostics_deny_privileged_actions() {
-        let result = legacy_doctor_summary(false, true);
+        let result = diagnostics::doctor(
+            Path::new("/nonexistent/edos-live-marker"),
+            Path::new("/nonexistent/edos-os-marker"),
+            Path::new("/nonexistent/edos-generation"),
+        );
         assert!(result.contains("Installer operations: unavailable"));
         assert!(result.contains("Live release marker: not present"));
     }
