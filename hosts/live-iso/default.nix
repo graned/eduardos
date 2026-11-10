@@ -41,6 +41,21 @@
     };
   };
 
+  # Diskless QEMU acceptance observes this over the emulated serial port.
+  # This runs only in the disposable live ISO after multi-user.target starts.
+  # It grants no installer authority and touches no storage devices.
+  systemd.services.edos-live-boot-probe = {
+    description = "eduardOS live preview boot acknowledgement (serial only)";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "local-fs.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      if [ -c /dev/ttyS0 ]; then
+        printf '%s\n' 'EDOS_LIVE_BOOT_OK=alpha-0.1-preview' > /dev/ttyS0
+      fi
+    '';
+  };
+
   hardware.graphics.enable = true;
 
   # Some desktop applications need these in a live, read-only-root environment.

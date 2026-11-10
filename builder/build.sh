@@ -1,15 +1,15 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 KEY=/run/secrets/nixbuild_key
 OUT=/out
 FEATURES=benchmark,big-parallel,ca-derivations,kvm,nixos-test
 
-if [[ ! -f "$KEY" || ! -s "$KEY" ]]; then
+if [ ! -f "$KEY" ] || [ ! -s "$KEY" ]; then
   echo "Missing private key. Export NIXBUILD_SSH_KEY as an absolute path to the key registered with nixbuild.net." >&2
   exit 2
 fi
-if [[ ! -f flake.nix ]]; then
+if [ ! -f flake.nix ]; then
   echo "Run this from the eduardOS repository root with: docker compose -f builder/compose.yml run --build --rm iso" >&2
   exit 2
 fi
@@ -33,12 +33,12 @@ path="$(
     --option builders-use-substitutes true \
     '.#live-iso'
 )"
-if [[ ! -d "$path/iso" ]]; then
+if [ ! -d "$path/iso" ]; then
   echo "Expected ISO output directory was not produced: $path/iso" >&2
   exit 4
 fi
 iso="$(find "$path/iso" -maxdepth 1 -type f -name '*.iso' -print -quit)"
-if [[ -z "$iso" ]]; then
+if [ -z "$iso" ]; then
   echo "The Nix build returned successfully but no ISO was found." >&2
   exit 4
 fi

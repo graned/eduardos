@@ -20,7 +20,9 @@ RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh \
  && chmod 600 /root/.ssh/known_hosts /root/.ssh/config
 
 COPY builder/build.sh /usr/local/bin/edos-build
-RUN chmod 755 /usr/local/bin/edos-build
+RUN chmod 755 /usr/local/bin/edos-build \
+ && /bin/sh -n /usr/local/bin/edos-build \
+ && test -x /bin/sh
 
 WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/edos-build"]
