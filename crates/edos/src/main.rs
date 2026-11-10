@@ -11,6 +11,7 @@ enum Command {
     Version,
     Status,
     Doctor,
+    Shortcuts,
     Help,
 }
 
@@ -21,6 +22,7 @@ fn parse(args: &[String]) -> Result<Command, &'static str> {
         [arg] if arg == "--version" || arg == "-V" || arg == "version" => Ok(Command::Version),
         [arg] if arg == "status" => Ok(Command::Status),
         [arg] if arg == "doctor" => Ok(Command::Doctor),
+        [arg] if arg == "shortcuts" => Ok(Command::Shortcuts),
         _ => Err("unknown command or unexpected arguments"),
     }
 }
@@ -55,7 +57,11 @@ fn doctor(release_present: bool, os_release_present: bool) -> String {
 }
 
 fn usage() -> &'static str {
-    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Check local release metadata without modifying anything\n  version  Show CLI version\n  help     Show this help\n"
+    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Check local release metadata without modifying anything\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
+}
+
+fn shortcuts() -> &'static str {
+    "eduardOS desktop shortcuts\nSuper + Enter: Ghostty\nSuper + D: Fuzzel launcher\nSuper + Shift + D: system diagnostics\nPrint: screen screenshot to clipboard\nSuper + Shift + S: region screenshot to clipboard\nSuper + Q: close window\nSuper + F: fullscreen\nSuper + Space: floating\nSuper + 1/2/3: switch workspace\nSuper + Shift + 1/2/3: move window\nSuper + Shift + E: exit Hyprland\n"
 }
 
 fn main() -> ExitCode {
@@ -63,6 +69,7 @@ fn main() -> ExitCode {
     match parse(&args) {
         Ok(Command::Help) => print!("{}", usage()),
         Ok(Command::Version) => println!("edos {}", env!("CARGO_PKG_VERSION")),
+        Ok(Command::Shortcuts) => print!("{}", shortcuts()),
         Ok(Command::Status) => {
             let release = fs::read_to_string(Path::new(RELEASE)).ok();
             let os_release = fs::read_to_string(Path::new(OS_RELEASE)).ok();
@@ -93,6 +100,7 @@ mod tests {
         assert_eq!(parse(&words(&["--version"])), Ok(Command::Version));
         assert_eq!(parse(&words(&["status"])), Ok(Command::Status));
         assert_eq!(parse(&words(&["doctor"])), Ok(Command::Doctor));
+        assert_eq!(parse(&words(&["shortcuts"])), Ok(Command::Shortcuts));
         assert!(parse(&words(&["status", "--execute"])).is_err());
         assert!(parse(&words(&["install"])).is_err());
     }
@@ -104,6 +112,12 @@ mod tests {
         assert!(status(None, None).contains("Unknown Linux system"));
         assert!(status(Some("eduardOS Alpha\n"), None).contains("eduardOS Alpha"));
         assert!(status(None, Some("PRETTY_NAME=\"NixOS\"")).contains("NixOS"));
+    }
+
+    #[test]
+    fn shortcuts_are_discoverable() {
+        assert!(shortcuts().contains("Super + Shift + S"));
+        assert!(shortcuts().contains("screenshot to clipboard"));
     }
 
     #[test]
