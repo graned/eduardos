@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Fast, read-only contract tests for the shipped three desktop presets."""
+"""Fast, read-only contract tests for the shipped four desktop presets."""
 import pathlib
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-THEMES = ("forge-classic", "forge-neon", "forge-brutalist")
+THEMES = ("forge-classic", "forge-neon", "forge-brutalist", "forge-eclipse")
 KEYBINDINGS = (
     "bind = , PRINT, exec, edos-screenshot screen",
     "bind = $mod SHIFT, S, exec, edos-screenshot region",
