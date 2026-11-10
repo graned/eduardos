@@ -13,8 +13,8 @@ eduardOS ISO **and** developer-first Rust tooling that we validate
 in disposable QEMU before carefully testing a real computer.
 
 **Execution baseline:** [Full Alpha 0.2 delivery plan: PR #49–#70](docs/alpha-0.2-delivery-plan.md).
-PRs #51 (Forge Eclipse) and #52 (branded boot) are open;
-#53–#70 are proposed planning slots, **not** yet-created PRs.
+PRs #49–#52 are merged; #53 (Rust diagnostics v2) is in review.
+#54–#70 remain proposed planning slots, **not** yet-created PRs.
 That document specifies deliverables, dependencies and release gates;
 this overview tracks higher-level milestones.
 
@@ -161,9 +161,8 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next:** review roadmap PR #50, validate Eclipse theme PR #51,
-then branded live-boot and safe installer preview PR #52. Follow with
-Rust developer engine PRs #53–#59 and installer/release PRs #60–#70,
+**Next:** validate Rust system diagnostics in PR #53, then deliver
+Rust developer engine PRs #54–#59 and installer/release PRs #60–#70,
 adjusting numbers and dependencies when findings require. The same-boot QEMU
 attempt marker is *not* durable across reboot and must never be
 repurposed as physical-disk authorization.

@@ -76,10 +76,10 @@ them without configuring the entire machine manually.
 | Slot | Track | Deliverable | Acceptance gate |
 | --- | --- | --- | --- |
 | **#49 (merged)** | Installer | Mounted-target refusal in disposable QEMU | Disk and sentinel remain intact; Disko not invoked; all CI green |
-| **#50 (this plan)** | Roadmap | Commit agreed developer vision and delivery gates | User reviews PR list and scope; docs-only CI |
-| **#51 (open)** | Theme | New default Berserk-inspired **Forge Eclipse** desktop preset and ISO visual tests | Four theme previews and original artwork render in CI |
-| **#52 (open)** | Boot/UX | Distinct eduardOS UEFI/BIOS boot menus; auto-open explicitly read-only Forge preview | Boot asset CI and manual UEFI/BIOS ISO appearance check |
-| **#53** | Rust | `edos doctor` v2: real read-only OS, session and tool diagnostics | Unit tests + missing subsystem graceful fallbacks; build under Nix |
+| **#50 (merged)** | Roadmap | Commit agreed developer vision and delivery gates | User reviews PR list and scope; docs-only CI |
+| **#51 (merged)** | Theme | New default Berserk-inspired **Forge Eclipse** desktop preset and ISO visual tests | Four theme previews and original artwork render in CI |
+| **#52 (merged)** | Boot/UX | Distinct eduardOS UEFI/BIOS boot menus; auto-open explicitly read-only Forge preview | Boot asset CI and manual UEFI/BIOS ISO appearance check |
+| **#53 (in review)** | Rust | `edos doctor` v2: real read-only OS, session and tool diagnostics | Unit tests + missing subsystem graceful fallbacks; build under Nix |
 | **#54** | Rust | `edos dev inspect`: offline project/manifests detection | Go/Rust/Node/Python/Nix/Compose fixtures; symlink/path traversal and no-execution tests |
 | **#55** | Rust | `edos dev init`: preview/consent, project templates | No overwrite; no secret injection; deterministic fixture outputs |
 | **#56** | Rust | Explicit Nix dev-shell integration with trust boundaries | Show planned command, require consent before evaluation/execution; safe cancellation |
@@ -99,16 +99,15 @@ them without configuring the entire machine manually.
 | **#70** | Release | Alpha 0.2 release-candidate gate | All release tests green, hardware evidence recorded, known limitations published |
 
 **Current plan: 22 slots (#49–#70 inclusive): one merged QEMU test, one
-roadmap PR, two open visual-identity PRs, seven Rust implementation slots,
+merged roadmap PR, two merged visual-identity PRs, seven Rust implementation slots,
 nine installer/integration slots, and two release slots, plus any safety
 follow-ups.** Counting is
 indicative; schedule changes are made explicitly in this file.
 
 ## Execution order and strict dependencies
 
-- #49 is merged. #50 documents this plan; #51 adds the default Forge Eclipse
-  theme; #52 is stacked on #51 and brands the boot + safe installer preview.
-- Merge #51 before #52, then resume the Rust development track.
+- #49–#52 are merged. #53 implements read-only Rust diagnostics;
+  then continue through the developer-first Rust milestones.
 - Ship #53–#59 before release (the agreed developer-first identity).
   Keep the Rust tools usable without root and without replacing Python.
 - #60 must pass before enabling any real physical disk execution.
