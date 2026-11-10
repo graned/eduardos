@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import http.client
 import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import threading
 import unittest
 from http.server import ThreadingHTTPServer
@@ -60,6 +62,23 @@ class WebPreviewTests(unittest.TestCase):
         self.assertEqual(self.request("GET", "/style.css", token=False)[0], 200)
         self.assertEqual(self.request("GET", "/app.js", token=False)[0], 200)
         self.assertEqual(self.request("GET", "/etc/passwd")[0], 404)
+
+    def test_approved_artwork_is_fixed_read_only_png_route(self):
+        with TemporaryDirectory() as directory:
+            image = Path(directory) / "approved.png"
+            image.write_bytes(b"\\x89PNG\\r\\n\\x1a\\nimage-fixture")
+            with patch.object(forge_gui, "ARTWORK", image):
+                status, body, headers = self.request("GET", "/artwork.png", token=False)
+                self.assertEqual(status, 200)
+                self.assertEqual(body, b"\\x89PNG\\r\\n\\x1a\\nimage-fixture")
+                self.assertEqual(headers["Content-Type"], "image/png")
+                self.assertEqual(self.request(
+                    "GET", "/artwork.png?file=/etc/passwd", token=False
+                )[1], body)
+                self.assertEqual(self.request(
+                    "GET", "/../artwork.png", token=False
+                )[0], 404)
+            self.assertEqual(self.request("GET", "/artwork.png", token=False)[0], 404)
 
     def test_rejects_host_rebinding(self):
         self.assertEqual(self.request("GET", f"/?token={self.token}", host=False)[0], 403)
