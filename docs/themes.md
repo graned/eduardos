@@ -103,9 +103,11 @@ nix build .#checks.x86_64-linux.theme-preview-neon -L
 
 ## Forge Eclipse
 
-The default desktop combines a blackened-iron/crimson palette and an
-**original** eclipse/greatsword-inspired vector illustration. It is a
-visual homage to dark-fantasy manga, **not** bundled official Berserk
-artwork or characters. Its SVG is rendered to a PNG once at Nix build
-time; the live desktop uses static `swaybg`, not an animated wallpaper
-or constantly running rasterizer.
+The default desktop combines a blackened-iron/crimson palette with the
+approved **Forge Eclipse: Forged in Darkness** art, supplied in lossless
+form and converted into a full-resolution static PNG **at build time**.
+The immutable PNG is shared with the read-only graphical Forge preview.
+There is no animated wallpaper or constantly running rasterizer.
+
+See [Forge Eclipse approved artwork](forge-eclipse-approved-art.md) for
+the exact source checksum, rendering and installer behavior.

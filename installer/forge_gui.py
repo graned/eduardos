@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Forge Neon browser-based installer preview, served only on loopback.
+"""Forge Eclipse browser-based installer preview, served only on loopback.
 
 No disk writes or installation APIs exist here. Uses the PR #20 hardware
 preflight module as the source of truth rather than duplicating its rules.
@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import secrets
 import subprocess
 import sys
@@ -21,6 +22,9 @@ from pathlib import Path
 import forge_installer as core
 
 ASSETS = Path(__file__).with_name("web")
+# Nix supplies the same immutable PNG used by the default desktop theme.
+# Local development can provide installer/web/artwork.png instead.
+ARTWORK = Path(os.environ.get("EDOS_FORGE_ARTWORK_PNG", str(ASSETS / "artwork.png")))
 MAX_PATH_LENGTH = 2048
 
 
@@ -93,6 +97,16 @@ def make_handler(token: str):
                 return self.serve_asset("style.css", "text/css; charset=utf-8")
             if path == "/app.js":
                 return self.serve_asset("app.js", "text/javascript; charset=utf-8")
+            # Fixed artwork route: no user-controlled asset paths, and the
+            # installer remains a strictly read-only preview.
+            if path == "/artwork.png":
+                # A fixed, read-only file selected by the trusted Nix launcher.
+                # Never accept request-supplied filesystem paths.
+                try:
+                    data = ARTWORK.read_bytes()
+                except OSError:
+                    return self.reject(404)
+                return self.send_body(200, data, "image/png")
             if self.headers.get("X-Forge-Token") != token:
                 return self.reject()
             if path == "/api/inventory":

@@ -65,17 +65,8 @@ let
   neonPath = ../../../themes/forge-neon;
   brutalistPath = ../../../themes/forge-brutalist;
   eclipsePath = ../../../themes/forge-eclipse;
-  eclipseFonts = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
-  eclipseWallpaper = pkgs.runCommand "eduardos-forge-eclipse-wallpaper" {
-    nativeBuildInputs = [ pkgs.librsvg ];
-  } ''
-    mkdir -p "$out"
-    export FONTCONFIG_FILE="${eclipseFonts}"
-    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
-    mkdir -p "$XDG_CACHE_HOME"
-    rsvg-convert -w 1920 -h 1080 ${eclipsePath + "/wallpaper.svg"} -o "$out/wallpaper.png"
-  '';
-  # Bundled high-definition generated image: no wallpaper conversion build.
+  eclipseWallpaper = import ../../artwork/forge-eclipse.nix { inherit pkgs; };
+  # The approved artwork is rendered to PNG during the Nix build, never at login.
   wallpaper = classicPath + "/wallpaper.jpg";
 in
 {
