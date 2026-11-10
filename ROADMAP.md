@@ -38,10 +38,13 @@ carefully testing a real computer.
 - [x] Add dependency-light Rust `edos` CLI to live/VM/installed desktop,
   with read-only diagnostics and Nix CI while keeping Python Forge
   safety tooling intact (PR #46 merged).
-- [ ] Build and boot a **new Alpha 0.1 preview ISO** (PR #47:
-  manual ISO workflow, diskless serial boot test, artifact checksum and
-  live Rust CLI wiring in review). Actual ISO build and visual review
-  must still be completed before checking this milestone.
+- [x] Build and boot a **new Alpha 0.1 preview ISO** (PR #47 merged;
+  user confirmed successful ISO testing; diskless serial smoke and
+  artifact checksum support added).
+
+- [ ] Improve the live desktop experience with discoverable `edos`
+  shortcuts, screenshot-to-clipboard and diagnostic terminal bindings
+  across all three Forge themes (**PR #48 in review**).
 
 ### Alpha 0.2 — first installable ISO
 
@@ -132,9 +135,9 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #47:** run the manual ISO workflow, download and
-visually inspect the refreshed preview with Hyprland/Ghostty/edos.
-Record issues before returning to destructive QEMU interruption,
+**Next after PR #48:** test shortcuts and screenshots in the next
+live preview, record practical desktop issues, and then return to
+destructive QEMU interruption,
 mount-change and storage-hotplug acceptance, and the independently
 authorized physical execution service with a durable recovery policy. The
 same-boot QEMU attempt marker is *not* durable across reboot and
