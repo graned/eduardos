@@ -25,4 +25,4 @@ with Image.open(source) as art:
 PY
   test -s "$out/wallpaper.png"
   test "$(head -c 4 "$out/wallpaper.png" | od -An -tx1 | tr -d '[:space:]')" = 89504e47
-'';
+''
