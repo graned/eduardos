@@ -10,8 +10,8 @@
   networking.hostName = "eduardos-live";
   system.stateVersion = "26.05";
 
-  # The first image showcases the neon/Tlaloc look; switching presets comes later.
-  eduardos.theme = "forge-neon";
+  # The live ISO previews the default dark-fantasy Forge Eclipse identity.
+  eduardos.theme = "forge-eclipse";
 
   # The live session is disposable. No hardcoded target device or disk
   # provisioning happens during boot.

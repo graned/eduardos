@@ -1,10 +1,11 @@
 # Obsidian Forge appearance presets
 
-eduardOS has three official lightweight appearance presets:
+eduardOS has four official lightweight appearance presets:
 
 | Preset | Default focus color | Character |
 | --- | --- | --- |
-| `forge-classic` | Ember orange `#e56b35` | Warm industrial forge (default) |
+| `forge-classic` | Ember orange `#e56b35` | Warm industrial forge |
+| `forge-eclipse` | Eclipse crimson `#d43a45` | Berserk-inspired dark fantasy, original eclipse-and-sword artwork (**default**) |
 | `forge-neon` | Signal teal `#19c6bf` | Futuristic cyber-forge |
 | `forge-brutalist` | Sharp orange `#ff8a45` | Restrained high-contrast minimal |
 
@@ -25,9 +26,9 @@ Set the following NixOS option in your host configuration:
 }
 ```
 
-Allowed values: `forge-classic`, `forge-neon`, `forge-brutalist`.
+Allowed values: `forge-classic`, `forge-neon`, `forge-brutalist`, `forge-eclipse`.
 
-If omitted, the default is `forge-classic`. Apply the change with the
+If omitted, the default is `forge-eclipse`. Apply the change with the
 usual `nixos-rebuild switch --flake ...` for your installed host. The
 disposable QEMU VM is a prototype, not an installable disk image.
 
@@ -65,13 +66,13 @@ nix build .#checks.x86_64-linux.boot -L
 nix build .#checks.x86_64-linux.hyprland-session -L
 ```
 
-The first check builds generated Waybar CSS for all three choices and
+The first check builds generated Waybar CSS for all four choices and
 verifies each accent color. The others still require real NixOS boot
 and Hyprland graphical-session behavior.
 
 ## Real desktop screenshots from CI
 
-PRs also boot all three themes in separate QEMU guests, start Hyprland,
+PRs also boot all four themes in separate QEMU guests, start Hyprland,
 Waybar, Mako and Ghostty, verify that the Super+Return shortcut maps
 another Ghostty window, and invoke Fuzzel through Super+D. The test
 captures three actual VM display screenshots for each theme:
@@ -80,6 +81,7 @@ captures three actual VM display screenshots for each theme:
 | --- | --- | --- | --- |
 | Classic | `forge-classic-wallpaper.png` | `forge-classic-desktop.png` | `forge-classic-launcher.png` |
 | Neon | `forge-neon-wallpaper.png` | `forge-neon-desktop.png` | `forge-neon-launcher.png` |
+| Eclipse | `forge-eclipse-wallpaper.png` | `forge-eclipse-desktop.png` | `forge-eclipse-launcher.png` |
 | Brutalist | `forge-brutalist-wallpaper.png` | `forge-brutalist-desktop.png` | `forge-brutalist-launcher.png` |
 
 Download the screenshots from **Actions → successful workflow run →
@@ -98,3 +100,12 @@ To build an individual theme preview on an x86_64 Linux KVM host:
 ```sh
 nix build .#checks.x86_64-linux.theme-preview-neon -L
 ```
+
+## Forge Eclipse
+
+The default desktop combines a blackened-iron/crimson palette and an
+**original** eclipse/greatsword-inspired vector illustration. It is a
+visual homage to dark-fantasy manga, **not** bundled official Berserk
+artwork or characters. Its SVG is rendered to a PNG once at Nix build
+time; the live desktop uses static `swaybg`, not an animated wallpaper
+or constantly running rasterizer.

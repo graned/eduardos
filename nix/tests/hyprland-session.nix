@@ -130,13 +130,13 @@ pkgs.testers.runNixOSTest {
         import time
         machine.screenshot("obsidian-forge-ghostty-before.png")
         if ${if preview then "True" else "False"}:
-            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" ] then "True" else "False"}:
+            if ${if builtins.elem theme [ "forge-classic" "forge-neon" "forge-brutalist" "forge-eclipse" ] then "True" else "False"}:
                 machine.wait_until_succeeds(
                     "pgrep -u forge -f 'swaybg.*${theme}-wallpaper' >/dev/null",
                     timeout=30
                 )
                 machine.succeed(
-                    "test -s /etc/xdg/eduardos/${theme}-wallpaper.jpg"
+                    "test -s /etc/xdg/eduardos/${theme}-wallpaper${if theme == "forge-eclipse" then ".png" else ".jpg"}"
                 )
                 # A process that exits immediately is not a working wallpaper.
                 time.sleep(3)

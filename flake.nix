@@ -586,7 +586,7 @@
           let
             cfg = self.nixosConfigurations.eduardos-live.config;
             hasIso = cfg.system.build ? isoImage;
-            neon = cfg.eduardos.theme == "forge-neon";
+            eclipse = cfg.eduardos.theme == "forge-eclipse";
             login = cfg.services.greetd.settings.initial_session.user == "forge";
             network = cfg.networking.networkmanager.enable;
             noDisko = !(cfg ? disko);
@@ -594,7 +594,7 @@
               == [ "multi-user.target" ];
             rustCli = builtins.any (pkg: (pkg.pname or "") == "edos")
               cfg.environment.systemPackages;
-          in assert hasIso && neon && login && network && noDisko
+          in assert hasIso && eclipse && login && network && noDisko
             && serialProbe && rustCli;
           pkgs.runCommand "eduardos-live-iso-config-check" {} ''
             mkdir -p "$out"
@@ -667,6 +667,19 @@
             classic = themeStyles "forge-classic";
             neon = themeStyles "forge-neon";
             brutalist = themeStyles "forge-brutalist";
+            eclipse = themeStyles "forge-eclipse";
+            eclipseWallpaper = (nixpkgs.lib.nixosSystem {
+              inherit system;
+              modules = vmModules ++ [
+                { eduardos.theme = "forge-eclipse"; system.stateVersion = "26.05"; }
+              ];
+            }).config.environment.etc."xdg/eduardos/forge-eclipse-wallpaper.png".source;
+            eclipseHyprland = (nixpkgs.lib.nixosSystem {
+              inherit system;
+              modules = vmModules ++ [
+                { eduardos.theme = "forge-eclipse"; system.stateVersion = "26.05"; }
+              ];
+            }).config.environment.etc."xdg/hypr/hyprland.conf".source;
             neonWallpaper = (nixpkgs.lib.nixosSystem {
               inherit system;
               modules = vmModules ++ [
@@ -707,6 +720,9 @@
             grep -Fq '#f18a4e' "$classic"
             grep -Fq '#19c6bf' "$neon"
             grep -Fq '#e6a04e' "$brutalist"
+            test -s "$eclipseWallpaper"
+            test "$(head -c 4 "$eclipseWallpaper" | od -An -tx1 | tr -d '[:space:]')" = 89504e47
+            grep -Fq 'forge-eclipse-wallpaper.png' "$eclipseHyprland"
             test -s "$neonWallpaper"
             test "$(head -c 3 "$neonWallpaper" | od -An -tx1 | tr -d '[:space:]')" = ffd8ff
             grep -Fq 'exec-once = swaybg' "$neonHyprland"
@@ -718,6 +734,12 @@
             grep -Fq 'background-opacity = 0.89' "$brutalistGhostty"
             touch "$out"
           '';
+        theme-preview-eclipse = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-eclipse";
+          preview = true;
+        };
         hyprland-session = import ./nix/tests/hyprland-session.nix {
           inherit pkgs;
           modules = vmModules;
@@ -761,7 +783,7 @@
             "runuser -u forge -- zsh -ic 'print -r -- $ZSH_THEME' "
             "| grep -Fxq eduardos-catppuccin"
           )
-          machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-classic")
+          machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-eclipse")
           machine.succeed("grep -Fq brave-browser.desktop /etc/xdg/mimeapps.list")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
           machine.succeed("opencode --version")
@@ -773,14 +795,14 @@
           # Verify the actual desktop configuration lands in the booted guest.
           machine.succeed("test -r /etc/xdg/hypr/hyprland.conf")
           machine.succeed("grep -Fq 'exec-once = swaybg' /etc/xdg/hypr/hyprland.conf")
-          machine.succeed("test -r /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
-          machine.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
+          machine.succeed("test -r /etc/xdg/eduardos/forge-eclipse-wallpaper.png")
+          machine.succeed("test -s /etc/xdg/eduardos/forge-eclipse-wallpaper.png")
           machine.succeed("grep -Fq 'exec-once = waybar' /etc/xdg/hypr/hyprland.conf")
           machine.succeed("test -r /etc/xdg/waybar/config.jsonc")
           machine.succeed("test -r /etc/xdg/waybar/style.css")
           machine.succeed("test -r /etc/xdg/ghostty/config")
           machine.succeed("grep -Fqx 'background-opacity = 0.88' /etc/xdg/ghostty/config")
-          machine.succeed("grep -Fqx 'background = #1e1e2e' /etc/xdg/ghostty/config")
+          machine.succeed("grep -Fqx 'background = #110c11' /etc/xdg/ghostty/config")
           machine.succeed("test -r /etc/xdg/fuzzel/fuzzel.ini")
           machine.succeed("test -r /etc/xdg/mako/config")
         '';

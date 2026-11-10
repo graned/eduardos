@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <radialGradient id="night" cx="64%" cy="30%" r="78%">
+      <stop stop-color="#2a1217"/><stop offset=".55" stop-color="#100b0e"/><stop offset="1" stop-color="#060608"/>
+    </radialGradient>
+    <radialGradient id="halo">
+      <stop offset=".58" stop-color="#e52f37"/><stop offset=".71" stop-color="#a41828"/><stop offset=".90" stop-color="#4e111b" stop-opacity=".43"/><stop offset="1" stop-color="#200d11" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="17"/></filter>
+    <pattern id="rain" width="97" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(16)"><path d="M0 0V80M35 45v54M73 6v21" stroke="#b35c60" stroke-width=".8" opacity=".09"/></pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#night)"/>
+  <circle cx="1260" cy="410" r="320" fill="url(#halo)" filter="url(#glow)"/>
+  <circle cx="1260" cy="410" r="235" fill="none" stroke="#be2b37" stroke-width="31" opacity=".16" filter="url(#glow)"/>
+  <circle cx="1260" cy="410" r="234" fill="#de4044"/>
+  <circle cx="1260" cy="410" r="209" fill="#0b080c"/>
+  <circle cx="1260" cy="410" r="220" fill="none" stroke="#fc6868" stroke-width="3" opacity=".58"/>
+  <path d="M0 855 170 725 315 791 480 610 605 720 740 569 950 800 1110 735 1285 855 1420 688 1630 815 1785 665 1920 754v326H0z" fill="#1d1619"/>
+  <path d="M0 957 240 797 422 888 635 752 829 932 1062 786 1264 941 1520 774 1743 920 1920 799v281H0z" fill="#0a0a0d"/>
+  <g fill="#050609">
+    <path d="M405 876 535 505 575 502 686 886z"/>
+    <path d="m515 502-9-130h75l-5 130z"/>
+    <path d="m543 375-22-135 11-73 11 86 14-122 14 126 11-78 10 61-18 135z"/>
+    <path d="M365 910 399 777 483 711l104 54 72 145z"/>
+    <path d="m465 744-74-94 49-42 84 109z"/>
+  </g>
+  <path d="M543 175v530" stroke="#89242d" stroke-width="7" opacity=".6"/>
+  <path d="M0 0h1920v1080H0z" fill="url(#rain)"/>
+  <path d="M61 92h360" stroke="#922831" stroke-width="2" opacity=".72"/>
+  <text x="65" y="77" fill="#ead9d1" font-family="sans-serif" font-size="29" font-weight="700" letter-spacing="7">eduardOS</text>
+  <text x="67" y="120" fill="#c7575f" font-family="monospace" font-size="13" letter-spacing="6">FORGED IN NEON</text>
+  <text x="68" y="1022" fill="#876a70" font-family="monospace" font-size="15" letter-spacing="4">FORGE ECLIPSE  /  STRUGGLE. BUILD. REPEAT.</text>
+</svg>
