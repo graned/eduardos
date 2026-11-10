@@ -76,7 +76,7 @@ class WebPreviewTests(unittest.TestCase):
                     "GET", "/artwork.png?file=/etc/passwd", token=False
                 )[1], body)
                 self.assertEqual(self.request(
-                    "GET", "/../artwork.png", token=False
+                    "GET", "/../artwork.png", token=True
                 )[0], 404)
             self.assertEqual(self.request("GET", "/artwork.png", token=False)[0], 404)
 
