@@ -249,6 +249,21 @@
         inherit system;
         modules = desktopModules ++ [
           ./hosts/live-iso/default.nix
+          # The live ISO can preview the Forge UI, but never includes
+          # the lab-only destructive installer or a physical write API.
+          ({ pkgs, ... }: {
+            environment.systemPackages = [
+              forgeInstallerGui
+              (pkgs.makeDesktopItem {
+                name = "eduardos-forge-installer";
+                desktopName = "eduardOS Forge Installer (Preview)";
+                comment = "Read-only hardware and storage preview — no disk writes";
+                exec = "${forgeInstallerGui}/bin/forge-installer-gui";
+                terminal = false;
+                categories = [ "System" "Utility" ];
+              })
+            ];
+          })
         ];
       };
 
@@ -590,12 +605,18 @@
             login = cfg.services.greetd.settings.initial_session.user == "forge";
             network = cfg.networking.networkmanager.enable;
             noDisko = !(cfg ? disko);
+            bootLabel = cfg.system.nixos.distroName == "eduardOS";
+            bootTheme = cfg.isoImage.grubTheme != null;
+            installerLauncher = builtins.any (pkg:
+              (pkg.pname or "") == "forge-installer-gui"
+              || (pkg.name or "") == "forge-installer-gui")
+              cfg.environment.systemPackages;
             serialProbe = cfg.systemd.services.edos-live-boot-probe.wantedBy
               == [ "multi-user.target" ];
             rustCli = builtins.any (pkg: (pkg.pname or "") == "edos")
               cfg.environment.systemPackages;
           in assert hasIso && eclipse && login && network && noDisko
-            && serialProbe && rustCli;
+            && serialProbe && rustCli && bootLabel && bootTheme && installerLauncher;
           pkgs.runCommand "eduardos-live-iso-config-check" {} ''
             mkdir -p "$out"
             echo "Live ISO configured without Disko" > "$out/result"
