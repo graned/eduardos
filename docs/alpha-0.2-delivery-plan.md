@@ -79,51 +79,54 @@ them without configuring the entire machine manually.
 | **#50 (merged)** | Roadmap | Commit agreed developer vision and delivery gates | User reviews PR list and scope; docs-only CI |
 | **#51 (merged)** | Theme | New default Berserk-inspired **Forge Eclipse** desktop preset and ISO visual tests | Four theme previews and original artwork render in CI |
 | **#52 (merged)** | Boot/UX | Distinct eduardOS UEFI/BIOS boot menus; auto-open explicitly read-only Forge preview | Boot asset CI and manual UEFI/BIOS ISO appearance check |
-| **#53 (in review)** | Rust | `edos doctor` v2: real read-only OS, session and tool diagnostics | Unit tests + missing subsystem graceful fallbacks; build under Nix |
-| **#54** | Rust | `edos dev inspect`: offline project/manifests detection | Go/Rust/Node/Python/Nix/Compose fixtures; symlink/path traversal and no-execution tests |
-| **#55** | Rust | `edos dev init`: preview/consent, project templates | No overwrite; no secret injection; deterministic fixture outputs |
-| **#56** | Rust | Explicit Nix dev-shell integration with trust boundaries | Show planned command, require consent before evaluation/execution; safe cancellation |
-| **#57** | Rust | `edos dev up/down/status` for approved project processes and Compose | Child process groups stopped on exit; errors surfaced; no rogue services |
-| **#58** | Rust | `edos dev stats`: project-aware resource inspection | Read-only cgroup/process tests, no elevated privileges or idle daemon |
-| **#59** | Rust | `edos workspace open` + `edos dev context`, developer UX docs | Opt-in editor launch; redaction tests; no network/AI invocation |
-| **#60** | Installer | QEMU after-review mount/hotplug/identity-change and cancellation boundary tests | Refuse before irreversible write; existing encrypted install still passes |
-| **#61** | Installer | Trusted root executor: independently authorize exact device and operation | Allowlist; physical disk writes still disabled; adversarial root/non-root tests |
-| **#62** | Installer | Persistent attempt state, lock, refusal and recovery policy | Reboot/interruption tests; no automatic destructive retry |
-| **#63** | Installer | Secure runtime LUKS/account credential consumption in executor | No plaintext argv/env/Nix store; FD ownership/zeroization and denial tests |
-| **#64** | Installer | Wire Forge GUI to narrowly scoped service / consent sequence | GUI is never root; spoofing and invalid request tests |
-| **#65** | Installer | GUI setup: disk identity, hostname, user, encryption and full preview | Unambiguous irreversible confirmation; safe edits/cancellation |
-| **#66** | Installer | Progress, cancellation and partial-failure recovery UX | Honest phase states; no retry after partial format |
-| **#67** | Integration | First physical-write-capable **gated** installation in disposable QEMU | Only VM image gets written; real encrypted boot/login; no host device access |
-| **#68** | Integration | Build installable Alpha 0.2 ISO and automate GUI-to-boot smoke | ISO contains real installer, Rust dev engine, selected desktop; repeated encrypted cold boots |
-| **#69** | Release | Controlled UEFI real-hardware qualification, documentation and checksums | Explicit test matrix, safe target identification, backup warning, signed/hashed artifacts policy |
-| **#70** | Release | Alpha 0.2 release-candidate gate | All release tests green, hardware evidence recorded, known limitations published |
+| **#53 (merged)** | Rust | `edos doctor` v2: real read-only OS, session and tool diagnostics | Unit tests + missing subsystem graceful fallbacks; build under Nix |
+| **#54 (in review)** | Rust | `edos dev inspect`: offline project/manifests detection | Go/Rust/Node/Python/Nix/Compose fixtures; symlink/path traversal and no-execution tests |
+| **#55 (in review)** | Installer | Real QEMU newly-mounted-target race after clean guard review | Held-FD audit refuses changed mount, sentinel intact; no Disko |
+| **#56** | Rust | `edos dev init`: preview/consent, project templates | No overwrite; no secret injection; deterministic fixture outputs |
+| **#57** | Rust | Explicit Nix dev-shell integration with trust boundaries | Show planned command, require consent before evaluation/execution; safe cancellation |
+| **#58** | Rust | `edos dev up/down/status` for approved project processes and Compose | Child process groups stopped on exit; errors surfaced; no rogue services |
+| **#59** | Rust | `edos dev stats`: project-aware resource inspection | Read-only cgroup/process tests, no elevated privileges or idle daemon |
+| **#60** | Rust | `edos workspace open` + `edos dev context`, developer UX docs | Opt-in editor launch; redaction tests; no network/AI invocation |
+| **#61** | Installer | QEMU after-review mount/hotplug/identity-change and cancellation boundary tests | Refuse before irreversible write; existing encrypted install still passes |
+| **#62** | Installer | Trusted root executor: independently authorize exact device and operation | Allowlist; physical disk writes still disabled; adversarial root/non-root tests |
+| **#63** | Installer | Persistent attempt state, lock, refusal and recovery policy | Reboot/interruption tests; no automatic destructive retry |
+| **#64** | Installer | Secure runtime LUKS/account credential consumption in executor | No plaintext argv/env/Nix store; FD ownership/zeroization and denial tests |
+| **#65** | Installer | Wire Forge GUI to narrowly scoped service / consent sequence | GUI is never root; spoofing and invalid request tests |
+| **#66** | Installer | GUI setup: disk identity, hostname, user, encryption and full preview | Unambiguous irreversible confirmation; safe edits/cancellation |
+| **#67** | Installer | Progress, cancellation and partial-failure recovery UX | Honest phase states; no retry after partial format |
+| **#68** | Integration | First physical-write-capable **gated** installation in disposable QEMU | Only VM image gets written; real encrypted boot/login; no host device access |
+| **#69** | Integration | Build installable Alpha 0.2 ISO and automate GUI-to-boot smoke | ISO contains real installer, Rust dev engine, selected desktop; repeated encrypted cold boots |
+| **#70** | Release | Controlled UEFI real-hardware qualification, documentation and checksums | Explicit test matrix, safe target identification, backup warning, signed/hashed artifacts policy |
+| **#71** | Release | Alpha 0.2 release-candidate gate | All release tests green, hardware evidence recorded, known limitations published |
 
-**Current plan: 22 slots (#49–#70 inclusive): one merged QEMU test, one
+**Current plan: 23 slots (#49–#71 inclusive): one merged QEMU test, one
 merged roadmap PR, two merged visual-identity PRs, seven Rust implementation slots,
-nine installer/integration slots, and two release slots, plus any safety
+ten installer/integration slots, and two release slots, plus any safety
 follow-ups.** Counting is
 indicative; schedule changes are made explicitly in this file.
 
 ## Execution order and strict dependencies
 
-- #49–#52 are merged. #53 implements read-only Rust diagnostics;
-  then continue through the developer-first Rust milestones.
-- Ship #53–#59 before release (the agreed developer-first identity).
+- #49–#53 are merged. #54 (Rust offline inspect) and #55 (disposable
+  QEMU after-review mount safety) are independent parallel PRs.
+- #56–#60 continue the Rust developer-first sequence; installer after-review
+  hotplug, changed disk identity and cancellation tests remain planned #61.
+- Ship #53–#60 before release (the agreed developer-first identity).
   Keep the Rust tools usable without root and without replacing Python.
-- #60 must pass before enabling any real physical disk execution.
-- #61–#63 are security gates; a manifest or UI confirmation alone must
+- #61 must pass before enabling any real physical disk execution.
+- #62–#64 are security gates; a manifest or UI confirmation alone must
   never authorize writes. No generic shell command RPC.
-- #64–#66 connect UI to independently validated service operations.
-- #67 must operate only in isolated, disposable QEMU. Do not claim
+- #65–#67 connect UI to independently validated service operations.
+- #68 must operate only in isolated, disposable QEMU. Do not claim
   a VM pass implies safe arbitrary physical hardware.
-- #68–#70 validate the **same distribution artifact** that would ship.
+- #69–#71 validate the **same distribution artifact** that would ship.
   Only then consider a public Alpha 0.2 release.
 - If any gate fails, pause subsequent unsafe work, fix it in the same PR,
   and add a regression test. **User merges every PR**.
 
 ## Release checklist (everything required before declaring Alpha 0.2)
 
-- [ ] All #49–#70 scope items merged or explicitly rescheduled with
+- [ ] All #49–#71 scope items merged or explicitly rescheduled with
       release criteria preserved.
 - [ ] Rust developer commands shipped in live and installed profiles;
       CLI/tests/documentation verified.

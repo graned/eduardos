@@ -676,6 +676,12 @@
           import ./nix/tests/forge-lab-mounted-target-refusal.nix {
             inherit pkgs;
           };
+        # Actual kernel race test: clean read-only audit, then new mount,
+        # then repeat irreversible-boundary audit before any Disko.
+        forge-lab-after-review-mount-race =
+          import ./nix/tests/forge-lab-after-review-mount-race.nix {
+            inherit pkgs;
+          };
         uefi-installed-boot = import ./nix/tests/uefi-installed-boot.nix {
           inherit pkgs;
           lib = nixpkgs.lib;
