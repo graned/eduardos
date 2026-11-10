@@ -15,6 +15,15 @@ The CLI is available in the **live ISO, VM and installed desktop profiles**
 through the shared desktop modules. It reads the optional
 `/etc/eduardos/live-release` marker and standard `/etc/os-release`.
 If the eduardOS marker is absent, it falls back to generic OS metadata.
+The `doctor` command additionally reads `/run/current-system`, `/proc/meminfo`,
+`/proc/loadavg`, session-presence environment variables and executable
+metadata on `PATH`. It reports Nix generation availability, detected
+Wayland/Hyprland session, developer-tool presence (git, nix, cargo, go,
+node, python3 and docker), available memory and load average. Results
+are informational; absent commands or headless/SSH sessions are reported
+without failing or changing the system. It never executes detected tools,
+reads secret values or exposes environment variable contents.
+
 It does not require root privileges, spawn Python, enumerate disks,
 read credentials, or authorize installation.
 
@@ -44,7 +53,7 @@ avoid rebuilding Rust binaries when unrelated themes and docs change.
 
 ## Next checkpoint
 
-Build a fresh Alpha 0.1 **preview** ISO and test `edos status`,
-`edos doctor`, the neon desktop and usability in a live virtual machine.
-Do not confuse this preview image with the unfinished physically
-installable Alpha 0.2.
+After this change, `edos dev inspect` is the next planned read-only Rust
+feature (PR #54): offline project manifest detection. No project code
+should be executed during detection. The live preview is not the unfinished
+physically installable Alpha 0.2.
