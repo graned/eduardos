@@ -42,9 +42,9 @@ carefully testing a real computer.
   user confirmed successful ISO testing; diskless serial smoke and
   artifact checksum support added).
 
-- [ ] Improve the live desktop experience with discoverable `edos`
+- [x] Improve the live desktop experience with discoverable `edos`
   shortcuts, screenshot-to-clipboard and diagnostic terminal bindings
-  across all three Forge themes (**PR #48 in review**).
+  across all three Forge themes (PR #48 merged).
 
 ### Alpha 0.2 — first installable ISO
 
@@ -80,6 +80,10 @@ then validate recovery from representative failures.
 - [ ] Prove failure, cancellation, unexpected mounts, changed boot,
   hotplug, partial-format and recovery handling in **destructive
   disposable-QEMU integration tests**.
+  - [ ] Independently boot disposable QEMU, mount the exact selected
+    /dev/vda, and prove Forge refuses prior to any Disko invocation
+    (**PR #49 in review**). This is an already-mounted-target test;
+    interruption/hotplug-after-review remain future work.
 - [ ] Connect the Forge graphical installer to the audited root
   service without granting the GUI unrestricted root access.
 - [ ] Add clear progress, refusal, cancellation and recovery UX.
@@ -135,11 +139,10 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #48:** test shortcuts and screenshots in the next
-live preview, record practical desktop issues, and then return to
-destructive QEMU interruption,
-mount-change and storage-hotplug acceptance, and the independently
-authorized physical execution service with a durable recovery policy. The
+**Next after PR #49:** test changes *between* a successful initial
+review and the irreversible format boundary (mount or storage hotplug)
+in disposable QEMU, then design the independently authorized
+physical execution service with a durable recovery policy. The
 same-boot QEMU attempt marker is *not* durable across reboot and
 must never be repurposed as physical-disk authorization.
 
