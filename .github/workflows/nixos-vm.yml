@@ -101,7 +101,7 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-installer-tests
       - name: Validate UEFI storage layout
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.uefi-storage-layout
-      - name: Validate all three Forge themes
+      - name: Validate all four Forge themes
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.theme-presets
 
   adversarial:
@@ -155,7 +155,7 @@ jobs:
         run: nix build --no-link --print-build-logs .#vm
 
   desktop:
-    name: Hyprland keyboard and three theme previews
+    name: Hyprland keyboard and four theme previews
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -188,16 +188,16 @@ jobs:
           path: artifacts/screenshots/
           if-no-files-found: warn
           retention-days: 14
-      - name: Render all three Forge themes in QEMU
+      - name: Render all four Forge themes in QEMU
         run: |
           mkdir -p artifacts/theme-previews
-          for preset in classic neon brutalist; do
+          for preset in classic neon brutalist eclipse; do
             nix build --out-link "theme-preview-$preset-result" --print-build-logs ".#checks.x86_64-linux.theme-preview-$preset"
             for shot in desktop launcher wallpaper; do
               cp -L "theme-preview-$preset-result/forge-$preset-$shot.png" artifacts/theme-previews/
             done
           done
-          test "$(find artifacts/theme-previews -maxdepth 1 -name '*.png' | wc -l)" -eq 9
+          test "$(find artifacts/theme-previews -maxdepth 1 -name '*.png' | wc -l)" -eq 12
       - name: Upload Forge theme previews
         if: always()
         uses: actions/upload-artifact@v4
