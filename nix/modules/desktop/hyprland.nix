@@ -14,6 +14,10 @@
       runtimeInputs = with pkgs; [ grim slurp wl-clipboard ];
       text = ''
         set -eu
+        if [ "$#" -ne 1 ]; then
+          echo "Usage: edos-screenshot {screen|region}" >&2
+          exit 2
+        fi
         case "$1" in
           screen)
             grim - | wl-copy --type image/png
