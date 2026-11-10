@@ -6,6 +6,11 @@ bash -n scripts/reassemble-live-iso.sh scripts/smoke-live-iso.sh
 # depend on /usr/bin/env being provided by the minimal nixos/nix image.
 head -n 1 builder/build.sh | grep -Fx '#!/bin/sh'
 sh -n builder/build.sh
+# A /nix mount shadows the image's shell and Nix executable store paths.
+if grep -Eq '^[[:space:]]*-[[:space:]]*[^#]*:/nix([[:space:]]|$)' builder/compose.yml; then
+  echo "Docker Compose must not mount a volume over /nix" >&2
+  exit 1
+fi
 temp="$(mktemp -d)"
 trap 'rm -rf "$temp"' EXIT
 mkdir "$temp/good" "$temp/bad"
