@@ -3,6 +3,8 @@
 
 use std::{env, fs, path::Path, process::ExitCode};
 
+mod diagnostics;
+
 const RELEASE: &str = "/etc/eduardos/live-release";
 const OS_RELEASE: &str = "/etc/os-release";
 
@@ -48,7 +50,7 @@ fn status(release: Option<&str>, os_release: Option<&str>) -> String {
     format!("eduardOS system status\nSystem: {name}\nCLI: {}\nMode: read-only\n", env!("CARGO_PKG_VERSION"))
 }
 
-fn doctor(release_present: bool, os_release_present: bool) -> String {
+fn legacy_doctor_summary(release_present: bool, os_release_present: bool) -> String {
     let release = if release_present { "present" } else { "not present" };
     let os = if os_release_present { "present" } else { "not present" };
     format!(
@@ -57,7 +59,7 @@ fn doctor(release_present: bool, os_release_present: bool) -> String {
 }
 
 fn usage() -> &'static str {
-    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Check local release metadata without modifying anything\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
+    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
 }
 
 fn shortcuts() -> &'static str {
@@ -76,7 +78,7 @@ fn main() -> ExitCode {
             print!("{}", status(release.as_deref(), os_release.as_deref()));
         }
         Ok(Command::Doctor) => {
-            print!("{}", doctor(Path::new(RELEASE).is_file(), Path::new(OS_RELEASE).is_file()));
+            print!("{}", diagnostics::doctor(Path::new(RELEASE), Path::new(OS_RELEASE), Path::new("/run/current-system")));
         }
         Err(problem) => {
             eprintln!("edos: {problem}\n{}", usage());
@@ -122,7 +124,7 @@ mod tests {
 
     #[test]
     fn diagnostics_deny_privileged_actions() {
-        let result = doctor(false, true);
+        let result = legacy_doctor_summary(false, true);
         assert!(result.contains("Installer operations: unavailable"));
         assert!(result.contains("Live release marker: not present"));
     }
