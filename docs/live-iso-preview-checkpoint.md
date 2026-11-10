@@ -5,6 +5,33 @@ authorized disk writer and does not import the Disko installation target.
 It is for experiencing the Forged in Neon desktop and read-only Rust CLI.
 The installable Alpha 0.2 remains a separate milestone.
 
+## Build with the existing Docker + nixbuild.net builder
+
+From the repository root (with your existing `NIXBUILD_SSH_KEY`):
+
+```sh
+docker compose -f builder/compose.yml run --build --rm iso
+```
+
+The image is written directly to `out/eduardos-alpha.iso` with
+`out/SHA256SUMS`. The Docker compose configuration must **not** mount a
+persistent volume over `/nix`: that hides the image's own Nix-store
+shell/CLI runtime closure and can cause an `exec ... no such file or
+directory` failure before the build starts.
+
+Old Docker volumes are left intact. They are no longer mounted by the
+builder; there is no need to remove other projects' data. The container
+uses its own ephemeral Nix store, while the x86_64 derivation build still
+runs on nixbuild.net.
+
+Optionally verify the container can start without invoking the remote
+builder:
+
+```sh
+docker compose -f builder/compose.yml run --build --rm \
+  --entrypoint /bin/sh iso -c 'command -v nix && command -v ssh && echo ready'
+```
+
 ## Build using GitHub
 
 1. Open **Actions → eduardOS Alpha live ISO → Run workflow**.
