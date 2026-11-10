@@ -822,7 +822,7 @@
             "runuser -u forge -- zsh -ic 'print -r -- $ZSH_THEME' "
             "| grep -Fxq eduardos-catppuccin"
           )
-          machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-classic")
+          machine.succeed("test \"$(cat /etc/xdg/eduardos/theme)\" = forge-eclipse")
           machine.succeed("grep -Fq brave-browser.desktop /etc/xdg/mimeapps.list")
           machine.succeed("test -x /run/current-system/sw/bin/mpv")
           machine.succeed("opencode --version")
@@ -834,8 +834,8 @@
           # Verify the actual desktop configuration lands in the booted guest.
           machine.succeed("test -r /etc/xdg/hypr/hyprland.conf")
           machine.succeed("grep -Fq 'exec-once = swaybg' /etc/xdg/hypr/hyprland.conf")
-          machine.succeed("test -r /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
-          machine.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
+          machine.succeed("test -r /etc/xdg/eduardos/forge-eclipse-wallpaper.png")
+          machine.succeed("test -s /etc/xdg/eduardos/forge-eclipse-wallpaper.png")
           machine.succeed("grep -Fq 'exec-once = waybar' /etc/xdg/hypr/hyprland.conf")
           machine.succeed("test -r /etc/xdg/waybar/config.jsonc")
           machine.succeed("test -r /etc/xdg/waybar/style.css")
