@@ -2,6 +2,10 @@
 # Fast non-Nix tests: no QEMU, ISO or disk access.
 set -euo pipefail
 bash -n scripts/reassemble-live-iso.sh scripts/smoke-live-iso.sh
+# The Docker ISO builder must start under the guaranteed /bin/sh; do not
+# depend on /usr/bin/env being provided by the minimal nixos/nix image.
+head -n 1 builder/build.sh | grep -Fx '#!/bin/sh'
+sh -n builder/build.sh
 temp="$(mktemp -d)"
 trap 'rm -rf "$temp"' EXIT
 mkdir "$temp/good" "$temp/bad"
