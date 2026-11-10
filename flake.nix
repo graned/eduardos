@@ -586,7 +586,7 @@
           let
             cfg = self.nixosConfigurations.eduardos-live.config;
             hasIso = cfg.system.build ? isoImage;
-            neon = cfg.eduardos.theme == "forge-neon";
+            eclipse = cfg.eduardos.theme == "forge-eclipse";
             login = cfg.services.greetd.settings.initial_session.user == "forge";
             network = cfg.networking.networkmanager.enable;
             noDisko = !(cfg ? disko);
@@ -594,7 +594,7 @@
               == [ "multi-user.target" ];
             rustCli = builtins.any (pkg: (pkg.pname or "") == "edos")
               cfg.environment.systemPackages;
-          in assert hasIso && neon && login && network && noDisko
+          in assert hasIso && eclipse && login && network && noDisko
             && serialProbe && rustCli;
           pkgs.runCommand "eduardos-live-iso-config-check" {} ''
             mkdir -p "$out"
@@ -667,6 +667,7 @@
             classic = themeStyles "forge-classic";
             neon = themeStyles "forge-neon";
             brutalist = themeStyles "forge-brutalist";
+            eclipse = themeStyles "forge-eclipse";
             neonWallpaper = (nixpkgs.lib.nixosSystem {
               inherit system;
               modules = vmModules ++ [
@@ -718,6 +719,12 @@
             grep -Fq 'background-opacity = 0.89' "$brutalistGhostty"
             touch "$out"
           '';
+        theme-preview-eclipse = import ./nix/tests/hyprland-session.nix {
+          inherit pkgs;
+          modules = vmModules;
+          theme = "forge-eclipse";
+          preview = true;
+        };
         hyprland-session = import ./nix/tests/hyprland-session.nix {
           inherit pkgs;
           modules = vmModules;
