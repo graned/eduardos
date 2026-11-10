@@ -29,6 +29,8 @@ jobs:
           NIXBUILD_SSH_KEY=/tmp/placeholder docker compose -f builder/compose.yml config --quiet
       - name: Validate preview ISO scripts without building an ISO
         run: bash scripts/test-preview-tools.sh
+      - name: Check desktop screenshot and diagnostics shortcut parity
+        run: python3 scripts/test-desktop-shortcuts.py
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
