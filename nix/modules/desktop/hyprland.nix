@@ -7,8 +7,35 @@
     xwayland.enable = true;
   };
 
-  # Hyprland's NixOS module provides the Wayland portal.
+  # The screenshot helper is shared by all themes and never saves to disk.
   environment.systemPackages = with pkgs; [
+    (pkgs.writeShellApplication {
+      name = "edos-screenshot";
+      runtimeInputs = with pkgs; [ grim slurp wl-clipboard ];
+      text = ''
+        set -eu
+        if [ "$#" -ne 1 ]; then
+          echo "Usage: edos-screenshot {screen|region}" >&2
+          exit 2
+        fi
+        case "$1" in
+          screen)
+            grim - | wl-copy --type image/png
+            ;;
+          region)
+            geometry="$(slurp)" || exit 0
+            [ -n "$geometry" ] || exit 0
+            grim -g "$geometry" - | wl-copy --type image/png
+            ;;
+          *)
+            echo "Usage: edos-screenshot {screen|region}" >&2
+            exit 2
+            ;;
+        esac
+      '';
+    })
+
+    # Hyprland's NixOS module provides the Wayland portal.
     ghostty
     waybar
     fuzzel
