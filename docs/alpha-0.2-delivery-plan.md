@@ -75,7 +75,7 @@ them without configuring the entire machine manually.
 
 | Slot | Track | Deliverable | Acceptance gate |
 | --- | --- | --- | --- |
-| **#49 (open)** | Installer | Mounted-target refusal in disposable QEMU | Disk and sentinel remain intact; Disko not invoked; all CI green |
+| **#49 (merged)** | Installer | Mounted-target refusal in disposable QEMU | Disk and sentinel remain intact; Disko not invoked; all CI green |
 | **#50 (this plan)** | Roadmap | Commit agreed developer vision and delivery gates | User reviews PR list and scope; docs-only CI |
 | **#51 (open)** | Theme | New default Berserk-inspired **Forge Eclipse** desktop preset and ISO visual tests | Four theme previews and original artwork render in CI |
 | **#52 (open)** | Boot/UX | Distinct eduardOS UEFI/BIOS boot menus; auto-open explicitly read-only Forge preview | Boot asset CI and manual UEFI/BIOS ISO appearance check |
