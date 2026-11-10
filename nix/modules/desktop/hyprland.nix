@@ -8,7 +8,7 @@
   };
 
   # The screenshot helper is shared by all themes and never saves to disk.
-  environment.systemPackages = [
+  environment.systemPackages = with pkgs; [
     (pkgs.writeShellApplication {
       name = "edos-screenshot";
       runtimeInputs = with pkgs; [ grim slurp wl-clipboard ];
@@ -34,10 +34,8 @@
         esac
       '';
     })
-  ];
 
-  # Hyprland's NixOS module provides the Wayland portal.
-  environment.systemPackages = with pkgs; [
+    # Hyprland's NixOS module provides the Wayland portal.
     ghostty
     waybar
     fuzzel
