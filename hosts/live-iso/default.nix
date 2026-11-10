@@ -1,5 +1,8 @@
 { modulesPath, pkgs, lib, ... }:
-
+let
+  # SVG text requires an explicit fontconfig file inside isolated Nix builders.
+  eclipseFonts = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
+in
 {
   # The upstream NixOS installer ISO supplies initrd, ISO/EFI boot support,
   # squashfs root and a writable overlay. Do not import the Disko lab profile.
@@ -30,17 +33,26 @@
   isoImage.splashImage = pkgs.runCommand "edos-bios-boot-image.png" {
     nativeBuildInputs = [ pkgs.librsvg ];
   } ''
+    export FONTCONFIG_FILE="${eclipseFonts}"
+    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
+    mkdir -p "$XDG_CACHE_HOME"
     rsvg-convert -w 800 -h 600 ${../../themes/forge-eclipse/wallpaper.svg} -o "$out"
   '';
   isoImage.efiSplashImage = pkgs.runCommand "edos-efi-boot-image.png" {
     nativeBuildInputs = [ pkgs.librsvg ];
   } ''
+    export FONTCONFIG_FILE="${eclipseFonts}"
+    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
+    mkdir -p "$XDG_CACHE_HOME"
     rsvg-convert -w 1280 -h 720 ${../../themes/forge-eclipse/wallpaper.svg} -o "$out"
   '';
   isoImage.grubTheme = pkgs.runCommand "edos-grub-boot-theme" {
     nativeBuildInputs = [ pkgs.librsvg pkgs.grub2 ];
   } ''
     mkdir -p "$out"
+    export FONTCONFIG_FILE="${eclipseFonts}"
+    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
+    mkdir -p "$XDG_CACHE_HOME"
     rsvg-convert -w 1280 -h 720 ${../../themes/forge-eclipse/wallpaper.svg} -o "$out/background.png"
     grub-mkfont -s 18 -o "$out/mono.pf2" ${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSansMono.ttf
     cat > "$out/theme.txt" <<'EOF'
