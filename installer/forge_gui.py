@@ -93,6 +93,12 @@ def make_handler(token: str):
                 return self.serve_asset("style.css", "text/css; charset=utf-8")
             if path == "/app.js":
                 return self.serve_asset("app.js", "text/javascript; charset=utf-8")
+            # Fixed artwork route: no user-controlled asset paths, and the
+            # installer remains a strictly read-only preview.
+            if path == "/artwork.png":
+                if not (ASSETS / "artwork.png").is_file():
+                    return self.reject(404)
+                return self.serve_asset("artwork.png", "image/png")
             if self.headers.get("X-Forge-Token") != token:
                 return self.reject()
             if path == "/api/inventory":
