@@ -130,10 +130,12 @@
           exec ${pkgs.python3}/bin/python3 ${./installer/forge_installer.py} "$@"
         '';
       };
+      forgeEclipseArtwork = import ./nix/artwork/forge-eclipse.nix { inherit pkgs; };
       forgeInstallerGui = pkgs.writeShellApplication {
         name = "forge-installer-gui";
         runtimeInputs = with pkgs; [ python3 util-linux xdg-utils ];
         text = ''
+          export EDOS_FORGE_ARTWORK_PNG="${forgeEclipseArtwork}/wallpaper.png"
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
         '';
       };
