@@ -51,6 +51,8 @@ jobs:
           nix build --no-link --print-build-logs .#checks.x86_64-linux.edos-cli-smoke
       - name: Validate live ISO profile (without building ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.live-iso-config
+      - name: Build branded eduardOS UEFI/BIOS boot menu assets (no ISO)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.live-boot-theme
       - name: Validate mounted-target auditor safety fixtures (no ISO)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.forge-mount-audit-tests
       - name: Validate guarded backend disk and encrypted-mount attestation (no ISO)
