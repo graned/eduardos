@@ -9,8 +9,14 @@ Update this file when completing a milestone or changing its scope.
 
 **Release goal:** Alpha 2.0.  
 **Next milestone:** Alpha 0.2 — a genuinely installable, encrypted
-eduardOS ISO that we can validate safely on disposable QEMU disks before
-carefully testing a real computer.
+eduardOS ISO **and** developer-first Rust tooling that we validate
+in disposable QEMU before carefully testing a real computer.
+
+**Execution baseline:** [Full Alpha 0.2 delivery plan: PR #49–#70](docs/alpha-0.2-delivery-plan.md).
+PRs #51 (Forge Eclipse) and #52 (branded boot) are open;
+#53–#70 are proposed planning slots, **not** yet-created PRs.
+That document specifies deliverables, dependencies and release gates;
+this overview tracks higher-level milestones.
 
 ### Completed foundations
 
@@ -46,7 +52,23 @@ carefully testing a real computer.
   shortcuts, screenshot-to-clipboard and diagnostic terminal bindings
   across all three Forge themes (PR #48 merged).
 
-### Alpha 0.2 — first installable ISO
+### Alpha 0.2 — developer engine (Rust) and first installable ISO
+
+**Rust developer-first MVP (required before Alpha 0.2):** Keep Python Forge,
+Nix as the declarative engine, and Rust as a fast, unprivileged orchestration
+and diagnostic CLI. Deliver real `edos doctor` checks, offline
+`edos dev inspect`, safe `init` templates, opt-in Nix envs, explicit
+`up/down/status`, project resource `stats`, and opt-in workspace/context
+integration. The executable must not run untrusted project scripts,
+Nix flakes, Compose files or AI tools without informed consent.
+
+- [ ] Rust developer engine completed and tested (proposed PRs #53–#59).
+- [ ] Release-facing Rust + Python + Nix integration documented, with
+  no unnecessary Python rewrite and no privileged Rust service.
+
+**Detailed implementation:** [Alpha 0.2 PR-by-PR delivery plan](docs/alpha-0.2-delivery-plan.md).
+
+**Installer checklist:**
 
 **Release exit criteria:** Boot a production ISO, pick an eligible
 disk with a stable device identity, explicitly confirm destruction,
@@ -80,10 +102,10 @@ then validate recovery from representative failures.
 - [ ] Prove failure, cancellation, unexpected mounts, changed boot,
   hotplug, partial-format and recovery handling in **destructive
   disposable-QEMU integration tests**.
-  - [ ] Independently boot disposable QEMU, mount the exact selected
-    /dev/vda, and prove Forge refuses prior to any Disko invocation
-    (**PR #49 in review**). This is an already-mounted-target test;
-    interruption/hotplug-after-review remain future work.
+  - [x] Boot disposable QEMU, mount the exact selected /dev/vda, and
+    prove Forge refuses before any Disko invocation (PR #49 merged).
+    This covers an already-mounted target; after-review mount changes
+    and storage hotplug remain outstanding.
 - [ ] Connect the Forge graphical installer to the audited root
   service without granting the GUI unrestricted root access.
 - [ ] Add clear progress, refusal, cancellation and recovery UX.
@@ -139,11 +161,11 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next after PR #49:** test changes *between* a successful initial
-review and the irreversible format boundary (mount or storage hotplug)
-in disposable QEMU, then design the independently authorized
-physical execution service with a durable recovery policy. The
-same-boot QEMU attempt marker is *not* durable across reboot and
-must never be repurposed as physical-disk authorization.
+**Next:** review roadmap PR #50, validate Eclipse theme PR #51,
+then branded live-boot and safe installer preview PR #52. Follow with
+Rust developer engine PRs #53–#59 and installer/release PRs #60–#70,
+adjusting numbers and dependencies when findings require. The same-boot QEMU
+attempt marker is *not* durable across reboot and must never be
+repurposed as physical-disk authorization.
 
 ⚡ **eduardOS — Forged in Neon.**
