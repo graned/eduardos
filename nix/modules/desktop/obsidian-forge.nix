@@ -65,20 +65,8 @@ let
   neonPath = ../../../themes/forge-neon;
   brutalistPath = ../../../themes/forge-brutalist;
   eclipsePath = ../../../themes/forge-eclipse;
-  eclipseFonts = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
-  # Prefer the approved full-resolution PNG when it is committed; retain the
-  # existing vector fallback for developers checking out older sources.
-  eclipseArtwork = eclipsePath + "/wallpaper-final.png";
-  eclipseWallpaper = if builtins.pathExists eclipseArtwork then eclipseArtwork else pkgs.runCommand "eduardos-forge-eclipse-wallpaper" {
-    nativeBuildInputs = [ pkgs.librsvg ];
-  } ''
-    mkdir -p "$out"
-    export FONTCONFIG_FILE="${eclipseFonts}"
-    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
-    mkdir -p "$XDG_CACHE_HOME"
-    rsvg-convert -w 1920 -h 1080 ${eclipsePath + "/wallpaper.svg"} -o "$out/wallpaper.png"
-  '';
-  # Bundled high-definition generated image: no wallpaper conversion build.
+  eclipseWallpaper = import ../../artwork/forge-eclipse.nix { inherit pkgs; };
+  # The approved artwork is rendered to PNG during the Nix build, never at login.
   wallpaper = classicPath + "/wallpaper.jpg";
 in
 {
@@ -139,7 +127,7 @@ in
       lib.mkIf isBrutalist { source = brutalistPath + "/wallpaper.jpg"; };
 
     environment.etc."xdg/eduardos/forge-eclipse-wallpaper.png" =
-      lib.mkIf isEclipse { source = if builtins.pathExists eclipseArtwork then eclipseArtwork else eclipseWallpaper + "/wallpaper.png"; };
+      lib.mkIf isEclipse { source = eclipseWallpaper + "/wallpaper.png"; };
 
     fonts.packages = with pkgs; [
       dejavu_fonts
