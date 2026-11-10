@@ -66,7 +66,10 @@ let
   brutalistPath = ../../../themes/forge-brutalist;
   eclipsePath = ../../../themes/forge-eclipse;
   eclipseFonts = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
-  eclipseWallpaper = pkgs.runCommand "eduardos-forge-eclipse-wallpaper" {
+  # Prefer the approved full-resolution PNG when it is committed; retain the
+  # existing vector fallback for developers checking out older sources.
+  eclipseArtwork = eclipsePath + "/wallpaper-final.png";
+  eclipseWallpaper = if builtins.pathExists eclipseArtwork then eclipseArtwork else pkgs.runCommand "eduardos-forge-eclipse-wallpaper" {
     nativeBuildInputs = [ pkgs.librsvg ];
   } ''
     mkdir -p "$out"
@@ -136,7 +139,7 @@ in
       lib.mkIf isBrutalist { source = brutalistPath + "/wallpaper.jpg"; };
 
     environment.etc."xdg/eduardos/forge-eclipse-wallpaper.png" =
-      lib.mkIf isEclipse { source = eclipseWallpaper + "/wallpaper.png"; };
+      lib.mkIf isEclipse { source = if builtins.pathExists eclipseArtwork then eclipseArtwork else eclipseWallpaper + "/wallpaper.png"; };
 
     fonts.packages = with pkgs; [
       dejavu_fonts
