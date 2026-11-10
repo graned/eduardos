@@ -1,6 +1,6 @@
 //! Read-only Linux / developer-environment diagnostics.
 //! No shell execution, credential inspection, privileged APIs, or disk writes.
-use std::{env, fs, path::{Path, PathBuf}};
+use std::{env, fs, path::Path};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum State { Ok, Missing, Unknown }
@@ -15,16 +15,6 @@ impl Check {
     fn new(name: &'static str, state: State, detail: impl Into<String>) -> Self {
         Self { name, state, detail: detail.into() }
     }
-}
-
-fn parse_mem_available(kib_text: &str) -> Option<u64> {
-    kib_text.lines().find_map(|line| {
-        let value = line.strip_prefix("MemAvailable:")?;
-        let mut fields = value.split_whitespace();
-        let kib = fields.next()?.parse::<u64>().ok()?;
-        if fields.next()? != "kB" { return None; }
-        kib.checked_mul(1024 * 1024).map(|bytes_kib| bytes_kib / 1024)
-    })
 }
 
 fn mem_available_mib(contents: &str) -> Option<u64> {
