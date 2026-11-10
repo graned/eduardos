@@ -55,7 +55,7 @@ class WebPreviewTests(unittest.TestCase):
         self.assertEqual(self.request("GET", "/")[0], 403)
         status, content, headers = self.request("GET", f"/?token={self.token}", token=False)
         self.assertEqual(status, 200)
-        self.assertIn(b"FORGED IN NEON", content)
+        self.assertIn(b"FORGED IN DARKNESS", content)
         self.assertIn("default-src 'none'", headers["Content-Security-Policy"])
 
     def test_static_assets_and_unknown_path(self):
