@@ -97,7 +97,7 @@ them without configuring the entire machine manually.
 | **#68** | Release | Alpha 0.2 release-candidate gate | All release tests green, hardware evidence recorded, known limitations published |
 
 **Current plan: 20 slots (#49–#68 inclusive): one already open, one
-roadmap change, seven Rust implementation slots, eight installer/integration
+roadmap change, seven Rust implementation slots, nine installer/integration
 slots and two release slots, plus any safety follow-ups.** Counting is
 indicative; schedule changes are made explicitly in this file.
 
