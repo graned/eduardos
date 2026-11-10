@@ -12,9 +12,10 @@ Update this file when completing a milestone or changing its scope.
 eduardOS ISO **and** developer-first Rust tooling that we validate
 in disposable QEMU before carefully testing a real computer.
 
-**Execution baseline:** [Full Alpha 0.2 delivery plan: PR #49–#70](docs/alpha-0.2-delivery-plan.md).
-PRs #49–#52 are merged; #53 (Rust diagnostics v2) is in review.
-#54–#70 remain proposed planning slots, **not** yet-created PRs.
+**Execution baseline:** [Full Alpha 0.2 delivery plan: PR #49–#71](docs/alpha-0.2-delivery-plan.md).
+PRs #49–#53 are merged. Independent PRs #54 (Rust project inspection)
+and #55 (QEMU after-review mount race) are in review; #56–#71 remain
+proposed planning slots, **not** yet-created PRs.
 That document specifies deliverables, dependencies and release gates;
 this overview tracks higher-level milestones.
 
@@ -62,7 +63,7 @@ and diagnostic CLI. Deliver real `edos doctor` checks, offline
 integration. The executable must not run untrusted project scripts,
 Nix flakes, Compose files or AI tools without informed consent.
 
-- [ ] Rust developer engine completed and tested (proposed PRs #53–#59).
+- [ ] Rust developer engine completed and tested (planned Rust work in PRs #53–#54 and #56–#60).
 - [ ] Release-facing Rust + Python + Nix integration documented, with
   no unnecessary Python rewrite and no privileged Rust service.
 
@@ -161,8 +162,9 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next:** validate Rust system diagnostics in PR #53, then deliver
-Rust developer engine PRs #54–#59 and installer/release PRs #60–#70,
+**Next:** review independent PRs #54 (Rust developer inspection) and #55
+(after-review mount safety). Continue developer tools #56–#60 and installer/
+release milestones #61–#71,
 adjusting numbers and dependencies when findings require. The same-boot QEMU
 attempt marker is *not* durable across reboot and must never be
 repurposed as physical-disk authorization.
