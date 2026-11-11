@@ -102,3 +102,12 @@ main .panel .sigil .inner span{font-size:28px}
   main .panel .lead{margin:16px 0}
   main .panel .notice{margin-bottom:14px}
 }
+
+/* Non-secret Forge configuration preview. The form cannot install or write disks. */
+.config-fields{display:grid;grid-template-columns:1fr;gap:8px;width:min(100%,520px);margin:8px 0 22px}
+.config-fields label{font:700 12px monospace;letter-spacing:.5px;color:#f0cdd5;margin-top:9px}
+.config-fields input{width:100%;background:rgba(13,8,14,.95);color:#fff;border:1px solid #9b4a5b;border-radius:7px;min-height:47px;padding:10px 14px;font:15px "Forge UI","DejaVu Sans",sans-serif}
+.config-fields input:focus-visible{outline:2px solid #ffc080;outline-offset:2px}
+.config-summary{border:1px solid #713240;background:rgba(17,10,15,.86);border-radius:8px;padding:18px;margin-bottom:16px;width:100%;overflow-wrap:anywhere}
+.config-summary strong{color:#ff7181;font:750 12px monospace}
+.config-summary p{color:#f0dfe4;font:12px/1.6 monospace;margin:8px 0 0}
