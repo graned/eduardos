@@ -20,6 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import forge_installer as core
+from forge_install_config import validate_draft
 
 ASSETS = Path(__file__).with_name("web")
 # Nix supplies dedicated immutable installer artwork, distinct from both
@@ -30,6 +31,7 @@ ARTWORK = Path(os.environ.get("EDOS_FORGE_ARTWORK_PNG", str(ASSETS / "artwork.pn
 # draws backgrounds but fails to paint text when font fallback is unavailable.
 FONT = Path(os.environ.get("EDOS_FORGE_FONT_PATH", "/nonexistent/forge-font.ttf"))
 MAX_PATH_LENGTH = 2048
+MAX_DRAFT_BYTES = 2048
 
 
 def inventory() -> dict:
@@ -138,7 +140,31 @@ def make_handler(token: str):
             return self.reject(404)
 
         def do_POST(self):
-            self.reject(405)
+            # This single, bounded JSON endpoint validates a NON-SECRET draft.
+            # It cannot access an executor, store data or authorize installation.
+            if len(self.path) > MAX_PATH_LENGTH:
+                return self.reject(414)
+            if self.headers.get("Host") != f"127.0.0.1:{self.server.server_address[1]}":
+                return self.reject()
+            if urllib.parse.urlsplit(self.path).path != "/api/config/validate":
+                return self.reject(405)
+            if self.headers.get("X-Forge-Token") != token:
+                return self.reject()
+            if self.headers.get("Origin") != f"http://127.0.0.1:{self.server.server_address[1]}":
+                return self.reject()
+            if self.headers.get("Content-Type") != "application/json":
+                return self.reject(415)
+            length_str = self.headers.get("Content-Length", "")
+            if not length_str.isascii() or not length_str.isdecimal():
+                return self.reject(411)
+            length = int(length_str)
+            if length == 0 or length > MAX_DRAFT_BYTES:
+                return self.reject(413)
+            try:
+                value = json.loads(self.rfile.read(length))
+            except (ValueError, UnicodeError):
+                return self.send_json(400, {"error": "Invalid JSON draft"})
+            return self.send_json(200, validate_draft(value))
 
         def do_PUT(self):
             self.reject(405)
