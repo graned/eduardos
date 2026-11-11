@@ -22,7 +22,8 @@ from pathlib import Path
 import forge_installer as core
 
 ASSETS = Path(__file__).with_name("web")
-# Nix supplies the same immutable PNG used by the default desktop theme.
+# Nix supplies dedicated immutable installer artwork, distinct from both
+# the desktop wallpaper and the EFI/BIOS boot menu background.
 # Local development can provide installer/web/artwork.png instead.
 ARTWORK = Path(os.environ.get("EDOS_FORGE_ARTWORK_PNG", str(ASSETS / "artwork.png")))
 MAX_PATH_LENGTH = 2048
