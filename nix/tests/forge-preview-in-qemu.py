@@ -37,8 +37,8 @@ def main(binary: str) -> None:
                 pending.extend(data)
                 if len(pending) > 16 * 1024:
                     raise AssertionError("Forge GUI startup output exceeded allowed size")
-                while b"\\n" in pending:
-                    raw, _, rest = pending.partition(b"\\n")
+                while b"\n" in pending:
+                    raw, _, rest = pending.partition(b"\n")
                     pending = bytearray(rest)
                     if raw.startswith(b"Open locally: "):
                         url = raw.removeprefix(b"Open locally: ").strip().decode("ascii")
