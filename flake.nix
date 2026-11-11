@@ -136,6 +136,7 @@
         runtimeInputs = with pkgs; [ python3 util-linux xdg-utils ];
         text = ''
           export EDOS_FORGE_ARTWORK_PNG="${forgeEclipseInstallerArtwork}/installer.png"
+          export EDOS_FORGE_FONT_PATH="${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSans.ttf"
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
         '';
       };
