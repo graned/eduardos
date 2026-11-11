@@ -26,6 +26,9 @@ ASSETS = Path(__file__).with_name("web")
 # the desktop wallpaper and the EFI/BIOS boot menu background.
 # Local development can provide installer/web/artwork.png instead.
 ARTWORK = Path(os.environ.get("EDOS_FORGE_ARTWORK_PNG", str(ASSETS / "artwork.png")))
+# Serve a known system font as a same-origin asset: Chromium in some live VMs
+# draws backgrounds but fails to paint text when font fallback is unavailable.
+FONT = Path(os.environ.get("EDOS_FORGE_FONT_PATH", "/nonexistent/forge-font.ttf"))
 MAX_PATH_LENGTH = 2048
 
 
@@ -68,7 +71,7 @@ def make_handler(token: str):
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Content-Security-Policy",
                              "default-src 'none'; script-src 'self'; style-src 'self'; "
-                             "connect-src 'self'; img-src 'self' data:; "
+                             "connect-src 'self'; img-src 'self' data:; font-src 'self'; "
                              "base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
             self.end_headers()
             self.wfile.write(body)
@@ -98,6 +101,12 @@ def make_handler(token: str):
                 return self.serve_asset("style.css", "text/css; charset=utf-8")
             if path == "/app.js":
                 return self.serve_asset("app.js", "text/javascript; charset=utf-8")
+            if path == "/forge-font.ttf":
+                try:
+                    font_data = FONT.read_bytes()
+                except OSError:
+                    return self.reject(404)
+                return self.send_body(200, font_data, "font/ttf")
             # Fixed artwork route: no user-controlled asset paths, and the
             # installer remains a strictly read-only preview.
             if path == "/artwork.png":
