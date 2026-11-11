@@ -19,7 +19,8 @@
         <div class="step active" data-step="0"><span class="number">01</span><span><strong>Welcome</strong><small>The Forge awaits</small></span></div>
         <div class="step" data-step="1"><span class="number">02</span><span><strong>Hardware</strong><small>System preflight</small></span></div>
         <div class="step" data-step="2"><span class="number">03</span><span><strong>Storage</strong><small>Select target preview</small></span></div>
-        <div class="step" data-step="3"><span class="number">04</span><span><strong>Review</strong><small>Dry-run summary</small></span></div>
+        <div class="step" data-step="3"><span class="number">04</span><span><strong>Configure</strong><small>Non-secret draft</small></span></div>
+        <div class="step" data-step="4"><span class="number">05</span><span><strong>Review</strong><small>Dry-run summary</small></span></div>
       </nav>
       <div class="rail-foot"><div class="status"><span class="dot"></span> PREVIEW ONLY — NO INSTALL</div><p>YOUR DISKS WILL NOT BE MODIFIED.</p></div>
     </aside>
@@ -45,12 +46,23 @@
         <p class="lead compact">Choose an available drive to preview. This does not erase it. The eventual installer will require a separate explicit confirmation.</p>
         <div id="disks" class="disk-list" role="radiogroup" aria-label="Disks"></div>
         <p id="disk-empty" class="empty hidden">No disks were detected. You can still inspect your system, but there is no installation target to preview.</p>
-        <div class="actions"><button class="secondary" data-back>← Back</button><button class="primary" id="to-review" disabled>Review plan →</button></div>
+        <div class="actions"><button class="secondary" data-back>← Back</button><button class="primary" id="to-config" disabled>Configure preview →</button></div>
+      </section>
+      <section class="panel" id="configure" aria-labelledby="configure-title">
+        <div class="eyebrow">04 / CONFIGURE A DRAFT</div><h2 id="configure-title">Name your <em>system.</em></h2>
+        <p class="lead compact">Preview-only configuration. Never enter passwords, passphrases or other secrets.</p>
+        <div class="config-fields">
+          <label for="hostname">Hostname</label><input id="hostname" type="text" maxlength="63" autocomplete="off" value="eduardos" required>
+          <label for="username">Username</label><input id="username" type="text" maxlength="31" autocomplete="off" value="developer" required>
+        </div>
+        <div id="config-alert" class="notice warn hidden" role="alert"></div>
+        <div class="actions"><button class="secondary" data-back>← Back</button><button class="primary" id="validate-config">Validate draft →</button></div>
       </section>
       <section class="panel" id="review" aria-labelledby="review-title">
         <div class="eyebrow">04 / READ BEFORE YOU FORGE</div><h2 id="review-title">Installation <em>blueprint.</em></h2>
         <p class="lead compact">This is what a future installation would propose. No operation will be executed.</p>
         <div id="summary" aria-live="polite"></div>
+        <div id="validated-config" class="config-summary" aria-live="polite"></div>
         <div class="notice"><span>◈</span><div><strong>Dry-run only — no changes made</strong><p>No password, passphrase, format action, mounting, or installation is available in this release.</p></div></div>
         <div class="actions"><button class="secondary" data-back>← Back</button><button class="primary" id="restart">Start over ↻</button></div>
       </section>

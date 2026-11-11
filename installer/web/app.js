@@ -1,7 +1,7 @@
 /* Forge Installer UI. No disk-write endpoints exist in this application. */
 "use strict";
 const token = new URLSearchParams(location.search).get("token") || "";
-const sections = ["welcome", "hardware", "storage", "review"];
+const sections = ["welcome", "hardware", "storage", "configure", "review"];
 let step = 0;
 let inventory = null;
 let selected = null;
@@ -73,7 +73,7 @@ async function loadHardware() {
 }
 function renderDisks() {
   selected = null;
-  $("to-review").disabled = true;
+  $("to-config").disabled = true;
   const list = $("disks");
   list.replaceChildren();
   list.setAttribute("aria-label", "Eligible installation disks (preview only)");
@@ -99,7 +99,7 @@ function renderDisks() {
         option.setAttribute("aria-checked", String(option === button));
         option.tabIndex = option === button ? 0 : -1;
       });
-      $("to-review").disabled = false;
+      $("to-config").disabled = false;
     });
     list.append(button);
   });
@@ -119,6 +119,53 @@ function renderDisks() {
     enabled[next].click();
   };
 }
+async function validateConfiguration() {
+  const requestedId = selected;
+  const alert = $("config-alert");
+  const button = $("validate-config");
+  alert.classList.add("hidden");
+  button.disabled = true;
+  try {
+    if (!requestedId) throw new Error("Select a disk before configuration.");
+    const draft = {
+      hostname: $("hostname").value,
+      username: $("username").value,
+      disk_by_id: requestedId
+    };
+    const response = await fetch("/api/config/validate", {
+      method: "POST",
+      headers: {"X-Forge-Token": token, "Content-Type": "application/json"},
+      cache: "no-store",
+      credentials: "omit",
+      body: JSON.stringify(draft)
+    });
+    if (!response.ok) throw new Error("Configuration validation unavailable (" + response.status + ")");
+    const result = await response.json();
+    if (selected !== requestedId || step !== 3) return;
+    if (result.valid !== true || result.mode !== "dry-run-only" ||
+        result.write_operations_enabled !== false || !Array.isArray(result.errors) ||
+        result.errors.length !== 0) {
+      const errors = Array.isArray(result.errors) ? result.errors.join(" · ") : "Unexpected response";
+      throw new Error(errors || "Configuration draft was refused.");
+    }
+    const details = $("validated-config");
+    details.replaceChildren(
+      element("strong", "", "VALIDATED DRAFT — NOT AN INSTALLATION"),
+      element("p", "", "Hostname: " + draft.hostname),
+      element("p", "", "Username: " + draft.username),
+      element("p", "", "Disk identifier: " + draft.disk_by_id)
+    );
+    show(4);
+    renderReview();
+  } catch (error) {
+    if (step === 3) {
+      alert.replaceChildren(element("span", "", "⚠"), element("div", "", error.message));
+      alert.classList.remove("hidden");
+    }
+  } finally {
+    button.disabled = false;
+  }
+}
 async function renderReview() {
   const summary = $("summary");
   summary.replaceChildren(element("p", "", "Rechecking selected disk…"));
@@ -127,7 +174,7 @@ async function renderReview() {
     const requestedId = selected;
     const plan = await getJSON("/api/preview?id=" + encodeURIComponent(requestedId));
     // A stale asynchronous response must not replace a newer disk selection.
-    if (selected !== requestedId || step !== 3) return;
+    if (selected !== requestedId || step !== 4) return;
     const box = element("div", "summary");
     box.append(element("h3", "", "PROPOSED STORAGE PLAN"));
     const disk = plan.selected_disk;
@@ -150,13 +197,14 @@ async function renderReview() {
     }
     summary.replaceChildren(box);
   } catch (error) {
-    if (step !== 3) return;
+    if (step !== 4) return;
     summary.replaceChildren(element("p", "blocked-text", error.message));
   }
 }
 $("start").addEventListener("click", () => { show(1); loadHardware(); });
 $("to-storage").addEventListener("click", () => show(2));
-$("to-review").addEventListener("click", () => { show(3); renderReview(); });
-$("restart").addEventListener("click", () => { selected = null; show(0); });
+$("to-config").addEventListener("click", () => show(3));
+$("validate-config").addEventListener("click", validateConfiguration);
+$("restart").addEventListener("click", () => { selected = null; $("validated-config").replaceChildren(); show(0); });
 document.querySelectorAll("[data-back]").forEach((b) =>
   b.addEventListener("click", () => show(Math.max(0, step - 1))));
