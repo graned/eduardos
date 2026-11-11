@@ -5,6 +5,7 @@ use std::{env, fs, path::Path, process::ExitCode};
 
 mod diagnostics;
 mod dev_inspect;
+mod dev_init;
 
 const RELEASE: &str = "/etc/eduardos/live-release";
 const OS_RELEASE: &str = "/etc/os-release";
@@ -15,6 +16,7 @@ enum Command {
     Status,
     Doctor,
     DevInspect(String),
+    DevInit(Vec<String>),
     Shortcuts,
     Help,
 }
@@ -28,6 +30,7 @@ fn parse(args: &[String]) -> Result<Command, &'static str> {
         [arg] if arg == "doctor" => Ok(Command::Doctor),
         [dev, inspect] if dev == "dev" && inspect == "inspect" => Ok(Command::DevInspect(".".to_owned())),
         [dev, inspect, path] if dev == "dev" && inspect == "inspect" => Ok(Command::DevInspect(path.clone())),
+        [dev, init, rest @ ..] if dev == "dev" && init == "init" => Ok(Command::DevInit(rest.to_vec())),
         [arg] if arg == "shortcuts" => Ok(Command::Shortcuts),
         _ => Err("unknown command or unexpected arguments"),
     }
@@ -55,7 +58,7 @@ fn status(release: Option<&str>, os_release: Option<&str>) -> String {
 }
 
 fn usage() -> &'static str {
-    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  dev inspect [path]  Detect project manifests offline\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
+    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  dev inspect [path]  Detect project manifests offline\n  dev init <template> <name> [--write]  Preview or create a local project\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
 }
 
 fn shortcuts() -> &'static str {
@@ -80,6 +83,12 @@ fn main() -> ExitCode {
                     eprintln!("edos: {}", dev_inspect::message(&error));
                     return ExitCode::from(1);
                 }
+            }
+        }
+        Ok(Command::DevInit(args)) => {
+            match dev_init::init(&args) {
+                Ok(report) => print!("{report}"),
+                Err(error) => { eprintln!("edos: {error}"); return ExitCode::from(2); }
             }
         }
         Ok(Command::Doctor) => {
@@ -110,6 +119,7 @@ mod tests {
         assert_eq!(parse(&words(&["dev", "inspect"])), Ok(Command::DevInspect(".".to_owned())));
         assert_eq!(parse(&words(&["dev", "inspect", "project"])), Ok(Command::DevInspect("project".to_owned())));
         assert!(parse(&words(&["dev", "inspect", "project", "extra"])).is_err());
+        assert_eq!(parse(&words(&["dev", "init", "go", "demo"])), Ok(Command::DevInit(words(&["go", "demo"]))));
         assert_eq!(parse(&words(&["shortcuts"])), Ok(Command::Shortcuts));
         assert!(parse(&words(&["status", "--execute"])).is_err());
         assert!(parse(&words(&["install"])).is_err());
