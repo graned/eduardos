@@ -7,6 +7,7 @@ mod diagnostics;
 mod dev_inspect;
 mod dev_init;
 mod dev_env;
+mod dev_compose;
 
 const RELEASE: &str = "/etc/eduardos/live-release";
 const OS_RELEASE: &str = "/etc/os-release";
@@ -19,6 +20,7 @@ enum Command {
     DevInspect(String),
     DevInit(Vec<String>),
     DevEnv(String),
+    DevCompose(String),
     Shortcuts,
     Help,
 }
@@ -35,6 +37,8 @@ fn parse(args: &[String]) -> Result<Command, &'static str> {
         [dev, init, rest @ ..] if dev == "dev" && init == "init" => Ok(Command::DevInit(rest.to_vec())),
         [dev, envcmd] if dev == "dev" && envcmd == "env" => Ok(Command::DevEnv(".".to_owned())),
         [dev, envcmd, path] if dev == "dev" && envcmd == "env" => Ok(Command::DevEnv(path.clone())),
+        [dev, compose] if dev == "dev" && compose == "compose" => Ok(Command::DevCompose(".".to_owned())),
+        [dev, compose, path] if dev == "dev" && compose == "compose" => Ok(Command::DevCompose(path.clone())),
         [arg] if arg == "shortcuts" => Ok(Command::Shortcuts),
         _ => Err("unknown command or unexpected arguments"),
     }
@@ -62,7 +66,7 @@ fn status(release: Option<&str>, os_release: Option<&str>) -> String {
 }
 
 fn usage() -> &'static str {
-    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  dev inspect [path]  Detect project manifests offline\n  dev init <template> <name> [--write]  Preview or create a local project\n  dev env [path]  Preview project Nix environment without running it\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
+    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  dev inspect [path]  Detect project manifests offline\n  dev init <template> <name> [--write]  Preview or create a local project\n  dev env [path]  Preview project Nix environment without running it\n  dev compose [path]  Inspect Compose manifests without starting containers\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
 }
 
 fn shortcuts() -> &'static str {
@@ -101,6 +105,12 @@ fn main() -> ExitCode {
                 Err(error) => { eprintln!("edos: {error}"); return ExitCode::from(1); }
             }
         }
+        Ok(Command::DevCompose(path)) => {
+            match dev_compose::plan(&path) {
+                Ok(report) => print!("{report}"),
+                Err(error) => { eprintln!("edos: {error}"); return ExitCode::from(1); }
+            }
+        }
         Ok(Command::Doctor) => {
             print!("{}", diagnostics::doctor(Path::new(RELEASE), Path::new(OS_RELEASE), Path::new("/run/current-system")));
         }
@@ -133,6 +143,9 @@ mod tests {
         assert_eq!(parse(&words(&["dev", "env"])), Ok(Command::DevEnv(".".into())));
         assert_eq!(parse(&words(&["dev", "env", "project"])), Ok(Command::DevEnv("project".into())));
         assert!(parse(&words(&["dev", "env", "project", "--execute"])).is_err());
+        assert_eq!(parse(&words(&["dev", "compose"])), Ok(Command::DevCompose(".".into())));
+        assert_eq!(parse(&words(&["dev", "compose", "project"])), Ok(Command::DevCompose("project".into())));
+        assert!(parse(&words(&["dev", "compose", "a", "b"])).is_err());
         assert_eq!(parse(&words(&["shortcuts"])), Ok(Command::Shortcuts));
         assert!(parse(&words(&["status", "--execute"])).is_err());
         assert!(parse(&words(&["install"])).is_err());
