@@ -12,12 +12,12 @@ Update this file when completing a milestone or changing its scope.
 eduardOS ISO **and** developer-first Rust tooling that we validate
 in disposable QEMU before carefully testing a real computer.
 
-**Execution baseline:** [Full Alpha 0.2 delivery plan: PR #49–#71](docs/alpha-0.2-delivery-plan.md).
-PRs #49–#53 are merged. Independent PRs #54 (Rust project inspection)
-and #55 (QEMU after-review mount race) are in review; #56–#71 remain
-proposed planning slots, **not** yet-created PRs.
-That document specifies deliverables, dependencies and release gates;
-this overview tracks higher-level milestones.
+**Execution baseline:** [Live Alpha 0.2 delivery gates](docs/alpha-0.2-delivery-plan.md).
+As reconciled on November 11, 2026, PRs #61–#72 are incorporated into
+`main`. PRs #73 (workspace launch) and #74 (persistent attempt record
+primitive) remain open pending review. Later PR numbers are not reserved.
+The earlier slot numbering in the historical plan became stale; the linked
+plan now tracks actual GitHub PRs and future deliverables separately.
 
 ### Completed foundations
 
@@ -162,11 +162,11 @@ Neon/Aztec desktop identity preserved across releases.
 - Prioritize the next release's acceptance criteria over accumulating
   unused infrastructure or declaring premature release readiness.
 
-**Next:** review independent PRs #54 (Rust developer inspection) and #55
-(after-review mount safety). Continue developer tools #56–#60 and installer/
-release milestones #61–#71,
-adjusting numbers and dependencies when findings require. The same-boot QEMU
-attempt marker is *not* durable across reboot and must never be
-repurposed as physical-disk authorization.
+**Next:** review open #73–#74, independently qualify the physical installer
+pre-format disk/mount/swap re-attestation, and define the audited privileged
+fixed-command boundary. Do not enable physical writes until the durable
+attempt policy, credentials, GUI-to-root trust boundary and disposable-QEMU
+adversarial tests are complete. The lab-only /run retry marker remains
+nonpersistent and must not authorize any physical disk operation.
 
 ⚡ **eduardOS — Forged in Neon.**
