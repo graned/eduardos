@@ -19,6 +19,8 @@ function show(index) {
   document.querySelectorAll(".step").forEach((s, i) => {
     s.classList.toggle("active", index === i);
     s.classList.toggle("done", i < index);
+    if (i === index) s.setAttribute("aria-current", "step");
+    else s.removeAttribute("aria-current");
   });
   const heading = $(sections[index]).querySelector("h1,h2");
   if (heading) heading.setAttribute("tabindex", "-1"), heading.focus({preventScroll: true});
@@ -74,6 +76,7 @@ function renderDisks() {
   $("to-review").disabled = true;
   const list = $("disks");
   list.replaceChildren();
+  list.setAttribute("aria-label", "Eligible installation disks (preview only)");
   const disks = inventory?.disks || [];
   $("disk-empty").classList.toggle("hidden", disks.length !== 0);
   disks.forEach((disk) => {
@@ -82,6 +85,7 @@ function renderDisks() {
     button.setAttribute("role", "radio");
     button.setAttribute("aria-checked", "false");
     button.disabled = !disk.eligible || !disk.by_id;
+    button.tabIndex = button.disabled ? -1 : (list.querySelector(".disk-option:not(:disabled)") ? -1 : 0);
     button.append(element("span", "disk-radio"));
     const info = element("span", "disk-info");
     info.append(element("strong", "", disk.model || disk.path),
@@ -91,12 +95,29 @@ function renderDisks() {
     button.append(info, element("span", "disk-state", disk.eligible ? "CANDIDATE" : "BLOCKED"));
     button.addEventListener("click", () => {
       selected = disk.by_id;
-      list.querySelectorAll(".disk-option").forEach((option) =>
-        option.setAttribute("aria-checked", String(option === button)));
+      list.querySelectorAll(".disk-option").forEach((option) => {
+        option.setAttribute("aria-checked", String(option === button));
+        option.tabIndex = option === button ? 0 : -1;
+      });
       $("to-review").disabled = false;
     });
     list.append(button);
   });
+  // Standard radio-group navigation: keyboard selection never triggers writes.
+  list.onkeydown = (event) => {
+    if (!["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+    const enabled = [...list.querySelectorAll(".disk-option:not(:disabled)")];
+    if (!enabled.length) return;
+    event.preventDefault();
+    const current = enabled.indexOf(document.activeElement);
+    let next;
+    if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = enabled.length - 1;
+    else if (event.key === "ArrowDown" || event.key === "ArrowRight") next = (current + 1) % enabled.length;
+    else next = (current + enabled.length - 1) % enabled.length;
+    enabled[next].focus();
+    enabled[next].click();
+  };
 }
 async function renderReview() {
   const summary = $("summary");
