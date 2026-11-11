@@ -1,7 +1,8 @@
 { modulesPath, pkgs, lib, ... }:
 let
-  # SVG text requires an explicit fontconfig file inside isolated Nix builders.
-  eclipseFonts = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
+  # Dedicated approved PNG art for the BIOS/UEFI boot menus.
+  # This is intentionally separate from the desktop wallpaper.
+  eclipseBootArt = import ../../nix/artwork/forge-eclipse-boot.nix { inherit pkgs; };
 in
 {
   # The upstream NixOS installer ISO supplies initrd, ISO/EFI boot support,
@@ -16,9 +17,9 @@ in
   # boot branding on UEFI GRUB and BIOS Syslinux.
   system.nixos.distroName = "eduardOS";
   isoImage.appendToMenuLabel = " — Forge Eclipse Live";
-  isoImage.configurationName = "Forged in Neon";
+  isoImage.configurationName = "Forged in Darkness";
   isoImage.syslinuxTheme = ''
-    MENU TITLE eduardOS - Forged in Neon
+    MENU TITLE eduardOS - Forged in Darkness
     MENU RESOLUTION 800 600
     MENU CLEAR
     MENU ROWS 7
@@ -29,34 +30,18 @@ in
     MENU COLOR UNSEL 37;40 #ffeee3dd #ff0c090d none
   '';
 
+  # Boot images are generated once from the approved PNG source at build time.
   # Generate RGB PNGs at image-build time; no expensive runtime effect.
-  isoImage.splashImage = pkgs.runCommand "edos-bios-boot-image.png" {
-    nativeBuildInputs = [ pkgs.librsvg ];
-  } ''
-    export FONTCONFIG_FILE="${eclipseFonts}"
-    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
-    mkdir -p "$XDG_CACHE_HOME"
-    rsvg-convert -w 800 -h 600 ${../../themes/forge-eclipse/wallpaper.svg} -o "$out"
-  '';
-  isoImage.efiSplashImage = pkgs.runCommand "edos-efi-boot-image.png" {
-    nativeBuildInputs = [ pkgs.librsvg ];
-  } ''
-    export FONTCONFIG_FILE="${eclipseFonts}"
-    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
-    mkdir -p "$XDG_CACHE_HOME"
-    rsvg-convert -w 1280 -h 720 ${../../themes/forge-eclipse/wallpaper.svg} -o "$out"
-  '';
+  isoImage.splashImage = eclipseBootArt + "/bios.png";
+  isoImage.efiSplashImage = eclipseBootArt + "/efi.png";
   isoImage.grubTheme = pkgs.runCommand "edos-grub-boot-theme" {
-    nativeBuildInputs = [ pkgs.librsvg pkgs.grub2 ];
+    nativeBuildInputs = [ pkgs.grub2 ];
   } ''
     mkdir -p "$out"
-    export FONTCONFIG_FILE="${eclipseFonts}"
-    export XDG_CACHE_HOME="$TMPDIR/edos-fontconfig-cache"
-    mkdir -p "$XDG_CACHE_HOME"
-    rsvg-convert -w 1280 -h 720 ${../../themes/forge-eclipse/wallpaper.svg} -o "$out/background.png"
+    cp ${eclipseBootArt}/grub.png "$out/background.png"
     grub-mkfont -s 18 -o "$out/mono.pf2" ${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSansMono.ttf
     cat > "$out/theme.txt" <<'EOF'
-    title-text: "eduardOS  /  FORGED IN NEON"
+    title-text: "eduardOS  /  FORGED IN DARKNESS"
     title-font: "DejaVu Sans Mono Regular 18"
     title-color: "#eee3dd"
     desktop-image: "background.png"
