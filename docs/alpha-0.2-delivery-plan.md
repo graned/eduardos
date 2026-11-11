@@ -1,160 +1,117 @@
-# eduardOS Alpha 0.2 delivery plan — Rust developer engine + safe installation
+# eduardOS Alpha 0.2 — live delivery gates
 
-**Status:** proposed execution baseline; updated 2026-11-10. **Ultimate goal:** Alpha 2.0.
-**Release criterion:** an installable, encrypted eduardOS ISO with a useful, safe,
-reproducible developer experience, verified end-to-end in disposable QEMU and
-on a tightly scoped real-UEFI hardware matrix.
+**Last reconciled:** November 11, 2026. **Next release:** Alpha 0.2. **Ultimate goal:** Alpha 2.0.
 
-The PR numbers below are **planning slots**, not created GitHub PRs or
-guaranteed issue numbers. Rebase/resequence if GitHub assigns numbers
-differently. One reviewable deliverable per PR; if an integration needs
-splitting to keep CI green, update this table rather than claiming it done.
+This document is the **current execution baseline**. Earlier numbered planning slots no
+longer correspond to the actual GitHub PR numbers. A release is not complete
+just because many PRs have merged. Future PR numbers are not reserved.
 
-## Product vision: a developer-focused NixOS distro
+## Current GitHub checkpoint
 
-A developer should be able to clone a project, understand its environment,
-bring up explicitly trusted services, inspect their health and cleanly stop
-them without configuring the entire machine manually.
+These changes are already incorporated on the default branch:
 
-- **NixOS/Nix:** reproducible package versions, environments, generations,
-  ISO images, and rollback primitives.
-- **Rust:** lightweight, unprivileged `edos` CLI with project detection,
-  developer environment orchestration, process ownership, observability,
-  and eventual versioned interfaces.
-- **Python:** retain Forge installer, existing safety logic and test harness;
-  introduce a typed interface only when a concrete cross-language need exists.
-- **systemd/cgroups:** ownership, limits and supervision of user services,
-  not a custom Linux process scheduler.
-- **Docker/Podman:** optional existing engines for project-defined containers;
-  no forced global daemon, no silent container startup.
-- **Ghostty/Isenguard/OpenCode:** optional integrations for terminal,
-  editor and AI-assisted workflows. No background AI agent or automatic
-  external data transfer.
-- **Home Manager:** user-controlled dotfiles and per-user configuration.
-  Never overwrite an existing unmanaged configuration without consent.
+| Actual PR | Work landed | Qualification remaining |
+| --- | --- | --- |
+| #61 | Developer project initialization templates | Preview, overwrite and Nix packaging checks |
+| #62 | Forge accessible disk navigation | Browser/keyboard testing |
+| #63 | Offline Nix environment preview | No automatic Nix evaluation |
+| #64 | Forge HTTP safety regression suite | Security CI coverage |
+| #65 | Offline Compose discovery | Manifest ambiguity |
+| #66 | Strict read-only disk preview replies | Browser race testing |
+| #67 | Opt-in Docker/Podman Compose up/down/status | Real-engine/cancellation tests |
+| #68 | Non-secret configuration schema | Nix schema parity |
+| #69 | Same-user PID resource snapshots | Project and cgroup stats incomplete |
+| #70 | Forge non-secret configuration wizard | Browser end-to-end testing |
+| #71 | Redacted developer context | No project data or network transfers |
+| #72 | Stale draft invalidation | Browser delayed-response tests |
 
-### Alpha 0.2 developer-engine MVP — required, not just an idea
+**Open as of reconciliation:** #73 (opt-in clean Neovim workspace launch) and
+#74 (persistent installation attempt marker primitive). Both require CI and
+user review. Neither is presumed merged.
 
-1. `edos doctor`: genuinely useful **read-only** checks of OS generation,
-   shell/desktop session, available dev tooling, basic resource status;
-   clear failure and missing-component reporting.
-2. `edos dev inspect [path]`: **read-only, offline** recognition of
-   `flake.nix`, `devshell.toml`, `go.mod`, `Cargo.toml`, Node manifests,
-   Python manifests and Compose files. Never execute untrusted repository
-   configuration to inspect it; report ambiguous/conflicting detections.
-3. `edos dev init`: opt-in template generation only, explicit previews,
-   refuse overwrite, and support Go, Rust, Node and Python. No hardcoded
-   personal paths or credentials.
-4. `edos dev up/down/status`: scoped process/Compose lifecycle for
-   explicitly approved, project-owned manifests; no arbitrary shell commands
-   in a privileged daemon, no implicit `docker compose up` just from
-   opening a repo; stable exit/error propagation and cancellation.
-5. `edos dev stats`: inspect owned process and cgroup resource usage
-   where available, with safe fallback and meaningful output, without
-   constantly running a resource-hungry watcher.
-6. `edos workspace open` and `edos dev context`: a safe optional
-   workspace launch and local structured environment summary for editors
-   or OpenCode. Redact credentials and paths that could leak secrets;
-   no uploads, no telemetry, and no automatic model requests.
-7. Dedicated unit/integration CI, Nix packaging and user documentation for
-   all shipped commands, plus an ISO smoke test. **No requirement to port
-   Python Forge to Rust or use PyO3.**
+## Release-critical workstreams
 
-### Explicit non-goals for Alpha 0.2
+### Developer-first CLI
 
-- Kernel modifications, faster fork/exec claims or replacing systemd.
-- A privileged Rust daemon, automatic system tuning, opaque scheduler
-  behavior, hidden process killers, or live resource profiling by default.
-- Universal automatic detection of every project language/framework.
-- Automatic `nix develop`, execution of flake-provided shell hooks, network
-  downloads, or container starts before informed user approval.
-- AI autonomy, sending project contents externally, or storing API secrets
-  in the Nix store. Advanced AI and adaptive CPU profiles can be Alpha 0.3+.
+- [x] Rust diagnostics, read-only manifest inspection and project templates
+- [x] Nix/Compose discovery and explicitly selected Docker/Podman actions
+- [x] Same-user PID resource snapshot and redacted project ecosystem context
+- [ ] Review/merge workspace launcher (#73)
+- [ ] Deliver expressly approved Nix development shell execution OR explicitly
+      defer it. The current Nix command only previews; it does not enter a shell
+- [ ] Validate real Docker/Podman execution, cancellation, failure propagation
+      and consent on untrusted Compose manifests
+- [ ] Project/cgroup resource statistics remain more limited than the current
+      single-PID snapshot
+- [ ] Correct CLI-wide read-only descriptions: some opt-in commands now create
+      files or execute containers, although they never install an OS
+- [ ] Rust tests, Nix package, live and installed integration, documentation
 
-## Full remaining PR sequence to Alpha 0.2
+### Installer trust boundary — not yet physically writable
 
-| Slot | Track | Deliverable | Acceptance gate |
-| --- | --- | --- | --- |
-| **#49 (merged)** | Installer | Mounted-target refusal in disposable QEMU | Disk and sentinel remain intact; Disko not invoked; all CI green |
-| **#50 (merged)** | Roadmap | Commit agreed developer vision and delivery gates | User reviews PR list and scope; docs-only CI |
-| **#51 (merged)** | Theme | New default Berserk-inspired **Forge Eclipse** desktop preset and ISO visual tests | Four theme previews and original artwork render in CI |
-| **#52 (merged)** | Boot/UX | Distinct eduardOS UEFI/BIOS boot menus; auto-open explicitly read-only Forge preview | Boot asset CI and manual UEFI/BIOS ISO appearance check |
-| **#53 (merged)** | Rust | `edos doctor` v2: real read-only OS, session and tool diagnostics | Unit tests + missing subsystem graceful fallbacks; build under Nix |
-| **#54 (in review)** | Rust | `edos dev inspect`: offline project/manifests detection | Go/Rust/Node/Python/Nix/Compose fixtures; symlink/path traversal and no-execution tests |
-| **#55 (in review)** | Installer | Real QEMU newly-mounted-target race after clean guard review | Held-FD audit refuses changed mount, sentinel intact; no Disko |
-| **#56** | Rust | `edos dev init`: preview/consent, project templates | No overwrite; no secret injection; deterministic fixture outputs |
-| **#57** | Rust | Explicit Nix dev-shell integration with trust boundaries | Show planned command, require consent before evaluation/execution; safe cancellation |
-| **#58** | Rust | `edos dev up/down/status` for approved project processes and Compose | Child process groups stopped on exit; errors surfaced; no rogue services |
-| **#59** | Rust | `edos dev stats`: project-aware resource inspection | Read-only cgroup/process tests, no elevated privileges or idle daemon |
-| **#60** | Rust | `edos workspace open` + `edos dev context`, developer UX docs | Opt-in editor launch; redaction tests; no network/AI invocation |
-| **#61** | Installer | QEMU after-review mount/hotplug/identity-change and cancellation boundary tests | Refuse before irreversible write; existing encrypted install still passes |
-| **#62** | Installer | Trusted root executor: independently authorize exact device and operation | Allowlist; physical disk writes still disabled; adversarial root/non-root tests |
-| **#63** | Installer | Persistent attempt state, lock, refusal and recovery policy | Reboot/interruption tests; no automatic destructive retry |
-| **#64** | Installer | Secure runtime LUKS/account credential consumption in executor | No plaintext argv/env/Nix store; FD ownership/zeroization and denial tests |
-| **#65** | Installer | Wire Forge GUI to narrowly scoped service / consent sequence | GUI is never root; spoofing and invalid request tests |
-| **#66** | Installer | GUI setup: disk identity, hostname, user, encryption and full preview | Unambiguous irreversible confirmation; safe edits/cancellation |
-| **#67** | Installer | Progress, cancellation and partial-failure recovery UX | Honest phase states; no retry after partial format |
-| **#68** | Integration | First physical-write-capable **gated** installation in disposable QEMU | Only VM image gets written; real encrypted boot/login; no host device access |
-| **#69** | Integration | Build installable Alpha 0.2 ISO and automate GUI-to-boot smoke | ISO contains real installer, Rust dev engine, selected desktop; repeated encrypted cold boots |
-| **#70** | Release | Controlled UEFI real-hardware qualification, documentation and checksums | Explicit test matrix, safe target identification, backup warning, signed/hashed artifacts policy |
-| **#71** | Release | Alpha 0.2 release-candidate gate | All release tests green, hardware evidence recorded, known limitations published |
+**Current boundary:** the Forge GUI only previews hardware and validates a
+non-secret configuration draft. Root physical attestation is read-only. The
+existing guarded destructive formatter is locked to disposable QEMU /dev/vda.
+None of those components grants writes to physical hardware.
 
-**Current plan: 23 slots (#49–#71 inclusive): one merged QEMU test, one
-merged roadmap PR, two merged visual-identity PRs, seven Rust implementation slots,
-ten installer/integration slots, and two release slots, plus any safety
-follow-ups.** Counting is
-indicative; schedule changes are made explicitly in this file.
+- [x] Stable-disk capture, read-only root ancestry checks and QEMU lab install
+- [ ] Reattest exact held block FD, stable alias, hardware identity, current
+      boot, mount and swap state at the future irreversible boundary
+- [ ] Review/merge persistent attempt primitive (#74). Integrate only after
+      verifying nonvolatile root-controlled backing storage, locking, reboot
+      behavior, crash consistency and an audited manual recovery policy
+- [ ] Review independently authorized physical executor with a closed
+      allowlist of exact immutable Disko/Nix commands, no shell or browser-
+      supplied writable path and no manifest digest accepted as permission
+- [ ] Trusted LUKS and account-secret delivery with sealed descriptors;
+      no plaintext in argv, environment, Nix store, logs or unencrypted files
+- [ ] Adversarial changes to mounts/swap, hotplug, alias identity, boot,
+      credentials, power loss and partial formatting in disposable QEMU
+- [ ] Keep physical writes disabled until independent security review
 
-## Execution order and strict dependencies
+### Forge GUI and execution integration
 
-- #49–#53 are merged. #54 (Rust offline inspect) and #55 (disposable
-  QEMU after-review mount safety) are independent parallel PRs.
-- #56–#60 continue the Rust developer-first sequence; installer after-review
-  hotplug, changed disk identity and cancellation tests remain planned #61.
-- Ship #53–#60 before release (the agreed developer-first identity).
-  Keep the Rust tools usable without root and without replacing Python.
-- #61 must pass before enabling any real physical disk execution.
-- #62–#64 are security gates; a manifest or UI confirmation alone must
-  never authorize writes. No generic shell command RPC.
-- #65–#67 connect UI to independently validated service operations.
-- #68 must operate only in isolated, disposable QEMU. Do not claim
-  a VM pass implies safe arbitrary physical hardware.
-- #69–#71 validate the **same distribution artifact** that would ship.
-  Only then consider a public Alpha 0.2 release.
-- If any gate fails, pause subsequent unsafe work, fix it in the same PR,
-  and add a regression test. **User merges every PR**.
+- [x] Forge Eclipse preview with keyboard disk selection and safer stale
+      response handling
+- [x] Non-secret hostname, username and disk-identifier validation
+- [ ] Narrow, versioned, local unprivileged-GUI to audited-root protocol
+- [ ] Independent consent and secrets, clear phases, safe cancellation,
+      terminal failure, recovery instructions and no automatic destructive retry
+- [ ] Browser tests for spoofing, malformed requests, delayed replies and
+      stale selected disk/configuration state
 
-## Release checklist (everything required before declaring Alpha 0.2)
+### ISO and release gates
 
-- [ ] All #49–#71 scope items merged or explicitly rescheduled with
-      release criteria preserved.
-- [ ] Rust developer commands shipped in live and installed profiles;
-      CLI/tests/documentation verified.
-- [ ] Developer engine does not silently execute a newly cloned repo's
-      Nix flake, Compose configuration, scripts, or AI integrations.
-- [ ] Physical executor re-verifies selected disk, protected root/boot/
-      swap ancestry, topology and current consent immediately before write.
-- [ ] No plaintext LUKS/user secrets in argv, environment, logs or Nix store.
-- [ ] GUI is non-root; consent is explicit and independently validated.
-- [ ] Fault injection covers mount changes, hotplug, cancellation,
-      partial formatting and cold-boot recovery in disposable QEMU.
-- [ ] Alpha 0.2 installable ISO successfully completes GUI-to-encrypted-
-      boot-to-user-login repeatedly in isolated QEMU.
-- [ ] Hardware qualification and honest release limitations documented.
-- [ ] ISO checksums/provenance, installation/recovery instructions and
-      release artifact verification published.
+- [ ] Actual GUI-to-executor install of the same system in disposable QEMU;
+      encrypted cold boot, real user login and repeated reboot acceptance
+- [ ] Integrated installable ISO with final Rust CLI, GUI and trusted service
+- [ ] Build ISO at checkpoints, not on every small PR; always run destructive
+      QEMU integration for changes to writer, mounted target or credentials
+- [ ] Controlled UEFI hardware qualification with backups and test matrix
+- [ ] Checksums/provenance, installation/recovery docs and known limitations
+- [ ] All required CI green, evidence reviewed, user-approved Alpha 0.2 release
+
+## Safe execution order
+
+1. Finish reattestation, persistent state and adversarial checks, separately.
+2. Audit the exact privileged executor boundary and secret transport.
+3. Exercise destructive operations only in disposable QEMU until proven safe.
+4. Connect the non-root GUI to the versioned independently authorized service.
+5. Build and verify installable ISO; carefully qualify supported real hardware.
+6. Publish Alpha 0.2 only after all release gates pass.
+
+Parallel PRs should own separate files or well-defined interfaces. Every
+PR requires review and green applicable CI, and **the user merges each PR**.
 
 ## Later milestones
 
-**Alpha 0.3:** enhanced recovery, multi-generational rollback, Btrfs snapshot
-policy, broader hardware support, system updates, advanced workspace profiles
-and optional resource controls.
+**Alpha 0.3:** recovery, Nix generations and rollback, snapshots, update
+workflow and broader hardware coverage.
 
-**Alpha 1.x:** daily-driver UX, user configuration migration, polished
-multi-monitor/laptop support, container workflows, better AI editor
-integration, signing and release-channel reliability.
+**Alpha 1.x:** daily-driver reliability, power/networking/peripheral polish,
+configuration migration and release channel lifecycle.
 
-**Alpha 2.0:** production-grade installation/update/rollback/recovery,
-hardware coverage, audit-ready trust boundaries and reproducible releases.
+**Alpha 2.0:** reproducible installation, upgrade, rollback and recovery
+guarantees for a documented supported hardware matrix.
 
-⚡ eduardOS — Forged in Neon.
+⚡ eduardOS — Forged in Darkness.
