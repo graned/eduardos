@@ -31,7 +31,7 @@ with Image.open(source) as original:
         image.save(os.path.join(destination, name), format="PNG",
                    optimize=True)
 PY
-  for file in "$out"/{bios,efi,grub}.png; do
+  for file in "$out"/bios.png "$out"/efi.png "$out"/grub.png; do
     test -s "$file"
     test "$(head -c 4 "$file" | od -An -tx1 | tr -d '[:space:]')" = 89504e47
   done
