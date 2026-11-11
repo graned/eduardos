@@ -626,6 +626,15 @@
 
         # Small native GRUB/BIOS image check; unlike live-iso, does not
         # build the multi-GB ISO and catches broken boot assets on every PR.
+        # The graphical Forge installer has dedicated art, not the wallpaper.
+        forge-installer-artwork = pkgs.runCommand "eduardos-forge-installer-artwork-check" {
+          installer = forgeEclipseInstallerArtwork;
+        } ''
+          test -s "$installer/installer.png"
+          test "$(head -c 4 "$installer/installer.png" | od -An -tx1 | tr -d '[:space:]')" = 89504e47
+          touch "$out"
+        '';
+
         live-boot-theme =
           let cfg = self.nixosConfigurations.eduardos-live.config;
           in pkgs.runCommand "eduardos-live-boot-theme-check" {
