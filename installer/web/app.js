@@ -123,7 +123,11 @@ async function renderReview() {
   const summary = $("summary");
   summary.replaceChildren(element("p", "", "Rechecking selected disk…"));
   try {
-    const plan = await getJSON("/api/preview?id=" + encodeURIComponent(selected));
+    if (!selected) throw new Error("No disk selected; return to Storage.");
+    const requestedId = selected;
+    const plan = await getJSON("/api/preview?id=" + encodeURIComponent(requestedId));
+    // A stale asynchronous response must not replace a newer disk selection.
+    if (selected !== requestedId || step !== 3) return;
     const box = element("div", "summary");
     box.append(element("h3", "", "PROPOSED STORAGE PLAN"));
     const disk = plan.selected_disk;
@@ -134,10 +138,19 @@ async function renderReview() {
       row.append(element("span", "marker", String(i + 1).padStart(2, "0")), element("span", "", text));
       box.append(row);
     });
-    if (plan.blockers?.length) box.append(element("p", "blocked-text", "BLOCKED: " + plan.blockers.join(" · ")));
-    else box.append(element("p", "ready-text", "✓ READY FOR REVIEW — NOT AN INSTALLATION"));
+    const safePreview = plan.mode === "dry-run-only" && plan.would_write_to_disk === false;
+    const sameDisk = disk && disk.by_id === requestedId;
+    const ready = safePreview && sameDisk && plan.status === "ready-for-review" &&
+      Array.isArray(plan.blockers) && plan.blockers.length === 0;
+    if (ready) box.append(element("p", "ready-text", "✓ READY FOR REVIEW — NOT AN INSTALLATION"));
+    else {
+      const reasons = Array.isArray(plan.blockers) ? plan.blockers.filter(x => typeof x === "string") : [];
+      box.append(element("p", "blocked-text", "BLOCKED: " + (reasons.length ? reasons.join(" · ") :
+        "Preview is inconsistent or the selected disk changed. Return to Storage and inspect again.")));
+    }
     summary.replaceChildren(box);
   } catch (error) {
+    if (step !== 3) return;
     summary.replaceChildren(element("p", "blocked-text", error.message));
   }
 }
