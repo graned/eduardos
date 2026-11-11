@@ -11,6 +11,7 @@ mod dev_compose;
 mod dev_service;
 mod dev_stats;
 mod dev_context;
+mod workspace;
 
 const RELEASE: &str = "/etc/eduardos/live-release";
 const OS_RELEASE: &str = "/etc/os-release";
@@ -27,6 +28,7 @@ enum Command {
     DevService(Vec<String>),
     DevStats(String),
     DevContext(String),
+    WorkspaceOpen(Vec<String>),
     Shortcuts,
     Help,
 }
@@ -49,6 +51,7 @@ fn parse(args: &[String]) -> Result<Command, &'static str> {
         [dev, stats, pid] if dev == "dev" && stats == "stats" => Ok(Command::DevStats(pid.clone())),
         [dev, context] if dev == "dev" && context == "context" => Ok(Command::DevContext(".".to_owned())),
         [dev, context, path] if dev == "dev" && context == "context" => Ok(Command::DevContext(path.clone())),
+        [work, open, rest @ ..] if work == "workspace" && open == "open" => Ok(Command::WorkspaceOpen(rest.to_vec())),
         [arg] if arg == "shortcuts" => Ok(Command::Shortcuts),
         _ => Err("unknown command or unexpected arguments"),
     }
@@ -76,7 +79,7 @@ fn status(release: Option<&str>, os_release: Option<&str>) -> String {
 }
 
 fn usage() -> &'static str {
-    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  dev inspect [path]  Detect project manifests offline\n  dev init <template> <name> [--write]  Preview or create a local project\n  dev env [path]  Preview project Nix environment without running it\n  dev compose [path]  Inspect Compose manifests without starting containers\n  dev service <up|down|status> --engine <docker|podman> --file <manifest> [--approve --run]\n  dev stats <pid>  Read resource snapshot of a same-user Linux process\n  dev context [path]  Show redacted local project ecosystem context\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
+    "eduardOS — Forged in Neon\nUsage: edos <command>\n\nCommands:\n  status   Display read-only system information\n  doctor   Inspect Nix generation, desktop, developer tools and resources\n  dev inspect [path]  Detect project manifests offline\n  dev init <template> <name> [--write]  Preview or create a local project\n  dev env [path]  Preview project Nix environment without running it\n  dev compose [path]  Inspect Compose manifests without starting containers\n  dev service <up|down|status> --engine <docker|podman> --file <manifest> [--approve --run]\n  dev stats <pid>  Read resource snapshot of a same-user Linux process\n  dev context [path]  Show redacted local project ecosystem context\n  workspace open [path] [--run]  Preview or open clean Neovim workspace\n  version  Show CLI version\n  shortcuts  List desktop keybindings\n  help     Show this help\n"
 }
 
 fn shortcuts() -> &'static str {
@@ -139,6 +142,12 @@ fn main() -> ExitCode {
                 Err(error) => { eprintln!("edos: {error}"); return ExitCode::from(1); }
             }
         }
+        Ok(Command::WorkspaceOpen(args)) => {
+            match workspace::open(&args) {
+                Ok(report) => print!("{report}"),
+                Err(error) => { eprintln!("edos: {error}"); return ExitCode::from(1); }
+            }
+        }
         Ok(Command::Doctor) => {
             print!("{}", diagnostics::doctor(Path::new(RELEASE), Path::new(OS_RELEASE), Path::new("/run/current-system")));
         }
@@ -180,6 +189,8 @@ mod tests {
         assert_eq!(parse(&words(&["dev", "context"])), Ok(Command::DevContext(".".into())));
         assert_eq!(parse(&words(&["dev", "context", "project"])), Ok(Command::DevContext("project".into())));
         assert!(parse(&words(&["dev", "context", "a", "b"])).is_err());
+        assert_eq!(parse(&words(&["workspace", "open"])), Ok(Command::WorkspaceOpen(vec![])));
+        assert_eq!(parse(&words(&["workspace", "open", ".", "--run"])), Ok(Command::WorkspaceOpen(words(&[".", "--run"]))));
         assert_eq!(parse(&words(&["shortcuts"])), Ok(Command::Shortcuts));
         assert!(parse(&words(&["status", "--execute"])).is_err());
         assert!(parse(&words(&["install"])).is_err());
