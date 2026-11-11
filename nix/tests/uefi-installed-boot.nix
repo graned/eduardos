@@ -1,4 +1,4 @@
-{ pkgs, lib, targetSystem, formattingSystem, labExecutor, mountAuditor }:
+{ pkgs, lib, targetSystem, formattingSystem, labExecutor, mountAuditor, guiPreview }:
 
 # Install eduardOS onto a throwaway disk; boot that disk via OVMF.
 pkgs.testers.runNixOSTest {
@@ -27,6 +27,7 @@ pkgs.testers.runNixOSTest {
         formattingSystem.config.system.build.destroyFormatMount
         labExecutor
         mountAuditor
+        guiPreview
         pkgs.stdenv
         pkgs.perlPackages.ConfigIniFiles
         pkgs.perlPackages.FileSlurp
@@ -69,6 +70,10 @@ pkgs.testers.runNixOSTest {
     # /dev/vda is only the disposable VM disk, never a physical target.
     installer.succeed("test -L /dev/disk/by-id/virtio-root")
     installer.succeed("test \"$(readlink -f /dev/disk/by-id/virtio-root)\" = /dev/vda")
+
+    with subtest("Forge preview HTTP in guest"):
+        installer.succeed("${pkgs.python3}/bin/python3 ${./forge-preview-in-qemu.py} ${lib.getExe guiPreview}")
+        installer.succeed("test ! -e /dev/vda1")
 
     with subtest("Partition through the real Disko layout"):
         installer.succeed(
