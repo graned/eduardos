@@ -187,6 +187,53 @@ class HeldTarget:
             if current.get(field) != snap["device"].get(field):
                 raise Refused("Disk hardware identity changed during installation")
 
+    def reattest_preformat(self) -> dict:
+        """Repeat independent root-only disk and kernel mount/swap checks.
+
+        Read-only evidence collected just before a *future* irreversible
+        operation. The eventual trusted writer MUST hold the device handle,
+        repeat relevant checks at its write boundary, and independently
+        authorize its exact fixed command. This method grants NO writes.
+        """
+        if self.used:
+            raise Refused("Prepared target already consumed")
+        _root_required()
+        block = identity.probe()
+        self._fresh_device(block)
+
+        # A previous review/hash/confirmation alone is never authority.
+        # Verify the exact snapshot against independently re-probed hardware.
+        verified = identity.verify(self.review, data=block)
+        if (verified.get("verified") is not True
+                or verified.get("write_operations_enabled") is not False
+                or verified.get("stable_id") != self.review["snapshot"]["stable_id"]):
+            raise Refused("Fresh physical disk identity verification refused")
+
+        selected_path = self.review["snapshot"]["device"]["path"]
+        verdict = guard.guard_topology(
+            selected_path,
+            block,
+            Path("/proc/self/mountinfo").read_text(),
+            Path("/proc/swaps").read_text(),
+            loop_backings=live.sysfs_loop_backings(),
+        )
+        if (verdict.get("target_devno") != self.devno
+                or verdict.get("target_path") != selected_path
+                or verdict.get("write_operations_enabled") is not False):
+            raise Refused("Kernel mount/swap ancestry or block identity changed")
+
+        # Re-probe the still-held FD and stable alias after the independent
+        # topology inspection; a hotplug during the guard must fail closed.
+        self._fresh_device(identity.probe())
+        return {
+            "status": "preformat-attested-read-only",
+            "target_devno": self.devno,
+            "write_operations_enabled": False,
+            "destructive_disk_operations_enabled": False,
+            "authorization_to_write": False,
+            "note": "No write capability was created or granted.",
+        }
+
     def stage_account_hash(self, password: str, *, data: dict | None = None,
                            mountinfo: str | None = None) -> dict:
         """Write only one account HASH, after proving mounted target ancestry.
