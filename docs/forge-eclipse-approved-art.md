@@ -52,3 +52,29 @@ execute installation operations.
 
 **Branding:** `FORGED IN NEON` remains the overarching eduardOS motto.
 `FORGED IN DARKNESS` is the distinct Forge Eclipse visual tagline.
+
+
+## Post-boot Forge browser text visibility
+
+The live ISO starts Forge's **read-only graphical preview** in Brave after
+Hyprland login. The welcome HTML ships the real headings, navigation, notices,
+and CTAs before JavaScript runs; it is not a skeleton screen.
+
+Some VM/browser environments may display the full-background art and CSS
+shapes while failing to paint text from an unavailable font fallback. To avoid
+depending on the guest's fontconfig environment, the Nix-built
+`forge-installer-gui` launcher provides a known DejaVu Sans TTF via
+`EDOS_FORGE_FONT_PATH`. The loopback-only server exposes it at a fixed,
+read-only `/forge-font.ttf` route and permits only same-origin fonts in CSP.
+CSS uses `font-display: swap` so text can render immediately with fallback.
+
+The installer background remains the **dedicated** Ruins Beneath the Crimson
+Moon art, not the wallpaper or boot menu art. Its dark overlay and responsive
+hero layout prioritize readable text; the original disk-writing protections
+and preview-only capability remain unchanged.
+
+To validate, boot a new ISO and look for the visible **From struggle, a new
+system rises** welcome heading, all four sidebar steps, and the
+**Read-only installation preview** notice in Brave at 1280×720 and 1920×1080.
+If the font still does not appear, check the local request to
+`/forge-font.ttf` in browser Developer Tools and inspect the live-user journal.
