@@ -10,13 +10,13 @@ body{margin:0;background:radial-gradient(circle at 80% 3%,#4a1821 0%,transparent
 .step{display:flex;gap:15px;align-items:center;padding:16px 10px;border-left:2px solid transparent;opacity:.47}.step.active{border-left-color:var(--teal);opacity:1;background:linear-gradient(90deg,#4d192477,transparent)}.step.done{opacity:.85}.step.done .number{color:var(--teal)}.number{font:700 13px monospace;color:#9db1bb}.step strong{display:block;font-size:13px;letter-spacing:.3px}.step small{display:block;font-size:11px;color:var(--muted);margin-top:5px}
 .rail-foot{margin-top:auto;padding-top:30px}.status{font:700 11px monospace;color:var(--teal);letter-spacing:1px}.dot{display:inline-block;background:var(--teal);width:7px;height:7px;border-radius:100%;margin-right:6px;box-shadow:0 0 12px var(--teal)}.rail-foot p{color:#78929e;font:11px monospace;margin-top:12px}
 main{padding:28px clamp(26px,6vw,100px) 24px;display:flex;flex-direction:column;min-width:0}
-/* The approved Forge Eclipse PNG fills the installer canvas. The dark
-   gradient remains usable when artwork is missing in development builds. */
+/* The installer uses its own Forge Eclipse scene, never the desktop
+   wallpaper or the ISO boot image. Keep foreground content legible. */
 main{
-  background-image:linear-gradient(90deg,rgba(8,5,9,.91) 0%,rgba(8,5,9,.72) 49%,rgba(8,5,9,.64) 100%),url("/artwork.png");
+  background-image:linear-gradient(90deg,rgba(8,5,9,.85) 0%,rgba(8,5,9,.65) 48%,rgba(8,5,9,.46) 100%),url("/artwork.png");
   background-size:cover;
   background-repeat:no-repeat;
-  background-position:35% center;
+  background-position:center center;
 }
 main .panel{position:relative}
 main .notice,main .hardware-card,main .disk-option,main .summary{
