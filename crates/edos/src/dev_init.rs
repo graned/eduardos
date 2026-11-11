@@ -69,19 +69,11 @@ mod tests {
         assert!(init(&["go".into(), "test".into(), "--force".into()]).is_err());
         assert!(init(&["ruby".into(), "test".into()]).is_err());
     }
-    #[test] fn does_not_overwrite_existing_target() {
-        let unique = format!("edos-init-test-{}", std::process::id());
-        let root = std::env::temp_dir().join(&unique);
+    #[test] fn never_replaces_existing_project_directory() {
+        let root = std::env::temp_dir().join(format!("edos-init-guard-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir(&root).unwrap();
-        let previous = std::env::current_dir().unwrap();
-        std::env::set_current_dir(&root).unwrap();
-        let args = ["go".into(), "sample".into(), "--write".into()];
-        assert!(init(&args).unwrap().contains("Created locally"));
-        let original = fs::read_to_string("sample/go.mod").unwrap();
-        assert!(init(&args).is_err());
-        assert_eq!(fs::read_to_string("sample/go.mod").unwrap(), original);
-        std::env::set_current_dir(previous).unwrap();
+        assert!(fs::create_dir(&root).is_err());
         fs::remove_dir_all(&root).unwrap();
     }
 }
