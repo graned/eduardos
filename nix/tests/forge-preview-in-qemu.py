@@ -6,6 +6,7 @@ the separate lab-only CLI executes Disko on disposable /dev/vda.
 """
 import http.client
 import json
+import os
 import re
 import select
 import subprocess
@@ -18,22 +19,34 @@ def main(binary: str) -> None:
     process = subprocess.Popen(
         [binary, "--no-browser"], stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        text=True, bufsize=1, start_new_session=True,
+        bufsize=0, start_new_session=True,
     )
     try:
+        # Read bytes directly from the pipe. select() + TextIOWrapper.readline()
+        # is incorrect here: readline() may buffer both startup lines, after
+        # which select() sees an empty kernel pipe and times out forever.
         end = time.monotonic() + 20
         url = None
-        while time.monotonic() < end:
+        pending = bytearray()
+        while time.monotonic() < end and url is None:
             readable, _, _ = select.select([process.stdout], [], [], 0.5)
             if readable:
-                line = process.stdout.readline().strip()
-                if line.startswith("Open locally: "):
-                    url = line.removeprefix("Open locally: ")
-                    break
-            if process.poll() is not None:
-                raise AssertionError("Forge GUI terminated before responding")
+                data = os.read(process.stdout.fileno(), 4096)
+                if not data:
+                    raise AssertionError("Forge GUI closed startup stdout before publishing URL")
+                pending.extend(data)
+                if len(pending) > 16 * 1024:
+                    raise AssertionError("Forge GUI startup output exceeded allowed size")
+                while b"\\n" in pending:
+                    raw, _, rest = pending.partition(b"\\n")
+                    pending = bytearray(rest)
+                    if raw.startswith(b"Open locally: "):
+                        url = raw.removeprefix(b"Open locally: ").strip().decode("ascii")
+                        break
+            if process.poll() is not None and url is None:
+                raise AssertionError("Forge GUI exited before publishing URL")
         if url is None:
-            raise AssertionError("Forge GUI did not publish loopback URL")
+            raise AssertionError("Forge GUI startup URL timed out (raw stdout not published)")
         parsed = urlsplit(url)
         assert parsed.hostname == "127.0.0.1" and parsed.scheme == "http"
         assert re.fullmatch(r"/\?token=[A-Za-z0-9_-]{32,}", parsed.path + "?" + parsed.query)
