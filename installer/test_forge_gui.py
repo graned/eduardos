@@ -63,6 +63,31 @@ class WebPreviewTests(unittest.TestCase):
         self.assertEqual(self.request("GET", "/app.js", token=False)[0], 200)
         self.assertEqual(self.request("GET", "/etc/passwd")[0], 404)
 
+    def test_installer_boot_ui_has_visible_static_content_and_font(self):
+        status, html, headers = self.request("GET", f"/?token={self.token}", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b"From struggle,", html)
+        self.assertIn(b"Read-only installation preview", html)
+        self.assertIn(b"Inspect this machine", html)
+        self.assertIn("font-src 'self'", headers["Content-Security-Policy"])
+        status, css, _ = self.request("GET", "/style.css", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b"/forge-font.ttf", css)
+        self.assertIn(b"/artwork.png", css)
+
+    def test_font_asset_is_same_origin_and_fixed_path(self):
+        with TemporaryDirectory() as directory:
+            font = Path(directory) / "forge.ttf"
+            font.write_bytes(b"fake-font-fixture")
+            with patch.object(forge_gui, "FONT", font):
+                status, body, headers = self.request("GET", "/forge-font.ttf", token=False)
+                self.assertEqual(status, 200)
+                self.assertEqual(body, b"fake-font-fixture")
+                self.assertEqual(headers["Content-Type"], "font/ttf")
+                self.assertEqual(self.request("GET", "/forge-font.ttf?path=/etc/passwd", token=False)[1], body)
+                self.assertEqual(self.request("GET", "/../forge-font.ttf", token=True)[0], 404)
+            self.assertEqual(self.request("GET", "/forge-font.ttf", token=False)[0], 404)
+
     def test_approved_artwork_is_fixed_read_only_png_route(self):
         with TemporaryDirectory() as directory:
             image = Path(directory) / "approved.png"
