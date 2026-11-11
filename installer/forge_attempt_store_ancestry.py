@@ -36,6 +36,10 @@ def attest_separate_backing(*, mountpoint: str, mountinfo: str,
             raise Refused("Unknown or incomplete mount/store target block identity")
         if nodes[target_devno].get("type") != "disk":
             raise Refused("Installation target must be a physical whole disk")
+        source = candidate["source"]
+        source_node = nodes[root_devno]
+        if source_node.get("path") != source:
+            raise Refused("Mount source differs from kernel block identity")
         ancestry = guard.ancestor_devices(root_devno, parents)
         if target_devno in ancestry:
             raise Refused("Attempt store would be erased with selected disk")
