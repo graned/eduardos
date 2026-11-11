@@ -54,6 +54,7 @@ def mount_evidence(mountpoint: str, mountinfo: str) -> dict:
         "status": "candidate-local-mount",
         "mountpoint": mountpoint,
         "devno": fields[2],
+        "source": source,
         "fstype": fstype,
         "write_operations_enabled": False,
         "authorization_to_write": False,
