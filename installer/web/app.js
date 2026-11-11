@@ -5,6 +5,13 @@ const sections = ["welcome", "hardware", "storage", "configure", "review"];
 let step = 0;
 let inventory = null;
 let selected = null;
+let draftRevision = 0;
+function invalidateDraft() {
+  draftRevision += 1;
+  $("validated-config").replaceChildren();
+  $("summary").replaceChildren();
+}
+
 const $ = (id) => document.getElementById(id);
 
 function element(tag, className, content) {
@@ -73,6 +80,7 @@ async function loadHardware() {
 }
 function renderDisks() {
   selected = null;
+  invalidateDraft();
   $("to-config").disabled = true;
   const list = $("disks");
   list.replaceChildren();
@@ -94,6 +102,7 @@ function renderDisks() {
     if (disk.reasons?.length) info.append(element("div", "reason", disk.reasons.join(" · ")));
     button.append(info, element("span", "disk-state", disk.eligible ? "CANDIDATE" : "BLOCKED"));
     button.addEventListener("click", () => {
+      if (selected !== disk.by_id) invalidateDraft();
       selected = disk.by_id;
       list.querySelectorAll(".disk-option").forEach((option) => {
         option.setAttribute("aria-checked", String(option === button));
@@ -121,6 +130,7 @@ function renderDisks() {
 }
 async function validateConfiguration() {
   const requestedId = selected;
+  const revision = draftRevision;
   const alert = $("config-alert");
   const button = $("validate-config");
   alert.classList.add("hidden");
@@ -141,7 +151,7 @@ async function validateConfiguration() {
     });
     if (!response.ok) throw new Error("Configuration validation unavailable (" + response.status + ")");
     const result = await response.json();
-    if (selected !== requestedId || step !== 3) return;
+    if (selected !== requestedId || step !== 3 || draftRevision !== revision) return;
     if (result.valid !== true || result.mode !== "dry-run-only" ||
         result.write_operations_enabled !== false || !Array.isArray(result.errors) ||
         result.errors.length !== 0) {
@@ -158,7 +168,7 @@ async function validateConfiguration() {
     show(4);
     renderReview();
   } catch (error) {
-    if (step === 3) {
+    if (step === 3 && draftRevision === revision) {
       alert.replaceChildren(element("span", "", "⚠"), element("div", "", error.message));
       alert.classList.remove("hidden");
     }
@@ -168,13 +178,14 @@ async function validateConfiguration() {
 }
 async function renderReview() {
   const summary = $("summary");
+  const revision = draftRevision;
   summary.replaceChildren(element("p", "", "Rechecking selected disk…"));
   try {
     if (!selected) throw new Error("No disk selected; return to Storage.");
     const requestedId = selected;
     const plan = await getJSON("/api/preview?id=" + encodeURIComponent(requestedId));
     // A stale asynchronous response must not replace a newer disk selection.
-    if (selected !== requestedId || step !== 4) return;
+    if (selected !== requestedId || step !== 4 || draftRevision !== revision || !$("validated-config").hasChildNodes()) return;
     const box = element("div", "summary");
     box.append(element("h3", "", "PROPOSED STORAGE PLAN"));
     const disk = plan.selected_disk;
@@ -197,7 +208,7 @@ async function renderReview() {
     }
     summary.replaceChildren(box);
   } catch (error) {
-    if (step !== 4) return;
+    if (step !== 4 || draftRevision !== revision || !$("validated-config").hasChildNodes()) return;
     summary.replaceChildren(element("p", "blocked-text", error.message));
   }
 }
@@ -205,6 +216,11 @@ $("start").addEventListener("click", () => { show(1); loadHardware(); });
 $("to-storage").addEventListener("click", () => show(2));
 $("to-config").addEventListener("click", () => show(3));
 $("validate-config").addEventListener("click", validateConfiguration);
-$("restart").addEventListener("click", () => { selected = null; $("validated-config").replaceChildren(); show(0); });
+$("restart").addEventListener("click", () => { selected = null; invalidateDraft(); show(0); });
+["hostname", "username"].forEach(id => $(id).addEventListener("input", invalidateDraft));
 document.querySelectorAll("[data-back]").forEach((b) =>
-  b.addEventListener("click", () => show(Math.max(0, step - 1))));
+  b.addEventListener("click", () => {
+    // Returning to configuration or storage invalidates any prior review.
+    if (step >= 3) invalidateDraft();
+    show(Math.max(0, step - 1));
+  }));
