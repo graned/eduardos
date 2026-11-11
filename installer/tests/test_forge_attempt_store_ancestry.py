@@ -42,6 +42,10 @@ class StoreAncestryTests(unittest.TestCase):
             with self.subTest(mount=mount), self.assertRaises(Refused):
                 self.check(mountinfo=mount)
 
+    def test_mount_source_must_match_selected_kernel_device(self):
+        with self.assertRaises(Refused):
+            self.check(mountinfo=MOUNT.replace("/dev/sdb1", "/dev/sdc1"))
+
     def test_removable_or_read_only_ancestor_rejected(self):
         for flag in ("ro", "rm"):
             inventory = {"blockdevices": [DISKS["blockdevices"][0],
