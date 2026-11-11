@@ -10,14 +10,6 @@ const MANIFESTS: &[&str] = &[
 #[derive(Debug, PartialEq, Eq)]
 pub enum Action { Up, Down, Status }
 
-struct Request {
-    action: Action,
-    engine: &'static str,
-    file: &'static str,
-    approved: bool,
-    execute: bool,
-}
-
 fn parse(args: &[String]) -> Result<(Action, &str, &str, bool, bool), &'static str> {
     let Some(first) = args.first() else {
         return Err("usage: edos dev service <up|down|status> --engine <docker|podman> --file <compose.yaml|compose.yml|docker-compose.yaml|docker-compose.yml> [--approve --run]");
