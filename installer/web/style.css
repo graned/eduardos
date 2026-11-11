@@ -1,4 +1,4 @@
-:root{color-scheme:dark;--bg:#0b080c;--panel:#181015;--line:#542933;--muted:#b19b9b;--text:#f2e7e0;--teal:#e13c4a;--amber:#e4b08a;--red:#fe7272;font-family:Inter,"Segoe UI",system-ui,sans-serif;font-synthesis:none}
+:root{color-scheme:dark;--bg:#0b080c;--panel:#181015;--line:#542933;--muted:#b19b9b;--text:#f2e7e0;--teal:#e13c4a;--amber:#e4b08a;--red:#fe7272;font-family:"Forge UI","DejaVu Sans",sans-serif}
 *{box-sizing:border-box}
 body{margin:0;background:radial-gradient(circle at 80% 3%,#4a1821 0%,transparent 39%),linear-gradient(130deg,#120c11,#0a080b 80%);color:var(--text);min-height:100vh}
 .rain{pointer-events:none;position:fixed;inset:0;opacity:.16;background:repeating-linear-gradient(105deg,transparent 0 92px,#2d7d80 93px,transparent 94px 180px),repeating-linear-gradient(0deg,transparent 0 76px,#173d47 77px,transparent 78px 145px);mask-image:linear-gradient(90deg,transparent,#000)}
@@ -31,7 +31,7 @@ header,footer{display:flex;justify-content:space-between;gap:12px;align-items:ce
 .lead{font-size:15px;line-height:1.85;color:#a6bac6;max-width:620px;margin:24px 0 28px}.lead.compact{margin:15px 0 25px;font-size:14px}
 .sigil{width:130px;height:130px;position:relative;margin:0 0 27px 24px;display:grid;place-items:center}.ring{display:grid;place-items:center;border:2px solid #ec5360;transform:rotate(45deg);box-shadow:0 0 22px #e13c4a38,inset 0 0 21px #e13c4a23}.outer{width:100px;height:100px}.inner{width:68px;height:68px;border:1px solid #dfb28e}.inner span{transform:rotate(-45deg);font-size:35px;color:var(--teal)}
 .notice{display:flex;gap:15px;width:100%;background:#30151ea3;border:1px solid #80303b;padding:18px 21px;border-radius:8px;color:#ddf5f3;margin:0 0 28px}.notice>span{color:var(--teal);font-size:22px}.notice strong{font-size:13px}.notice p{color:#9aafba;font-size:12px;line-height:1.7;margin:5px 0 0}.notice.warn{border-color:#825039;background:#32221670}.notice.warn strong{color:#ffc28c}.notice.warn>span{color:#ffc28c}
-button{font:750 12px/1.2 inherit;letter-spacing:.2px;border-radius:6px;min-height:45px;padding:0 24px;cursor:pointer;transition:transform .1s,background .15s}button:hover:not(:disabled){transform:translateY(-1px)}button:disabled{cursor:not-allowed;opacity:.35}
+button{font-family:inherit;font-size:12px;font-weight:750;line-height:1.2;letter-spacing:.2px;border-radius:6px;min-height:45px;padding:0 24px;cursor:pointer;transition:transform .1s,background .15s}button:hover:not(:disabled){transform:translateY(-1px)}button:disabled{cursor:not-allowed;opacity:.35}
 .primary{background:var(--teal);border:1px solid var(--teal);color:#061619;font-weight:850;box-shadow:0 5px 32px #bb23333a}.primary span{margin-left:14px}.secondary{background:transparent;color:#ccdbdf;border:1px solid #68434b}
 .actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px}
 .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;width:100%;margin:8px 0 26px}
@@ -48,3 +48,57 @@ body::before{content:"";pointer-events:none;position:fixed;z-index:0;width:min(5
 .rain{opacity:.11;filter:hue-rotate(125deg)}
 .panel .sigil .ring{border-color:#dc3343}
 .panel .sigil .inner{border-color:#daab84}
+
+
+/* The live ISO can start Brave without a usable system font fallback.
+   Ship our own font through the loopback server (CSP font-src 'self').
+   The HTML already contains the real welcome copy; no skeleton/hydration. */
+@font-face{
+  font-family:"Forge UI";
+  src:url("/forge-font.ttf") format("truetype");
+  font-display:block;
+  font-style:normal;
+  font-weight:100 900;
+}
+html{font-family:"Forge UI","DejaVu Sans",sans-serif}
+body{font-family:inherit;text-rendering:optimizeLegibility}
+.shell{isolation:isolate;background:#0d080ed9}
+.rail{background:rgba(12,8,13,.96)}
+.rail .wordmark{color:#fff;line-height:1.25}
+.rail .edition,.rail .status{line-height:1.55}
+.rail .step{opacity:.78}
+.rail .step.active{opacity:1}
+.rail .step strong{color:#f5edf0;font-size:14px}
+.rail .step small{color:#c5b4bc}
+main{
+  background-image:linear-gradient(90deg,rgba(10,6,12,.91) 0%,rgba(10,6,12,.80) 34%,rgba(10,6,12,.36) 100%),url("/artwork.png");
+  background-color:#120a10;
+  background-position:center center;
+}
+main header,main footer{position:relative;z-index:1}
+main header .overline{color:#e7b9c4}
+main .panel{max-width:780px;padding:42px 32px;margin:22px 0;border:1px solid rgba(187,56,79,.22);border-radius:14px;background:linear-gradient(110deg,rgba(9,6,12,.80),rgba(9,6,12,.48) 80%);box-shadow:0 20px 76px rgba(0,0,0,.30)}
+main .panel h1,main .panel h2{color:#fff;text-shadow:0 3px 22px #000}
+main .panel .lead{color:#eee1e6;font-size:16px;line-height:1.7}
+main .panel .eyebrow{color:#ff7181}
+main .panel .notice p{color:#e9cdd3}
+main .panel .primary{color:#160508;background:#ef4559;border-color:#ff6171}
+main .panel .secondary{color:#faf2f4}
+main .panel .notice{background:rgba(31,12,21,.90)}
+main .panel .sigil{width:90px;height:90px;margin:0 0 23px 12px}
+main .panel .sigil .outer{width:80px;height:80px}
+main .panel .sigil .inner{width:55px;height:55px}
+main .panel .sigil .inner span{font-size:28px}
+@media(max-width:850px){
+  .shell{grid-template-columns:1fr}
+  main .panel{margin:12px 0;padding:24px 18px}
+  main .panel .lead{font-size:14px}
+  main{background-position:60% center}
+}
+@media(max-height:740px) and (min-width:851px){
+  main .panel{padding:24px 30px;margin:8px 0}
+  main .panel .sigil{display:none}
+  main .panel h1{font-size:clamp(36px,4vw,55px)}
+  main .panel .lead{margin:16px 0}
+  main .panel .notice{margin-bottom:14px}
+}
