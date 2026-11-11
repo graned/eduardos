@@ -35,4 +35,4 @@ PY
     test -s "$file"
     test "$(head -c 4 "$file" | od -An -tx1 | tr -d '[:space:]')" = 89504e47
   done
-'';
+''
