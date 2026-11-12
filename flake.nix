@@ -137,6 +137,9 @@
         text = ''
           export EDOS_FORGE_ARTWORK_PNG="${forgeEclipseInstallerArtwork}/installer.png"
           export EDOS_FORGE_FONT_PATH="${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSans.ttf"
+          # The live Wayland VM can show artwork but render no Brave text
+          # when its GPU text compositor is unavailable.
+          export EDOS_FORGE_SOFTWARE_BROWSER=1
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
         '';
       };
