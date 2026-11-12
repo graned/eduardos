@@ -163,6 +163,17 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_lab_gui.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
         '';
       };
+      # VM-qualified Alpha 0.2 ISO: an opt-in local TTY entry point. Its only
+      # writable path is the existing guarded fixed QEMU /dev/vda executor.
+      # Never autostart or expose this through the unprivileged preview GUI.
+      forgeVmIsoInstaller = pkgs.writeShellApplication {
+        name = "forge-installer-vm";
+        runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_vm_iso_launcher.py \\
+            --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
+        '';
+      };
       # Read-only production disk identity contract. No privileged helper
       # and no disk writes; it cannot invoke the lab executor.
       forgeDiskReview = pkgs.writeShellApplication {
@@ -269,6 +280,7 @@
           ({ pkgs, ... }: {
             environment.systemPackages = [
               forgeInstallerGui
+              forgeVmIsoInstaller
               (pkgs.makeDesktopItem {
                 name = "eduardos-forge-installer";
                 desktopName = "eduardOS Forge Installer (Preview)";
