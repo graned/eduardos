@@ -75,6 +75,22 @@ def main(binary: str) -> None:
         assert data["write_operations_enabled"] is False
         assert isinstance(data["disks"], list)
 
+        # The actual packaged GUI must report installation unavailable,
+        # independently of inventory, disk selection or validated drafts.
+        status, body = request("GET", "/api/capabilities")
+        assert status == 200
+        capabilities = json.loads(body)
+        assert capabilities["version"] == "eduardos.forge.capabilities.v1"
+        assert capabilities["mode"] == "dry-run-only"
+        for key in (
+            "installation_available", "physical_disk_writes_enabled",
+            "credential_collection_enabled", "privileged_executor_connected",
+            "automatic_retry_enabled",
+        ):
+            assert capabilities[key] is False, key
+        assert len(capabilities["required_gates"]) == 4
+        assert request("GET", "/api/capabilities", auth="bad")[0] == 403
+
         # The disposable test disk is only 12 GiB and must never be an
         # eligible *physical* installer target. No host disk is selected.
         draft = {"hostname": "edos-lab", "username": "testpilot",
