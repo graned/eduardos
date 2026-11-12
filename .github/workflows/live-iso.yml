@@ -4,6 +4,15 @@ on:
   # Preview ISO builds are manual to avoid repeated multi-GB builds and
   # the GitHub-hosted runner disk exhaustion observed in earlier iterations.
   workflow_dispatch:
+  # One checkpoint build when the release-image packaging or boot contract
+  # changes; NOT on ordinary application/theme/docs PRs.
+  pull_request:
+    paths:
+      - "hosts/live-iso/**"
+      - "installer/forge_vm_iso_launcher.py"
+      - "flake.nix"
+      - "scripts/smoke-live-iso.sh"
+      - ".github/workflows/live-iso.yml"
 
 concurrency:
   group: eduardos-live-iso-${{ github.ref }}
@@ -15,7 +24,7 @@ permissions:
 
 jobs:
   build-iso:
-    name: Build and boot-test eduardOS Alpha preview ISO
+    name: Build and boot-test eduardOS Alpha 0.2 VM-only candidate ISO
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -61,7 +70,7 @@ jobs:
           test -n "$iso"
           EDOS_BOOT_TIMEOUT_SECONDS=300 bash scripts/smoke-live-iso.sh "$iso"
 
-      - name: Split ISO into artifact parts and compute checksums
+      - name: Split candidate ISO into artifact parts and compute checksums
         run: |
           set -euo pipefail
           mkdir -p artifacts
@@ -73,6 +82,12 @@ jobs:
           split -b 1900M --numeric-suffixes=0 --suffix-length=3 \
             "$iso" artifacts/eduardos-alpha.iso.part-
           ls -lh artifacts/
+          # Prove uploaded parts reconstruct exactly the SHA256-identified
+          # ISO rather than relying on a successful split command alone.
+          actual="$(cat artifacts/eduardos-alpha.iso.part-* | sha256sum | cut -d' ' -f1)"
+          expected="$(awk '{print $1}' artifacts/SHA256SUMS)"
+          test "$actual" = "$expected"
+          echo "PASS: uploaded candidate ISO parts match SHA256SUMS"
 
       - name: Upload verified preview ISO and build identity
         uses: actions/upload-artifact@v4
