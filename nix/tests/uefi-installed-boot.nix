@@ -1,4 +1,4 @@
-{ pkgs, lib, targetSystem, formattingSystem, labExecutor, mountAuditor, guiPreview }:
+{ pkgs, lib, targetSystem, formattingSystem, labExecutor, mountAuditor, guiPreview, labGui }:
 
 # Install eduardOS onto a throwaway disk; boot that disk via OVMF.
 pkgs.testers.runNixOSTest {
@@ -28,6 +28,7 @@ pkgs.testers.runNixOSTest {
         labExecutor
         mountAuditor
         guiPreview
+        labGui
         pkgs.stdenv
         pkgs.perlPackages.ConfigIniFiles
         pkgs.perlPackages.FileSlurp
@@ -100,11 +101,13 @@ pkgs.testers.runNixOSTest {
             "--user-password-stdin </dev/null"
         )
         installer.succeed("test ! -e /dev/vda1")
+        # Actual installation now starts through Forge's disposable-VM-only
+        # GUI HTTP contract, not via a direct CLI executor invocation.
         install_log = installer.succeed(
-            "${lib.getExe labExecutor} --execute "
-            "--confirm 'ERASE DISPOSABLE /dev/vda' --user-password-stdin "
-            "</run/edos-public-user-password"
+            "${pkgs.python3}/bin/python3 ${./forge-lab-gui-in-qemu.py} "
+            "${lib.getExe labGui}"
         )
+        assert "FORGE_QEMU_GUI=installed-via-http-lab" in install_log
         # Inspect the *actual* captured disposable executor stdout with the
         # strict phase observer, rather than substring-order checks (which
         # can accidentally accept duplicates or 'installed' after failure).
