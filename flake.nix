@@ -594,6 +594,7 @@
         } ''
           cd ${./installer}
           python3 -m unittest discover -p 'test_forge_gui.py' -v
+          python3 -m unittest discover -s tests -p 'test_forge_lab_gui_http.py' -v
           mkdir -p "$out"
           echo "Read-only GUI security and API tests passed" > "$out/result"
         '';
