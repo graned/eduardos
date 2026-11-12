@@ -18,6 +18,9 @@ on:
       - "nix/storage/disko-layout.nix"
       - "nix/tests/uefi-installed-boot.nix"
       - "nix/tests/forge-preview-in-qemu.py"
+      - "nix/tests/forge-lab-gui-in-qemu.py"
+      - "installer/forge_lab_gui_session.py"
+      - "installer/forge_lab_gui.py"
       - "hosts/uefi-lab/**"
       - ".github/workflows/full-install.yml"
   schedule:

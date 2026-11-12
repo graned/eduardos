@@ -15,6 +15,7 @@ Browser requests NEVER transport secrets. No automatic retry / resume.
 from __future__ import annotations
 
 import os
+from dataclasses import asdict, replace
 from pathlib import Path
 import signal
 import stat
@@ -22,6 +23,7 @@ import subprocess
 import threading
 
 import forge_executor_lab as lab
+import forge_installer as core
 import forge_lab_progress as progress
 
 VERSION = "eduardos.forge.qemu-gui-install.v1"
@@ -70,6 +72,55 @@ class LabInstallSession:
         if not Path(ALIAS).is_symlink() or Path(ALIAS).resolve() != Path(lab.TARGET):
             raise Refused("QEMU root disk stable alias differs from /dev/vda")
         _fixture()
+
+    def _disposable_disk(self) -> tuple[core.Disk, dict]:
+        """Re-read real inventory; relax ONLY the VM fixture's size minimum.
+
+        The production preview never calls this. The lab executor separately
+        requires a disposable QEMU root and reattests its target at execution.
+        """
+        self._verify_vm()
+        system = core.system_preflight()
+        disks = core.disk_inventory(core.run_lsblk(), core.stable_ids())
+        disk = next((d for d in disks if d.path == lab.TARGET and d.by_id == ALIAS), None)
+        if disk is None:
+            raise Refused("Trusted disposable VM target missing from inventory")
+        if not system["architecture_supported"]:
+            raise Refused("Disposable VM system preflight failed")
+        # Only the known 12-GiB disposable fixture may relax the production
+        # 32-GiB minimum. Never override mounted, swapped, mapped, removable,
+        # read-only or unstable disks.
+        if disk.reasons not in ((), ("Smaller than the 32 GiB minimum",)):
+            raise Refused("Disposable target has an independent safety blocker")
+        return replace(disk, eligible=True, reasons=()), system
+
+    def inventory(self) -> dict:
+        target, system = self._disposable_disk()
+        return {
+            "system": system,
+            "disks": [asdict(target)],
+            "write_operations_enabled": False,
+            "mode": "dry-run-only",
+            "lab_only": True,
+            "note": "Disposable QEMU only: 8-GiB lab minimum, production 32-GiB minimum unchanged.",
+        }
+
+    def preview(self, identifier: str) -> dict:
+        if identifier != ALIAS:
+            raise Refused("Only pinned disposable VM alias can be reviewed")
+        target, system = self._disposable_disk()
+        # The QEMU installer guest can boot via BIOS and report less than
+        # 4 GiB usable RAM even when provisioned with 4096 MiB; the real
+        # guarded test already installs into an OVMF/UEFI target with those
+        # constraints. These exceptions are lab-only, never production.
+        plan = core.preview(target, {**system, "uefi": True,
+                                     "sufficient_memory": True})
+        if plan["status"] != "ready-for-review" or plan["blockers"]:
+            raise Refused("Disposable target preview has blockers")
+        plan["lab_only"] = True
+        plan["note"] = ("QEMU-only fixture: installer boot mode, available RAM and "
+                        "disk size may differ from production requirements.")
+        return plan
 
     def report(self) -> dict:
         with self._lock:
