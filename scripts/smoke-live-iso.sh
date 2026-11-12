@@ -35,7 +35,7 @@ qemu-system-x86_64 \
   -display none -serial "file:$serial_log" -monitor none \
   -nic none -no-reboot >"$tmpdir/qemu.log" 2>&1 &
 qemu_pid=$!
-marker="EDOS_LIVE_BOOT_OK=alpha-0.1-preview"
+marker="EDOS_LIVE_BOOT_OK=alpha-0.2-vm-rc"
 started="$(date +%s)"
 while :; do
   if grep -Fq "$marker" "$serial_log"; then

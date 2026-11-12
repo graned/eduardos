@@ -163,6 +163,16 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_lab_gui.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
         '';
       };
+      # VM-qualified Alpha 0.2 ISO: an opt-in local TTY entry point. Its only
+      # writable path is the existing guarded fixed QEMU /dev/vda executor.
+      # Never autostart or expose this through the unprivileged preview GUI.
+      forgeVmIsoInstaller = pkgs.writeShellApplication {
+        name = "forge-installer-vm";
+        runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_vm_iso_launcher.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
+        '';
+      };
       # Read-only production disk identity contract. No privileged helper
       # and no disk writes; it cannot invoke the lab executor.
       forgeDiskReview = pkgs.writeShellApplication {
@@ -269,6 +279,7 @@
           ({ pkgs, ... }: {
             environment.systemPackages = [
               forgeInstallerGui
+              forgeVmIsoInstaller
               (pkgs.makeDesktopItem {
                 name = "eduardos-forge-installer";
                 desktopName = "eduardOS Forge Installer (Preview)";
@@ -600,6 +611,7 @@
           python3 -m unittest discover -s tests -p 'test_forge_lab_gui_http.py' -v
           python3 -m unittest discover -s tests -p 'test_forge_lab_gui_inventory.py' -v
           python3 -m unittest discover -s tests -p 'test_forge_lab_sealed_execution.py' -v
+          python3 -m unittest discover -s tests -p 'test_forge_vm_iso_launcher.py' -v
           mkdir -p "$out"
           echo "Read-only GUI security and API tests passed" > "$out/result"
         '';
@@ -629,12 +641,17 @@
               (pkg.pname or "") == "forge-installer-gui"
               || (pkg.name or "") == "forge-installer-gui")
               cfg.environment.systemPackages;
+            vmLabLauncher = builtins.any (pkg:
+              (pkg.pname or "") == "forge-installer-vm"
+              || (pkg.name or "") == "forge-installer-vm")
+              cfg.environment.systemPackages;
             serialProbe = cfg.systemd.services.edos-live-boot-probe.wantedBy
               == [ "multi-user.target" ];
             rustCli = builtins.any (pkg: (pkg.pname or "") == "edos")
               cfg.environment.systemPackages;
           in assert hasIso && eclipse && login && network && noDisko
-            && serialProbe && rustCli && bootLabel && bootTheme && installerLauncher;
+            && serialProbe && rustCli && bootLabel && bootTheme && installerLauncher
+            && vmLabLauncher;
           pkgs.runCommand "eduardos-live-iso-config-check" {} ''
             mkdir -p "$out"
             echo "Live ISO configured without Disko" > "$out/result"
