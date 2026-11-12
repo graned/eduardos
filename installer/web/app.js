@@ -184,8 +184,21 @@ async function renderReview() {
     if (!selected) throw new Error("No disk selected; return to Storage.");
     const requestedId = selected;
     const plan = await getJSON("/api/preview?id=" + encodeURIComponent(requestedId));
+    // This endpoint reports server-owned capabilities, not draft readiness.
+    // Even a validated preview must never become an executable permission.
+    const capability = await getJSON("/api/capabilities");
     // A stale asynchronous response must not replace a newer disk selection.
     if (selected !== requestedId || step !== 4 || draftRevision !== revision || !$("validated-config").hasChildNodes()) return;
+    if (capability.version !== "eduardos.forge.capabilities.v1" ||
+        capability.mode !== "dry-run-only" ||
+        capability.installation_available !== false ||
+        capability.physical_disk_writes_enabled !== false ||
+        capability.credential_collection_enabled !== false ||
+        capability.privileged_executor_connected !== false ||
+        capability.automatic_retry_enabled !== false ||
+        !Array.isArray(capability.required_gates)) {
+      throw new Error("Unexpected installation capability response; review is blocked.");
+    }
     const box = element("div", "summary");
     box.append(element("h3", "", "PROPOSED STORAGE PLAN"));
     const disk = plan.selected_disk;
@@ -206,6 +219,10 @@ async function renderReview() {
       box.append(element("p", "blocked-text", "BLOCKED: " + (reasons.length ? reasons.join(" · ") :
         "Preview is inconsistent or the selected disk changed. Return to Storage and inspect again.")));
     }
+    const blockedInstall = element("p", "blocked-text",
+      "INSTALLATION NOT YET AVAILABLE — This validated preview cannot erase or install. " +
+      "Independent authorization, durable recovery, sealed credentials and QEMU GUI integration are still required.");
+    box.append(blockedInstall);
     summary.replaceChildren(box);
   } catch (error) {
     if (step !== 4 || draftRevision !== revision || !$("validated-config").hasChildNodes()) return;
