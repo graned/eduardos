@@ -24,6 +24,8 @@ import threading
 
 import forge_executor_lab as lab
 import forge_installer as core
+import forge_secret_handoff as handoff
+import forge_credentials as credentials
 import forge_lab_progress as progress
 
 VERSION = "eduardos.forge.qemu-gui-install.v1"
@@ -50,12 +52,14 @@ def _fixture() -> None:
 class LabInstallSession:
     """One local consent, at most one VM install, no physical write support."""
 
-    def __init__(self, executor: str, operator_confirmation: str) -> None:
+    def __init__(self, executor: str, operator_confirmation: str, *,
+                 sealed_credentials: handoff.CredentialFDs | None = None) -> None:
         if (os.geteuid() != 0 or operator_confirmation != lab.CONFIRM
                 or not isinstance(executor, str)
                 or not executor.startswith("/nix/store/")
                 or not Path(executor).is_file()):
             raise Refused("Trusted local QEMU operator and immutable executor required")
+        self._sealed_credentials = sealed_credentials
         self._verify_vm()
         self._executor = executor
         self._used = False
@@ -65,13 +69,23 @@ class LabInstallSession:
         self._state = "awaiting-lab-trigger"
         self._cancel_requested = False
 
-    @staticmethod
-    def _verify_vm() -> None:
-        if lab.check_lab_guard():
+    def _verify_vm(self) -> None:
+        secure = self._sealed_credentials is not None
+        if lab.check_lab_guard(require_luks=not secure):
             raise Refused("Not a guarded disposable QEMU VM")
         if not Path(ALIAS).is_symlink() or Path(ALIAS).resolve() != Path(lab.TARGET):
             raise Refused("QEMU root disk stable alias differs from /dev/vda")
-        _fixture()
+        if secure:
+            # Validate role-labelled sealed descriptors before offering any
+            # executable session. This is not consent: constructor requires
+            # independent root confirmation; the executor revalidates too.
+            handles = self._sealed_credentials
+            handoff._assert_fd(handles.luks, credentials.LUKS_MEMFD_LABEL)
+            handoff._assert_fd(handles.account, credentials.ACCOUNT_MEMFD_LABEL)
+            if (lab.KEYFILE.exists() or lab.KEYFILE.is_symlink()):
+                raise Refused("Sealed lab requires an unused LUKS path")
+        else:
+            _fixture()
 
     def _disposable_disk(self) -> tuple[core.Disk, dict]:
         """Re-read real inventory; relax ONLY the VM fixture's size minimum.
@@ -182,13 +196,24 @@ class LabInstallSession:
         output = bytearray()
         try:
             self._verify_vm()
-            with ACCOUNT_FIXTURE.open("rb") as password_file:
+            handles = self._sealed_credentials
+            if handles is None:
+                # Compatibility with explicitly marked CI fixture mode.
+                password_file = ACCOUNT_FIXTURE.open("rb")
+                argv = [self._executor, "--execute", "--confirm", lab.CONFIRM,
+                        "--user-password-stdin"]
+                inherited = ()
+            else:
+                password_file = subprocess.DEVNULL
+                argv = [self._executor, "--execute", "--confirm", lab.CONFIRM,
+                        "--sealed-luks-fd", str(handles.luks),
+                        "--sealed-account-fd", str(handles.account)]
+                inherited = (handles.luks, handles.account)
+            try:
                 proc = subprocess.Popen(
-                    [self._executor, "--execute", "--confirm", lab.CONFIRM,
-                     "--user-password-stdin"],
-                    stdin=password_file, stdout=subprocess.PIPE,
+                    argv, stdin=password_file, stdout=subprocess.PIPE,
                     stderr=subprocess.DEVNULL, start_new_session=True,
-                    close_fds=True,
+                    close_fds=True, pass_fds=inherited,
                 )
                 with self._lock:
                     self._process = proc
@@ -212,6 +237,9 @@ class LabInstallSession:
                                 raise Refused("Excessive lab execution events")
                             self._phases.append(event)
                 code = proc.wait(timeout=30)
+            finally:
+                if handles is None:
+                    password_file.close()
             observed = progress.assess(output.decode("utf-8", "strict"), process_returncode=code)
             terminal = observed["status"]
         except (OSError, ValueError, subprocess.SubprocessError, UnicodeError):
