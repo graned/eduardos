@@ -151,6 +151,15 @@
             --system-closure ${installedUserLabSystem.config.system.build.toplevel} "$@"
         '';
       };
+      # Disposable-QEMU-only GUI-to-guarded-executor integration.
+      # NOT exported in packages or placed on the live ISO.
+      forgeInstallerLabGui = pkgs.writeShellApplication {
+        name = "forge-installer-lab-gui";
+        runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
+        text = ''
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_lab_gui.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
+        '';
+      };
       # Read-only production disk identity contract. No privileged helper
       # and no disk writes; it cannot invoke the lab executor.
       forgeDiskReview = pkgs.writeShellApplication {
@@ -585,6 +594,7 @@
         } ''
           cd ${./installer}
           python3 -m unittest discover -p 'test_forge_gui.py' -v
+          python3 -m unittest discover -s tests -p 'test_forge_lab_gui_http.py' -v
           mkdir -p "$out"
           echo "Read-only GUI security and API tests passed" > "$out/result"
         '';
@@ -702,6 +712,7 @@
           labExecutor = forgeInstallerLab;
           mountAuditor = forgeMountAuditor;
           guiPreview = forgeInstallerGui;
+          labGui = forgeInstallerLabGui;
         };
         storage-persistence = import ./nix/tests/storage-persistence.nix {
           inherit pkgs;

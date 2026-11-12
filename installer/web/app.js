@@ -224,11 +224,123 @@ async function renderReview() {
       "Independent authorization, durable recovery, sealed credentials and QEMU GUI integration are still required.");
     box.append(blockedInstall);
     summary.replaceChildren(box);
+    // Lab mode is *never* exposed by the production Forge preview server.
+    // The separate root-operator QEMU launcher alone supplies this endpoint.
+    if (ready) showDisposableLabControls(summary, requestedId, revision);
   } catch (error) {
     if (step !== 4 || draftRevision !== revision || !$("validated-config").hasChildNodes()) return;
     summary.replaceChildren(element("p", "blocked-text", error.message));
   }
 }
+// Only fixed disposable-QEMU lab sessions can expose this user-facing trigger.
+// No password or LUKS passphrase is ever collected by the HTTP frontend.
+// All real installation authority remains independently held by root.
+async function postLab(path, payload) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {"X-Forge-Token": token, "Content-Type": "application/json"},
+    cache: "no-store",
+    credentials: "omit",
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("QEMU lab action refused (" + response.status + ")");
+  return response.json();
+}
+
+async function showDisposableLabControls(summary, diskId, revision) {
+  let initial;
+  try {
+    initial = await getJSON("/api/lab/status");
+  } catch (_) {
+    return; // Normal production GUI: no lab interface exists.
+  }
+  if (step !== 4 || draftRevision !== revision || selected !== diskId) return;
+  if (initial.version !== "eduardos.forge.qemu-gui-install.v1" ||
+      initial.lab_only !== true ||
+      initial.physical_hardware_supported !== false ||
+      initial.authorization_to_write !== false ||
+      initial.automatic_retry_enabled !== false ||
+      diskId !== "/dev/disk/by-id/virtio-root" ||
+      $("username").value !== "testpilot" ||
+      $("hostname").value !== "edos-installed-lab") return;
+
+  const panel = element("div", "summary");
+  panel.append(element("h3", "", "DISPOSABLE QEMU INSTALLATION LAB"),
+               element("p", "", "A trusted local root operator pre-authorized this VM session. " +
+                 "Only the throwaway /dev/vda target is supported. " +
+                 "Public test credentials are held outside the browser."));
+  const status = element("p", "ready-text", "State: " + initial.status);
+  const progress = element("div", "lab-progress");
+  panel.append(status, progress);
+  const action = element("button", "primary", "Install disposable VM");
+  const cancel = element("button", "secondary", "Stop lab installation");
+  action.type = cancel.type = "button";
+  action.disabled = initial.status !== "awaiting-lab-trigger";
+  cancel.disabled = initial.status !== "running";
+  panel.append(action, cancel);
+  summary.append(panel);
+
+  let last = "";
+  const render = (data) => {
+    if (step !== 4 || draftRevision !== revision || selected !== diskId) return false;
+    if (data.version !== "eduardos.forge.qemu-gui-install.v1" ||
+        data.lab_only !== true || data.authorization_to_write !== false ||
+        data.automatic_retry_enabled !== false || !Array.isArray(data.phases)) {
+      status.textContent = "Invalid lab progress evidence";
+      return false;
+    }
+    status.textContent = "State: " + data.status;
+    const lines = data.phases.join("\n");
+    if (lines !== last) {
+      last = lines;
+      progress.replaceChildren(...data.phases.map((phase, i) =>
+        element("p", "layout-item", String(i + 1) + ". " + phase)));
+    }
+    action.disabled = true;
+    cancel.disabled = data.status !== "running";
+    return ["running", "preflight"].includes(data.status);
+  };
+  action.addEventListener("click", async () => {
+    action.disabled = true;
+    if (!window.confirm("ERASE DISPOSABLE /dev/vda — TEST VM ONLY. Continue?")) {
+      action.disabled = false;
+      return;
+    }
+    try {
+      const result = await postLab("/api/lab/start", {
+        operation: "start-disposable-qemu-install",
+        confirmation: "ERASE DISPOSABLE /dev/vda",
+        disk_by_id: diskId,
+        username: "testpilot",
+        hostname: "edos-installed-lab"
+      });
+      render(result);
+      const poll = async () => {
+        if (step !== 4 || draftRevision !== revision || selected !== diskId) return;
+        try {
+          if (render(await getJSON("/api/lab/status")))
+            window.setTimeout(poll, 900);
+        } catch (_) {
+          status.textContent = "Cannot verify installation status; inspect VM manually.";
+        }
+      };
+      window.setTimeout(poll, 900);
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  });
+  cancel.addEventListener("click", async () => {
+    cancel.disabled = true;
+    try {
+      render(await postLab("/api/lab/cancel", {
+        operation: "cancel-disposable-qemu-install"
+      }));
+    } catch (_) {
+      status.textContent = "Cancellation state unknown; inspect VM manually.";
+    }
+  });
+}
+
 $("start").addEventListener("click", () => { show(1); loadHardware(); });
 $("to-storage").addEventListener("click", () => show(2));
 $("to-config").addEventListener("click", () => show(3));
