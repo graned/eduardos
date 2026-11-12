@@ -1,117 +1,119 @@
-# eduardOS Alpha 0.2 — live delivery gates
+# eduardOS — FROZEN Alpha 0.2 delivery roadmap
 
-**Last reconciled:** November 11, 2026. **Next release:** Alpha 0.2. **Ultimate goal:** Alpha 2.0.
+**Frozen on:** 2026-11-12  
+**Owner:** Project conductor (user)  
+**Release target:** Alpha 0.2 — Forged in Darkness  
+**Scope changes:** Only after explicit user approval. No automatic new milestones.
 
-This document is the **current execution baseline**. Earlier numbered planning slots no
-longer correspond to the actual GitHub PR numbers. A release is not complete
-just because many PRs have merged. Future PR numbers are not reserved.
+> The number of merged PRs is **not** evidence of release completion.
+> Alpha 0.2 has **exactly three remaining delivery milestones**.
+> Bugs, tests and security fixes are implementation work under these milestones,
+> not new roadmap items.
 
-## Current GitHub checkpoint
+## Baseline — already implemented
 
-These changes are already incorporated on the default branch:
+- NixOS desktop environment, Forge Eclipse appearance and developer-tool foundation.
+- Graphical Forge preview: hardware, candidate disks, non-secret configuration and capability status.
+- Independently guarded disposable-QEMU installer using Disko, encrypted Btrfs, real user credential staging and NixOS installation.
+- Existing disposable-QEMU acceptance has exercised encrypted boot, account authentication, persistence and a second cold boot.
+- Read-only physical disk review and recovery safety groundwork; **physical installation remains disabled**.
 
-| Actual PR | Work landed | Qualification remaining |
-| --- | --- | --- |
-| #61 | Developer project initialization templates | Preview, overwrite and Nix packaging checks |
-| #62 | Forge accessible disk navigation | Browser/keyboard testing |
-| #63 | Offline Nix environment preview | No automatic Nix evaluation |
-| #64 | Forge HTTP safety regression suite | Security CI coverage |
-| #65 | Offline Compose discovery | Manifest ambiguity |
-| #66 | Strict read-only disk preview replies | Browser race testing |
-| #67 | Opt-in Docker/Podman Compose up/down/status | Real-engine/cancellation tests |
-| #68 | Non-secret configuration schema | Nix schema parity |
-| #69 | Same-user PID resource snapshots | Project and cgroup stats incomplete |
-| #70 | Forge non-secret configuration wizard | Browser end-to-end testing |
-| #71 | Redacted developer context | No project data or network transfers |
-| #72 | Stale draft invalidation | Browser delayed-response tests |
+**Not yet true:** Forge GUI cannot perform an installation. Running the GUI preview
+inside the same QEMU guest as a separately invoked lab installer is not
+GUI-driven installation.
 
-**Open as of reconciliation:** #73 (opt-in clean Neovim workspace launch) and
-#74 (persistent installation attempt marker primitive). Both require CI and
-user review. Neither is presumed merged.
+## Remaining milestones — fixed
 
-## Release-critical workstreams
+### 1. Connect Forge GUI to an authorized installer
 
-### Developer-first CLI
+**Goal:** A person can initiate a separately authorized, VM-only installer
+from Forge, using the existing lab execution implementation rather than
+another parallel safety framework.
 
-- [x] Rust diagnostics, read-only manifest inspection and project templates
-- [x] Nix/Compose discovery and explicitly selected Docker/Podman actions
-- [x] Same-user PID resource snapshot and redacted project ecosystem context
-- [ ] Review/merge workspace launcher (#73)
-- [ ] Deliver expressly approved Nix development shell execution OR explicitly
-      defer it. The current Nix command only previews; it does not enter a shell
-- [ ] Validate real Docker/Podman execution, cancellation, failure propagation
-      and consent on untrusted Compose manifests
-- [ ] Project/cgroup resource statistics remain more limited than the current
-      single-PID snapshot
-- [ ] Correct CLI-wide read-only descriptions: some opt-in commands now create
-      files or execute containers, although they never install an OS
-- [ ] Rust tests, Nix package, live and installed integration, documentation
+**Acceptance criteria:**
+- GUI presents the selected disposable VM target and obtains explicit,
+  independent local authorization at the privileged execution boundary.
+- Account and disk-unlock credentials are delivered through a trusted
+  mechanism without plaintext in process arguments, environment, Nix store,
+  HTTP responses or logs.
+- Only the existing disposable-QEMU execution path can run; the production
+  GUI must not expose a general physical-disk writer.
+- GUI reports real bounded phase events, terminal success/failure,
+  cancellation and manual-recovery-required state; no automatic destructive retry.
+- Hostile/stale requests and changed disk identity fail closed.
 
-### Installer trust boundary — not yet physically writable
+**Done means:** A guarded lab install can be initiated from the GUI
+with truthful progress and terminal outcome. Not merely an API preview.
 
-**Current boundary:** the Forge GUI only previews hardware and validates a
-non-secret configuration draft. Root physical attestation is read-only. The
-existing guarded destructive formatter is locked to disposable QEMU /dev/vda.
-None of those components grants writes to physical hardware.
+### 2. Prove end-to-end GUI installation on a fresh VM
 
-- [x] Stable-disk capture, read-only root ancestry checks and QEMU lab install
-- [ ] Reattest exact held block FD, stable alias, hardware identity, current
-      boot, mount and swap state at the future irreversible boundary
-- [ ] Review/merge persistent attempt primitive (#74). Integrate only after
-      verifying nonvolatile root-controlled backing storage, locking, reboot
-      behavior, crash consistency and an audited manual recovery policy
-- [ ] Review independently authorized physical executor with a closed
-      allowlist of exact immutable Disko/Nix commands, no shell or browser-
-      supplied writable path and no manifest digest accepted as permission
-- [ ] Trusted LUKS and account-secret delivery with sealed descriptors;
-      no plaintext in argv, environment, Nix store, logs or unencrypted files
-- [ ] Adversarial changes to mounts/swap, hotplug, alias identity, boot,
-      credentials, power loss and partial formatting in disposable QEMU
-- [ ] Keep physical writes disabled until independent security review
+**Goal:** Prove the entire user-facing flow, not just the lab CLI.
 
-### Forge GUI and execution integration
+**Acceptance criteria:**
+- Boot the release-candidate environment in disposable QEMU with a fresh disk.
+- Choose the target, configure a user and start installation **through Forge**.
+- Confirm real Disko format + NixOS install, encrypted UEFI boot,
+  correct user login, and a second cold boot retaining home/persistent data.
+- Exercise interruption/partial-format refusal and no automatic retry.
+- The full applicable QEMU CI suite is green; no mocked formatter in the
+  success-path acceptance test.
 
-- [x] Forge Eclipse preview with keyboard disk selection and safer stale
-      response handling
-- [x] Non-secret hostname, username and disk-identifier validation
-- [ ] Narrow, versioned, local unprivileged-GUI to audited-root protocol
-- [ ] Independent consent and secrets, clear phases, safe cancellation,
-      terminal failure, recovery instructions and no automatic destructive retry
-- [ ] Browser tests for spoofing, malformed requests, delayed replies and
-      stale selected disk/configuration state
+**Done means:** A real GUI-driven VM installation survives cold boot and recovery tests.
 
-### ISO and release gates
+### 3. Package, verify and publish the Alpha 0.2 ISO
 
-- [ ] Actual GUI-to-executor install of the same system in disposable QEMU;
-      encrypted cold boot, real user login and repeated reboot acceptance
-- [ ] Integrated installable ISO with final Rust CLI, GUI and trusted service
-- [ ] Build ISO at checkpoints, not on every small PR; always run destructive
-      QEMU integration for changes to writer, mounted target or credentials
-- [ ] Controlled UEFI hardware qualification with backups and test matrix
-- [ ] Checksums/provenance, installation/recovery docs and known limitations
-- [ ] All required CI green, evidence reviewed, user-approved Alpha 0.2 release
+**Goal:** Deliver one usable, reproducible VM-qualified alpha image.
 
-## Safe execution order
+**Acceptance criteria:**
+- ISO boots into the intended eduardOS desktop, Forge experience and
+  developer tools with the Eclipse default branding.
+- The **ISO itself** passes the supported disposable-QEMU GUI-install flow
+  and encrypted reboot acceptance (not only a separate test harness closure).
+- Checksum, exact supported VM configuration, installation instructions,
+  known limitations and recovery cautions are published.
+- Required CI is green; user reviews the release evidence and explicitly
+  approves publishing.
 
-1. Finish reattestation, persistent state and adversarial checks, separately.
-2. Audit the exact privileged executor boundary and secret transport.
-3. Exercise destructive operations only in disposable QEMU until proven safe.
-4. Connect the non-root GUI to the versioned independently authorized service.
-5. Build and verify installable ISO; carefully qualify supported real hardware.
-6. Publish Alpha 0.2 only after all release gates pass.
+**Done means:** Downloadable Alpha 0.2 artifact plus verification evidence.
 
-Parallel PRs should own separate files or well-defined interfaces. Every
-PR requires review and green applicable CI, and **the user merges each PR**.
+## Explicit exclusions — NOT Alpha 0.2 blockers
 
-## Later milestones
+- General-purpose physical-hardware installation and a claim of safety for arbitrary user disks.
+- Broad hardware matrix, driver/peripheral tuning and daily-driver guarantees.
+- New themes, redesigned UI, advanced snapshot/rollback products.
+- Extra CLI commands, container engines, project templates or unrelated applications.
+- Automatic retry or recovery of partially formatted disks.
 
-**Alpha 0.3:** recovery, Nix generations and rollback, snapshots, update
-workflow and broader hardware coverage.
+Physical hardware installation must remain disabled until separately
+reviewed and qualified. These exclusions can be planned for later releases
+without redefining Alpha 0.2.
 
-**Alpha 1.x:** daily-driver reliability, power/networking/peripheral polish,
-configuration migration and release channel lifecycle.
+## Implementation discipline
 
-**Alpha 2.0:** reproducible installation, upgrade, rollback and recovery
-guarantees for a documented supported hardware matrix.
+1. Work **only** on the three remaining milestones, in order.
+2. Merge existing PRs #89 and #90 only if applicable CI passes; they are
+   supporting tests, not new milestones or release blockers by themselves.
+3. Prefer modifying and integrating existing Forge components. No new
+   abstraction or policy PR unless it is necessary to unblock a milestone.
+4. An actual defect/security failure is fixed **within** its parent milestone;
+   it does not increase the milestone count.
+5. Tests needed to establish an acceptance criterion are part of that
+   milestone, not a new feature.
+6. Keep ISO builds at checkpoints instead of on every small PR, but run
+   destructive QEMU tests for changes to executable installer behavior.
+7. Do not merge automatically: user decides after review and green CI.
+8. Report progress as **0/3, 1/3, 2/3 or 3/3**, and provide the evidence;
+   never equate PR count with completion.
+9. The roadmap can be amended **only by explicit user approval**.
 
-⚡ eduardOS — Forged in Darkness.
+## Later releases (non-binding, outside this scope)
+
+- **Alpha 0.3+:** separately audited physical-hardware installation,
+  supported hardware qualifications and recovery/rollback improvements.
+- **Alpha 1.x:** broader daily-driver reliability and upgrade workflows.
+- **Alpha 2.0:** documented robust installation, update, rollback and
+  recovery on an explicitly supported hardware matrix.
+
+---
+
+⚡ **eduardOS — Forged in Darkness.**
