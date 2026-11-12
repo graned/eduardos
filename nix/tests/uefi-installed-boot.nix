@@ -108,9 +108,12 @@ pkgs.testers.runNixOSTest {
         # Inspect the *actual* captured disposable executor stdout with the
         # strict phase observer, rather than substring-order checks (which
         # can accidentally accept duplicates or 'installed' after failure).
-        import sys
-        sys.path.insert(0, "${../../installer}")
-        from forge_lab_progress import assess
+        # NixOS type-checks its generated driver before executing it. A
+        # runtime sys.path insertion cannot resolve a static import there.
+        # Load the pinned Nix-store source explicitly, retaining strict
+        # phase assessment without disabling the driver type checker.
+        import runpy
+        assess = runpy.run_path("${../../installer/forge_lab_progress.py}")["assess"]
         verified = assess(install_log, process_returncode=0)
         assert verified["status"] == "installed-lab-only"
         assert verified["complete"] is True
