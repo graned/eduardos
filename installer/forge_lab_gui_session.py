@@ -85,7 +85,7 @@ class LabInstallSession:
         disk = next((d for d in disks if d.path == lab.TARGET and d.by_id == ALIAS), None)
         if disk is None:
             raise Refused("Trusted disposable VM target missing from inventory")
-        if not system["architecture_supported"] or not system["sufficient_memory"]:
+        if not system["architecture_supported"]:
             raise Refused("Disposable VM system preflight failed")
         # Only the known 12-GiB disposable fixture may relax the production
         # 32-GiB minimum. Never override mounted, swapped, mapped, removable,
@@ -109,14 +109,17 @@ class LabInstallSession:
         if identifier != ALIAS:
             raise Refused("Only pinned disposable VM alias can be reviewed")
         target, system = self._disposable_disk()
-        # The installer test guest may boot via BIOS while installing an
-        # OVMF/UEFI target. Production preview still requires UEFI preflight.
-        plan = core.preview(target, {**system, "uefi": True})
+        # The QEMU installer guest can boot via BIOS and report less than
+        # 4 GiB usable RAM even when provisioned with 4096 MiB; the real
+        # guarded test already installs into an OVMF/UEFI target with those
+        # constraints. These exceptions are lab-only, never production.
+        plan = core.preview(target, {**system, "uefi": True,
+                                     "sufficient_memory": True})
         if plan["status"] != "ready-for-review" or plan["blockers"]:
             raise Refused("Disposable target preview has blockers")
         plan["lab_only"] = True
-        plan["note"] = ("QEMU-only test fixture: the guest installer boot method "
-                        "and minimum disk size differ from production requirements.")
+        plan["note"] = ("QEMU-only fixture: installer boot mode, available RAM and "
+                        "disk size may differ from production requirements.")
         return plan
 
     def report(self) -> dict:
