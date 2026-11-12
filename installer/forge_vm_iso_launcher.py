@@ -41,6 +41,11 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("Expected disposable virtio-root at /dev/vda is absent")
         if executor.MARKER.exists() or executor.MARKER.is_symlink():
             raise ValueError("Disposable VM authorization marker already exists")
+        print("WARNING: this will ERASE disposable QEMU /dev/vda.", flush=True)
+        print("No physical disk or arbitrary target is supported.", flush=True)
+        answer = input("Type ERASE DISPOSABLE /dev/vda to continue: ")
+        if answer != executor.CONFIRM:
+            raise ValueError("Operator confirmation was refused")
         # Marker creation grants no write permission by itself: the executor
         # independently checks the VM, target, mounts, one-shot attempt,
         # passphrase, and exact immutable Disko command at execution time.
@@ -53,11 +58,6 @@ def main(argv: list[str] | None = None) -> int:
             os.close(fd)
         if executor.check_lab_guard(require_luks=False):
             raise ValueError("VM disk preflight failed")
-        print("WARNING: this will ERASE disposable QEMU /dev/vda.", flush=True)
-        print("No physical disk or arbitrary target is supported.", flush=True)
-        answer = input("Type ERASE DISPOSABLE /dev/vda to continue: ")
-        if answer != executor.CONFIRM:
-            raise ValueError("Operator confirmation was refused")
         # A local root-operated Forge service is intentionally separate
         # from the unprivileged live desktop's read-only preview.
         return gui.main([
