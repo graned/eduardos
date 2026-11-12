@@ -170,8 +170,7 @@
         name = "forge-installer-vm";
         runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
         text = ''
-          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_vm_iso_launcher.py \\
-            --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_vm_iso_launcher.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
         '';
       };
       # Read-only production disk identity contract. No privileged helper
