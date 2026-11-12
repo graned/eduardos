@@ -1,4 +1,4 @@
-{ pkgs, lib, targetSystem, formattingSystem, labExecutor, mountAuditor }:
+{ pkgs, lib, targetSystem, formattingSystem, labExecutor, mountAuditor, guiPreview }:
 
 # Install eduardOS onto a throwaway disk; boot that disk via OVMF.
 pkgs.testers.runNixOSTest {
@@ -27,6 +27,7 @@ pkgs.testers.runNixOSTest {
         formattingSystem.config.system.build.destroyFormatMount
         labExecutor
         mountAuditor
+        guiPreview
         pkgs.stdenv
         pkgs.perlPackages.ConfigIniFiles
         pkgs.perlPackages.FileSlurp
@@ -69,6 +70,10 @@ pkgs.testers.runNixOSTest {
     # /dev/vda is only the disposable VM disk, never a physical target.
     installer.succeed("test -L /dev/disk/by-id/virtio-root")
     installer.succeed("test \"$(readlink -f /dev/disk/by-id/virtio-root)\" = /dev/vda")
+
+    with subtest("Forge preview HTTP in guest"):
+        installer.succeed("${pkgs.python3}/bin/python3 ${./forge-preview-in-qemu.py} ${lib.getExe guiPreview}")
+        installer.succeed("test ! -e /dev/vda1")
 
     with subtest("Partition through the real Disko layout"):
         installer.succeed(
@@ -174,7 +179,14 @@ pkgs.testers.runNixOSTest {
         target.succeed("test -x /run/current-system/sw/bin/Hyprland")
         target.succeed("test -x /run/current-system/sw/bin/ghostty")
         target.succeed("systemctl is-active NetworkManager.service")
-        target.succeed("test -s /etc/xdg/eduardos/forge-classic-wallpaper.jpg")
+        # Forge Eclipse is the installed default; Classic assets are not
+        # installed unless that theme is explicitly selected.
+        target.succeed("grep -Fxq forge-eclipse /etc/xdg/eduardos/theme")
+        target.succeed("test -s /etc/xdg/eduardos/forge-eclipse-wallpaper.png")
+        target.succeed(
+            "test \"$(head -c 4 /etc/xdg/eduardos/forge-eclipse-wallpaper.png "
+            "| od -An -tx1 | tr -d '[:space:]')\" = 89504e47"
+        )
         target.succeed("getent passwd testpilot")
         target.fail("getent passwd forge")
         target.succeed("systemctl is-active greetd.service")

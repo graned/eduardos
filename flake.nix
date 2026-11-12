@@ -701,6 +701,7 @@
           formattingSystem = installerFormatSystem;
           labExecutor = forgeInstallerLab;
           mountAuditor = forgeMountAuditor;
+          guiPreview = forgeInstallerGui;
         };
         storage-persistence = import ./nix/tests/storage-persistence.nix {
           inherit pkgs;
