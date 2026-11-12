@@ -11,6 +11,7 @@ import argparse
 from contextlib import contextmanager
 import os
 import io
+import fcntl
 import re
 from pathlib import Path
 import stat
@@ -405,6 +406,10 @@ def main(argv: list[str] | None = None) -> int:
             # independent root consent and format-attempt gates still apply.
             if os.geteuid() != 0 or not MARKER.is_file():
                 raise Refused("Sealed credentials require root disposable QEMU")
+            # subprocess pass_fds clears CLOEXEC in the exec'ed child.
+            # Restore it before validating the sealed descriptor contract.
+            for credential_fd in (args.sealed_luks_fd, args.sealed_account_fd):
+                fcntl.fcntl(credential_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
             handles = sealed_handoff.CredentialFDs(
                 args.sealed_luks_fd, args.sealed_account_fd)
             with sealed_handoff.OneShotCredentialReader(handles).consume() as material:
