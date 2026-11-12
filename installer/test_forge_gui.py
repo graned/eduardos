@@ -85,22 +85,51 @@ class WebPreviewTests(unittest.TestCase):
         self.assertIn(b"color:var(--text)", css)
 
     def test_live_brave_software_text_rendering_is_opt_in(self):
-        with patch.dict(forge_gui.os.environ, {"EDOS_FORGE_SOFTWARE_BROWSER": "1"}), \
-             patch.object(forge_gui.shutil, "which", return_value="/nix/store/brave/bin/brave"), \
+        with TemporaryDirectory() as runtime, \
+             patch.dict(forge_gui.os.environ, {
+                 "EDOS_FORGE_SOFTWARE_BROWSER": "1",
+                 "XDG_RUNTIME_DIR": runtime,
+             }), \
+             patch.object(forge_gui.shutil, "which",
+                          return_value="/nix/store/brave/bin/brave"), \
              patch.object(forge_gui.subprocess, "Popen") as popen, \
              patch.object(forge_gui.webbrowser, "open") as fallback:
             forge_gui.open_preview_browser("http://127.0.0.1:12345/?token=example")
             args = popen.call_args.args[0]
+            self.assertEqual(args[0], "/nix/store/brave/bin/brave")
+            profile = next(a.split("=", 1)[1] for a in args
+                           if a.startswith("--user-data-dir="))
+            self.assertTrue(Path(profile).is_dir())
+            self.assertEqual(Path(profile).parent, Path(runtime))
+            self.assertEqual(Path(profile).stat().st_mode & 0o777, 0o700)
+            self.assertIn("--ozone-platform=x11", args)
+            self.assertIn("--disable-gpu", args)
             self.assertIn("--disable-gpu-rasterization", args)
             self.assertIn("--disable-gpu-compositing", args)
-            self.assertIn("--disable-zero-copy", args)
-            self.assertIn("--disable-gpu-compositing", args)
+            self.assertIn("--new-window", args)
             self.assertEqual(popen.call_args.kwargs["env"]["LIBGL_ALWAYS_SOFTWARE"], "1")
+            self.assertEqual(popen.call_args.kwargs["env"]["GDK_BACKEND"], "x11")
             fallback.assert_not_called()
-        with patch.dict(forge_gui.os.environ, {"EDOS_FORGE_SOFTWARE_BROWSER": "0"}), \
+        with patch.dict(forge_gui.os.environ,
+                        {"EDOS_FORGE_SOFTWARE_BROWSER": "0"}), \
              patch.object(forge_gui.webbrowser, "open") as fallback:
             forge_gui.open_preview_browser("http://127.0.0.1:12345/?token=example")
             fallback.assert_called_once()
+
+    def test_broken_brave_launch_cleans_up_private_profile(self):
+        with TemporaryDirectory() as runtime, \
+             patch.dict(forge_gui.os.environ, {
+                 "EDOS_FORGE_SOFTWARE_BROWSER": "1",
+                 "XDG_RUNTIME_DIR": runtime,
+             }), \
+             patch.object(forge_gui.shutil, "which",
+                          return_value="/nix/store/brave/bin/brave"), \
+             patch.object(forge_gui.subprocess, "Popen",
+                          side_effect=OSError("not supported")), \
+             patch.object(forge_gui.webbrowser, "open") as fallback:
+            forge_gui.open_preview_browser("http://127.0.0.1:12345/?token=example")
+            fallback.assert_called_once()
+            self.assertEqual(list(Path(runtime).iterdir()), [])
 
     def test_font_asset_is_same_origin_and_fixed_path(self):
         with TemporaryDirectory() as directory:
