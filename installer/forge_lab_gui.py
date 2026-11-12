@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 from contextlib import ExitStack
 import getpass
+import os
 import fcntl
 import secrets
 import sys
@@ -18,6 +19,7 @@ from http.server import ThreadingHTTPServer
 
 import forge_gui
 import forge_authorization as authorization
+import forge_executor_lab as lab
 import forge_secret_handoff as handoff
 from forge_lab_gui_session import LabInstallSession, Refused
 
@@ -35,6 +37,11 @@ def main(argv=None) -> int:
                         help="QEMU harness: inherited independently created sealed account fd")
     args = parser.parse_args(argv)
     try:
+        # Verify this is already the expected root-run disposable QEMU
+        # operator session BEFORE soliciting any real user secret.
+        if (os.geteuid() != 0 or args.operator_confirm != lab.CONFIRM
+                or lab.check_lab_guard(require_luks=False)):
+            raise Refused("Independent root QEMU authorization failed")
         with ExitStack() as stack:
             handles = None
             inherited = (args.trusted_sealed_luks_fd, args.trusted_sealed_account_fd)
