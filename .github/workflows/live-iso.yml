@@ -68,7 +68,7 @@ jobs:
           iso="$(find -L result/iso -maxdepth 1 -type f -name '*.iso' -print -quit)"
           test -n "$iso"
           sha256sum "$iso" | awk '{print $1 "  eduardos-alpha.iso"}' > artifacts/SHA256SUMS
-          printf 'eduardOS Alpha 0.1 preview — Forged in Neon\nCommit: %s\nWorkflow: %s\nLive ISO: not physically installable\n' \
+          printf 'eduardOS Alpha 0.2 VM-only release candidate — Forged in Darkness\nCommit: %s\nWorkflow: %s\nInstaller: disposable QEMU /dev/vda only, explicit root console consent; NOT for physical disks\nVerification: diskless ISO boot smoke only; ISO-originated installation remains unverified\n' \
             "$GITHUB_SHA" "$GITHUB_RUN_ID" > artifacts/BUILDINFO.txt
           split -b 1900M --numeric-suffixes=0 --suffix-length=3 \
             "$iso" artifacts/eduardos-alpha.iso.part-
