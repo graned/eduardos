@@ -10,6 +10,8 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 import os
+import io
+import re
 from pathlib import Path
 import stat
 import subprocess
@@ -17,6 +19,7 @@ import sys
 
 import forge_authorization as authorization
 import forge_credentials as credentials
+import forge_secret_handoff as sealed_handoff
 import forge_disk_identity as identity
 import forge_installer as preflight
 import forge_install_transaction as transaction
@@ -90,12 +93,29 @@ def check_lab_guard() -> list[str]:
     except (OSError, ValueError, subprocess.CalledProcessError,
             subprocess.TimeoutExpired) as exc:
         errors.append(f"Disk guard could not complete: {type(exc).__name__}")
-    if not KEYFILE.is_file() or KEYFILE.is_symlink():
-        errors.append("Missing regular test-only LUKS key file")
+    # The legacy CI fixture is a root-owned 0600 tmpfs file. The trusted
+    # operator path instead supplies a role-labelled sealed memfd; Disko's
+    # immutable formatter expects this exact /run pathname, so it is a
+    # root-owned symlink to the executor's own live /proc/self/fd/N.
+    # Never follow an arbitrary symlink or accept a caller-provided key path.
+    if KEYFILE.is_symlink():
+        try:
+            link = os.readlink(KEYFILE)
+            if not re.fullmatch(r"/proc/[1-9][0-9]*/fd/[0-9]+", link):
+                raise Refused("Invalid sealed LUKS link")
+            pid, descriptor = (int(part) for part in (link.split("/")[2], link.split("/")[4]))
+            if pid != os.getpid() or KEYFILE.lstat().st_uid != 0:
+                raise Refused("Sealed LUKS link belongs to another process")
+            sealed_handoff._assert_fd(descriptor, credentials.LUKS_MEMFD_LABEL)
+        except (OSError, ValueError, Refused, sealed_handoff.Refused):
+            errors.append("Sealed LUKS credential provenance failed")
+    elif not KEYFILE.is_file():
+        errors.append("Missing guarded QEMU LUKS input")
     else:
-        stat = KEYFILE.stat()
-        if stat.st_size < 16 or stat.st_mode & 0o077:
-            errors.append("Disposable LUKS key must be nonempty and mode 0600")
+        metadata = KEYFILE.stat()
+        if (metadata.st_uid != 0 or metadata.st_size < 16
+                or metadata.st_mode & 0o077):
+            errors.append("Disposable LUKS fixture must be root-owned mode 0600")
     return errors
 
 
@@ -350,6 +370,10 @@ def main(argv: list[str] | None = None) -> int:
         "--user-password-stdin", action="store_true",
         help="Required in QEMU execute mode; public test fixture is read on stdin",
     )
+    parser.add_argument("--sealed-luks-fd", type=int, default=None,
+                        help="Trusted QEMU operator: inherited sealed LUKS memfd")
+    parser.add_argument("--sealed-account-fd", type=int, default=None,
+                        help="Trusted QEMU operator: inherited sealed account memfd")
     parser.add_argument("--disko-script", required=True)
     parser.add_argument("--system-closure", required=True)
     args = parser.parse_args(argv)
@@ -359,8 +383,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.confirm != CONFIRM:
         print("REFUSED: explicit disposable disk confirmation required.", file=sys.stderr)
         return 2
-    if not args.user_password_stdin:
-        print("REFUSED: QEMU fixture account password must be supplied on stdin.", file=sys.stderr)
+    sealed_mode = args.sealed_luks_fd is not None or args.sealed_account_fd is not None
+    if sealed_mode:
+        if (args.user_password_stdin or args.sealed_luks_fd is None
+                or args.sealed_account_fd is None):
+            print("REFUSED: expected exactly two sealed credential descriptors.", file=sys.stderr)
+            return 2
+    elif not args.user_password_stdin:
+        print("REFUSED: QEMU fixture password input required.", file=sys.stderr)
         return 2
     failures = check_lab_guard()
     if failures:
@@ -368,14 +398,34 @@ def main(argv: list[str] | None = None) -> int:
             print(f"REFUSED: {failure}", file=sys.stderr)
         return 2
     try:
-        install(args.disko_script, args.system_closure,
-                password_stream=sys.stdin.buffer)
+        if sealed_mode:
+            # Descriptor numbers are NOT authorization. QEMU, target identity,
+            # independent root consent and format-attempt gates still apply.
+            if os.geteuid() != 0 or not MARKER.is_file():
+                raise Refused("Sealed credentials require root disposable QEMU")
+            handles = sealed_handoff.CredentialFDs(
+                args.sealed_luks_fd, args.sealed_account_fd)
+            with sealed_handoff.OneShotCredentialReader(handles).consume() as material:
+                # The immutable Disko script reads the fixed /run path.
+                # Point it only to this live process's sealed memfd, never a
+                # plaintext secret file. Refuse to overwrite a fixture/link.
+                if KEYFILE.exists() or KEYFILE.is_symlink():
+                    raise Refused("Sealed LUKS path is already occupied")
+                os.symlink(f"/proc/{os.getpid()}/fd/{args.sealed_luks_fd}", KEYFILE)
+                try:
+                    install(args.disko_script, args.system_closure,
+                            password_stream=io.BytesIO(material.account))
+                finally:
+                    KEYFILE.unlink(missing_ok=True)
+        else:
+            install(args.disko_script, args.system_closure,
+                    password_stream=sys.stdin.buffer)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
             Refused, mount_audit.Refused, topology_guard.Refused,
             OSError, ValueError, TypeError, KeyError,
             credentials.Refused, authorization.Refused,
             command_policy.Refused, lab_attempt.Refused,
-            lab_child.Cancelled) as exc:
+            lab_child.Cancelled, sealed_handoff.Refused) as exc:
         print(f"Installation aborted: {exc}", file=sys.stderr)
         return 3
     print("Disposable VM installation complete; no physical device was supported.")
