@@ -33,6 +33,29 @@ FONT = Path(os.environ.get("EDOS_FORGE_FONT_PATH", "/nonexistent/forge-font.ttf"
 MAX_PATH_LENGTH = 2048
 MAX_DRAFT_BYTES = 2048
 
+def install_capabilities() -> dict:
+    """Safe public contract: preview-only, no local privileged executor.
+
+    This is intentionally fixed server-side. A browser, preview hash or
+    validated draft can never promote these flags into an install action.
+    """
+    return {
+        "version": "eduardos.forge.capabilities.v1",
+        "mode": "dry-run-only",
+        "installation_available": False,
+        "physical_disk_writes_enabled": False,
+        "credential_collection_enabled": False,
+        "privileged_executor_connected": False,
+        "automatic_retry_enabled": False,
+        "required_gates": [
+            "independent-root-authorization",
+            "durable-attempt-recovery",
+            "sealed-credential-integration",
+            "gui-executor-qemu-acceptance",
+        ],
+    }
+
+
 
 def inventory() -> dict:
     system = core.system_preflight()
@@ -121,6 +144,8 @@ def make_handler(token: str):
                 return self.send_body(200, data, "image/png")
             if self.headers.get("X-Forge-Token") != token:
                 return self.reject()
+            if path == "/api/capabilities":
+                return self.send_json(200, install_capabilities())
             if path == "/api/inventory":
                 try:
                     result = inventory()
