@@ -226,7 +226,7 @@ async function renderReview() {
     summary.replaceChildren(box);
     // Lab mode is *never* exposed by the production Forge preview server.
     // The separate root-operator QEMU launcher alone supplies this endpoint.
-    showDisposableLabControls(summary, requestedId, revision);
+    if (ready) showDisposableLabControls(summary, requestedId, revision);
   } catch (error) {
     if (step !== 4 || draftRevision !== revision || !$("validated-config").hasChildNodes()) return;
     summary.replaceChildren(element("p", "blocked-text", error.message));
@@ -302,7 +302,10 @@ async function showDisposableLabControls(summary, diskId, revision) {
   };
   action.addEventListener("click", async () => {
     action.disabled = true;
-    if (!window.confirm("ERASE DISPOSABLE /dev/vda — TEST VM ONLY. Continue?")) return;
+    if (!window.confirm("ERASE DISPOSABLE /dev/vda — TEST VM ONLY. Continue?")) {
+      action.disabled = false;
+      return;
+    }
     try {
       const result = await postLab("/api/lab/start", {
         operation: "start-disposable-qemu-install",
