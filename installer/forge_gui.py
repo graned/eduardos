@@ -78,7 +78,9 @@ def plan_for_identifier(identifier: str) -> dict:
     return core.preview(disk, system)
 
 
-def make_handler(token: str):
+def make_handler(token: str, *, lab_session=None):
+    # Only a separate disposable-VM root launcher may supply lab_session.
+    # The normal live ISO and packaged GUI always use the default None.
     class ForgeHandler(BaseHTTPRequestHandler):
         server_version = "ForgePreview/0.2"
 
@@ -144,6 +146,8 @@ def make_handler(token: str):
                 return self.send_body(200, data, "image/png")
             if self.headers.get("X-Forge-Token") != token:
                 return self.reject()
+            if path == "/api/lab/status" and lab_session is not None:
+                return self.send_json(200, lab_session.report())
             if path == "/api/capabilities":
                 return self.send_json(200, install_capabilities())
             if path == "/api/inventory":
@@ -171,7 +175,10 @@ def make_handler(token: str):
                 return self.reject(414)
             if self.headers.get("Host") != f"127.0.0.1:{self.server.server_address[1]}":
                 return self.reject()
-            if urllib.parse.urlsplit(self.path).path != "/api/config/validate":
+            route = urllib.parse.urlsplit(self.path).path
+            if route not in ("/api/config/validate", "/api/lab/start", "/api/lab/cancel"):
+                return self.reject(405)
+            if route != "/api/config/validate" and lab_session is None:
                 return self.reject(405)
             if self.headers.get("X-Forge-Token") != token:
                 return self.reject()
@@ -189,6 +196,18 @@ def make_handler(token: str):
                 value = json.loads(self.rfile.read(length))
             except (ValueError, UnicodeError):
                 return self.send_json(400, {"error": "Invalid JSON draft"})
+            if route == "/api/lab/start":
+                try:
+                    return self.send_json(202, lab_session.start(value))
+                except ValueError:
+                    return self.reject(409)
+            if route == "/api/lab/cancel":
+                if value != {"operation": "cancel-disposable-qemu-install"}:
+                    return self.reject(400)
+                try:
+                    return self.send_json(200, lab_session.cancel())
+                except ValueError:
+                    return self.reject(409)
             return self.send_json(200, validate_draft(value))
 
         def do_PUT(self):
