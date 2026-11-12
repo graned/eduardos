@@ -20,6 +20,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import urlsplit
 
 COMPLETE = "installed-lab-only"
@@ -140,7 +141,7 @@ def main(binary: str, chromium: str, chromedriver: str) -> None:
             account.send_keys("testpilot")
             click_when_ready("#validate-config")
             click_when_ready("#summary button.primary")
-            alert = wait.until(lambda d: d.switch_to.alert)
+            alert = wait.until(EC.alert_is_present())
             assert "DISPOSABLE /dev/vda" in alert.text
             alert.accept()
             wait.until(lambda d: any(
