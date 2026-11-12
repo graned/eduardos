@@ -123,7 +123,7 @@ in
     serviceConfig.Type = "oneshot";
     script = ''
       if [ -c /dev/ttyS0 ]; then
-        printf '%s\n' 'EDOS_LIVE_BOOT_OK=alpha-0.1-preview' > /dev/ttyS0
+        printf '%s\n' 'EDOS_LIVE_BOOT_OK=alpha-0.2-vm-rc' > /dev/ttyS0
       fi
     '';
   };
@@ -138,8 +138,10 @@ in
   ];
 
   environment.etc."eduardos/live-release".text = ''
-    eduardOS Alpha 0.1 — Forged in Neon
-    Disposable live environment; no automatic partitioning or installation.
+    eduardOS Alpha 0.2 VM-only release candidate — Forged in Darkness
+    Regular Forge desktop remains read-only; only deliberate root-operated
+    disposable QEMU VM installation can format the fixed virtio-root disk.
+    Physical-hardware installation is not available.
     Live account: forge
   '';
 
