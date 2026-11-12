@@ -91,7 +91,9 @@ class WebPreviewTests(unittest.TestCase):
              patch.object(forge_gui.webbrowser, "open") as fallback:
             forge_gui.open_preview_browser("http://127.0.0.1:12345/?token=example")
             args = popen.call_args.args[0]
-            self.assertIn("--disable-gpu", args)
+            self.assertIn("--disable-gpu-rasterization", args)
+            self.assertIn("--disable-gpu-compositing", args)
+            self.assertIn("--disable-zero-copy", args)
             self.assertIn("--disable-gpu-compositing", args)
             self.assertEqual(popen.call_args.kwargs["env"]["LIBGL_ALWAYS_SOFTWARE"], "1")
             fallback.assert_not_called()
