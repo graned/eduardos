@@ -21,6 +21,8 @@ on:
       - "nix/tests/forge-lab-gui-in-qemu.py"
       - "installer/forge_lab_gui_session.py"
       - "installer/forge_lab_gui.py"
+      - "installer/forge_secret_handoff.py"
+      - "installer/forge_credentials.py"
       - "hosts/uefi-lab/**"
       - ".github/workflows/full-install.yml"
   schedule:
