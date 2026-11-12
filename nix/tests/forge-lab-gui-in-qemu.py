@@ -71,6 +71,25 @@ def main(binary: str) -> None:
             finally:
                 conn.close()
 
+        # The real GUI must be able to SELECT the 12-GiB VM target and
+        # reach ready-for-review; production requires a 32-GiB disk.
+        code, vm_inventory = request("GET", "/api/inventory")
+        assert code == 200 and vm_inventory["lab_only"] is True
+        assert vm_inventory["mode"] == "dry-run-only"
+        assert vm_inventory["write_operations_enabled"] is False
+        assert len(vm_inventory["disks"]) == 1
+        disk = vm_inventory["disks"][0]
+        assert disk["path"] == "/dev/vda" and disk["eligible"] is True, disk
+        assert disk["by_id"] == "/dev/disk/by-id/virtio-root", disk
+        code, preview = request("GET", "/api/preview?id=/dev/disk/by-id/virtio-root")
+        assert code == 200 and preview["status"] == "ready-for-review", preview
+        assert preview["lab_only"] is True
+        assert preview["would_write_to_disk"] is False
+        assert preview["blockers"] == []
+        code, denied = request("GET", "/api/preview?id=/dev/vdb")
+        assert code == 503
+        assert denied["error"].startswith("Hardware discovery failed:")
+
         code, result = request("GET", "/api/lab/status")
         assert code == 200 and result["status"] == "awaiting-lab-trigger"
         assert result["authorization_to_write"] is False
