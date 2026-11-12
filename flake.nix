@@ -611,6 +611,7 @@
           python3 -m unittest discover -s tests -p 'test_forge_lab_gui_http.py' -v
           python3 -m unittest discover -s tests -p 'test_forge_lab_gui_inventory.py' -v
           python3 -m unittest discover -s tests -p 'test_forge_lab_sealed_execution.py' -v
+          python3 -m unittest discover -s tests -p 'test_forge_vm_iso_launcher.py' -v
           mkdir -p "$out"
           echo "Read-only GUI security and API tests passed" > "$out/result"
         '';
@@ -640,12 +641,17 @@
               (pkg.pname or "") == "forge-installer-gui"
               || (pkg.name or "") == "forge-installer-gui")
               cfg.environment.systemPackages;
+            vmLabLauncher = builtins.any (pkg:
+              (pkg.pname or "") == "forge-installer-vm"
+              || (pkg.name or "") == "forge-installer-vm")
+              cfg.environment.systemPackages;
             serialProbe = cfg.systemd.services.edos-live-boot-probe.wantedBy
               == [ "multi-user.target" ];
             rustCli = builtins.any (pkg: (pkg.pname or "") == "edos")
               cfg.environment.systemPackages;
           in assert hasIso && eclipse && login && network && noDisko
-            && serialProbe && rustCli && bootLabel && bootTheme && installerLauncher;
+            && serialProbe && rustCli && bootLabel && bootTheme && installerLauncher
+            && vmLabLauncher;
           pkgs.runCommand "eduardos-live-iso-config-check" {} ''
             mkdir -p "$out"
             echo "Live ISO configured without Disko" > "$out/result"
