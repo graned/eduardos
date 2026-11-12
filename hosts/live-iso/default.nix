@@ -122,8 +122,16 @@ in
     after = [ "local-fs.target" ];
     serviceConfig.Type = "oneshot";
     script = ''
+      # The release smoke marker is valid only if the installed ISO
+      # actually exposes both Forge and the opt-in QEMU-only launcher.
+      # Never start any installer or access block devices in this probe.
+      if [ ! -x /run/current-system/sw/bin/forge-installer-vm ] || \\
+         [ ! -x /run/current-system/sw/bin/forge-installer-gui ]; then
+        echo "EDOS_LIVE_BOOT_REFUSED=installer-launcher-missing" > /dev/ttyS0 2>/dev/null || true
+        exit 1
+      fi
       if [ -c /dev/ttyS0 ]; then
-        printf '%s\n' 'EDOS_LIVE_BOOT_OK=alpha-0.2-vm-rc' > /dev/ttyS0
+        printf '%s\\n' 'EDOS_LIVE_BOOT_OK=alpha-0.2-vm-rc' > /dev/ttyS0
       fi
     '';
   };
