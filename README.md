@@ -4,9 +4,10 @@ An experimental NixOS-based Linux distribution with an Aztec-inspired
 neon desktop, Hyprland, Ghostty, Catppuccin and the read-only Rust `edos`
 diagnostic CLI.
 
-**Current releases:** Alpha 0.1 live preview exists; the first physically
-installable Alpha 0.2 is **not finished**. Do not use the QEMU installation
-test executables on physical disks.
+**Current releases:** Alpha 0.1 live preview exists. Alpha 0.2 is currently a
+**VM-only release candidate**, not yet built and accepted as a release. Its
+explicit installer is guarded for disposable QEMU `/dev/vda` and is **never
+supported on a physical disk**. See [Alpha 0.2 VM ISO checkpoint](docs/alpha-0.2-vm-iso-checkpoint.md).
 
 ## Preview the system
 
