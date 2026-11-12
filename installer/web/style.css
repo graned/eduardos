@@ -14,9 +14,10 @@ main{padding:28px clamp(26px,6vw,100px) 24px;display:flex;flex-direction:column;
    wallpaper or the ISO boot image. Keep foreground content legible. */
 main{
   background-image:linear-gradient(90deg,rgba(8,5,9,.85) 0%,rgba(8,5,9,.65) 48%,rgba(8,5,9,.46) 100%),url("/artwork.png");
-  background-size:cover;
-  background-repeat:no-repeat;
-  background-position:center center;
+  /* Each layer has its own sizing: the actual logo/image must NEVER crop. */
+  background-size:100% 100%,contain;
+  background-repeat:no-repeat,no-repeat;
+  background-position:center center,center center;
 }
 main .panel{position:relative}
 main .notice,main .hardware-card,main .disk-option,main .summary{
@@ -58,10 +59,18 @@ body::before{content:"";pointer-events:none;position:fixed;z-index:0;width:min(5
   src:url("/forge-font.ttf") format("truetype");
   font-display:swap;
   font-style:normal;
-  font-weight:100 900;
+  /* DejaVuSans.ttf is a STATIC face, not a variable weight font. */
+  font-weight:400;
 }
 html{font-family:"Forge UI","DejaVu Sans",sans-serif}
-body{font-family:inherit;text-rendering:optimizeLegibility}
+/* Avoid GPU-sensitive font rasterization and transparent inherited colors
+   in Brave's live Wayland environment; text stays readable even if the
+   optional webfont cannot load. */
+body{font-family:"Forge UI","DejaVu Sans",sans-serif;text-rendering:auto;-webkit-font-smoothing:auto;color:var(--text)}
+button,input,select,textarea{font-family:inherit;-webkit-text-fill-color:currentColor}
+.shell,.rail,main,.panel,.step,.notice,.hardware-card,.disk-option,.summary{color:var(--text)}
+main p,main label,main strong,main .disk-info,main .layout-item{visibility:visible;opacity:1}
+
 .shell{isolation:isolate;background:#0d080ed9}
 .rail{background:rgba(12,8,13,.96)}
 .rail .wordmark{color:#fff;line-height:1.25}
@@ -73,7 +82,9 @@ body{font-family:inherit;text-rendering:optimizeLegibility}
 main{
   background-image:linear-gradient(90deg,rgba(10,6,12,.91) 0%,rgba(10,6,12,.80) 34%,rgba(10,6,12,.36) 100%),url("/artwork.png");
   background-color:#120a10;
-  background-position:center center;
+  /* The Eclipse logo must remain in-frame even on 4:3 VM displays. */
+  background-size:100% 100%,contain;
+  background-position:center center,center center;
 }
 main header,main footer{position:relative;z-index:1}
 main header .overline{color:#e7b9c4}
