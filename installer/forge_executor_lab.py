@@ -47,7 +47,7 @@ def run(*args: str) -> str:
                           timeout=30).stdout.strip()
 
 
-def check_lab_guard() -> list[str]:
+def check_lab_guard(*, require_luks: bool = True) -> list[str]:
     errors = []
     if os.geteuid() != 0:
         errors.append("Must run as root inside a disposable VM")
@@ -98,6 +98,8 @@ def check_lab_guard() -> list[str]:
     # immutable formatter expects this exact /run pathname, so it is a
     # root-owned symlink to the executor's own live /proc/self/fd/N.
     # Never follow an arbitrary symlink or accept a caller-provided key path.
+    if not require_luks:
+        return errors
     if KEYFILE.is_symlink():
         try:
             link = os.readlink(KEYFILE)
@@ -392,7 +394,7 @@ def main(argv: list[str] | None = None) -> int:
     elif not args.user_password_stdin:
         print("REFUSED: QEMU fixture password input required.", file=sys.stderr)
         return 2
-    failures = check_lab_guard()
+    failures = check_lab_guard(require_luks=not sealed_mode)
     if failures:
         for failure in failures:
             print(f"REFUSED: {failure}", file=sys.stderr)
