@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 from contextlib import ExitStack
 import getpass
+import fcntl
 import secrets
 import sys
 from http.server import ThreadingHTTPServer
@@ -28,11 +29,25 @@ def main(argv=None) -> int:
                         help="Explicit root-side disposable QEMU consent phrase")
     parser.add_argument("--trusted-console-credentials", action="store_true",
                         help="Collect both secrets at the local root TTY into sealed memfds")
+    parser.add_argument("--trusted-sealed-luks-fd", type=int, default=None,
+                        help="QEMU harness: inherited independently created sealed LUKS fd")
+    parser.add_argument("--trusted-sealed-account-fd", type=int, default=None,
+                        help="QEMU harness: inherited independently created sealed account fd")
     args = parser.parse_args(argv)
     try:
         with ExitStack() as stack:
             handles = None
-            if args.trusted_console_credentials:
+            inherited = (args.trusted_sealed_luks_fd, args.trusted_sealed_account_fd)
+            if any(fd is not None for fd in inherited):
+                if (args.trusted_console_credentials or any(fd is None for fd in inherited)
+                        or any(fd < 0 for fd in inherited)):
+                    raise Refused("Sealed QEMU descriptor pair is incomplete")
+                # subprocess pass_fds clears FD_CLOEXEC during exec; restore it
+                # before verifying both immutable descriptor roles and seals.
+                for fd in inherited:
+                    fcntl.fcntl(fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
+                handles = handoff.CredentialFDs(*inherited)
+            elif args.trusted_console_credentials:
                 # Explicit root/operator mode, NOT the HTTP/browser UI.
                 if not sys.stdin.isatty():
                     raise Refused("Trusted credential entry requires an actual local TTY")
