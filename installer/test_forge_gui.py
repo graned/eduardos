@@ -75,6 +75,31 @@ class WebPreviewTests(unittest.TestCase):
         self.assertIn(b"/forge-font.ttf", css)
         self.assertIn(b"/artwork.png", css)
 
+    def test_installer_artwork_fits_and_font_fallback_is_legible(self):
+        status, css, _ = self.request("GET", "/style.css", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b"background-size:100% 100%,contain", css)
+        self.assertNotIn(b"background-size:cover", css)
+        self.assertIn(b"font-weight:400", css)
+        self.assertIn(b'"DejaVu Sans",sans-serif', css)
+        self.assertIn(b"color:var(--text)", css)
+
+    def test_live_brave_software_text_rendering_is_opt_in(self):
+        with patch.dict(forge_gui.os.environ, {"EDOS_FORGE_SOFTWARE_BROWSER": "1"}), \\
+             patch.object(forge_gui.shutil, "which", return_value="/nix/store/brave/bin/brave"), \\
+             patch.object(forge_gui.subprocess, "Popen") as popen, \\
+             patch.object(forge_gui.webbrowser, "open") as fallback:
+            forge_gui.open_preview_browser("http://127.0.0.1:12345/?token=example")
+            args = popen.call_args.args[0]
+            self.assertIn("--disable-gpu", args)
+            self.assertIn("--disable-gpu-compositing", args)
+            self.assertEqual(popen.call_args.kwargs["env"]["LIBGL_ALWAYS_SOFTWARE"], "1")
+            fallback.assert_not_called()
+        with patch.dict(forge_gui.os.environ, {"EDOS_FORGE_SOFTWARE_BROWSER": "0"}), \\
+             patch.object(forge_gui.webbrowser, "open") as fallback:
+            forge_gui.open_preview_browser("http://127.0.0.1:12345/?token=example")
+            fallback.assert_called_once()
+
     def test_font_asset_is_same_origin_and_fixed_path(self):
         with TemporaryDirectory() as directory:
             font = Path(directory) / "forge.ttf"
