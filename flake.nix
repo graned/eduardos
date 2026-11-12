@@ -157,8 +157,7 @@
         name = "forge-installer-lab-gui";
         runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
         text = ''
-          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_lab_gui.py \\
-            --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
+          exec ${pkgs.python3}/bin/python3 ${./installer}/forge_lab_gui.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
         '';
       };
       # Read-only production disk identity contract. No privileged helper
