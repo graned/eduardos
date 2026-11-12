@@ -124,6 +124,13 @@ def make_handler(token: str, *, lab_session=None):
             # Browsers do not attach custom request headers when loading
             # stylesheet and script tags; these fixed assets are public,
             # but the HTML entrypoint and read-only API remain token-guarded.
+            if path == "/favicon.ico":
+                # Browsers request this automatically. No icon is shipped;
+                # respond with an explicit empty asset rather than a 403.
+                self.send_response(204)
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                return
             if path == "/style.css":
                 return self.serve_asset("style.css", "text/css; charset=utf-8")
             if path == "/app.js":
