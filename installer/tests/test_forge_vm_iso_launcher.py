@@ -23,8 +23,9 @@ class VmIsoLauncherTests(unittest.TestCase):
 
     def test_non_interactive_root_rejected_without_prompt(self):
         with mock.patch.object(launcher.os, "geteuid", return_value=0), \
-             mock.patch.object(launcher.sys.stdin, "isatty", return_value=False), \
+             mock.patch.object(launcher.sys, "stdin") as fake_stdin, \
              mock.patch.object(launcher.gui, "main") as gui:
+            fake_stdin.isatty.return_value = False
             self.assertEqual(launcher.main(["--executor", "/nix/store/fake"]), 2)
             gui.assert_not_called()
 
@@ -32,20 +33,22 @@ class VmIsoLauncherTests(unittest.TestCase):
         def fake_dmi(self, *args, **kwargs):
             return "Acme Physical Laptop"
         with mock.patch.object(launcher.os, "geteuid", return_value=0), \
-             mock.patch.object(launcher.sys.stdin, "isatty", return_value=True), \
+             mock.patch.object(launcher.sys, "stdin") as fake_stdin, \
              mock.patch.object(Path, "read_text", fake_dmi), \
              mock.patch.object(launcher.os, "open") as open_file, \
              mock.patch.object(launcher.gui, "main") as gui:
+            fake_stdin.isatty.return_value = True
             self.assertEqual(launcher.main(["--executor", "/nix/store/fake"]), 2)
             open_file.assert_not_called()
             gui.assert_not_called()
 
     def test_qemu_with_wrong_stable_disk_refused(self):
         with mock.patch.object(launcher.os, "geteuid", return_value=0), \
-             mock.patch.object(launcher.sys.stdin, "isatty", return_value=True), \
+             mock.patch.object(launcher.sys, "stdin") as fake_stdin, \
              mock.patch.object(Path, "read_text", return_value="QEMU"), \
              mock.patch.object(Path, "is_symlink", return_value=False), \
              mock.patch.object(launcher.os, "open") as open_file:
+            fake_stdin.isatty.return_value = True
             self.assertEqual(launcher.main(["--executor", "/nix/store/fake"]), 2)
             open_file.assert_not_called()
 
