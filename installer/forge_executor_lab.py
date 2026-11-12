@@ -48,6 +48,35 @@ def run(*args: str) -> str:
                           timeout=30).stdout.strip()
 
 
+def verify_luks_input(keyfile: Path) -> None:
+    """One closed credential file interface for the immutable Disko script.
+
+    Secure mode accepts ONLY a root-owned symlink to THIS executor's live,
+    labelled sealed LUKS memfd. CI fixture mode accepts only a root-owned
+    regular 0600 /run file. Neither mode trusts a browser-provided path.
+    """
+    if keyfile.is_symlink():
+        link = os.readlink(keyfile)
+        if not re.fullmatch(r"/proc/[1-9][0-9]*/fd/[0-9]+", link):
+            raise Refused("Sealed LUKS link has invalid target")
+        pieces = link.split("/")
+        pid, descriptor = int(pieces[2]), int(pieces[4])
+        if pid != os.getpid() or keyfile.lstat().st_uid != 0:
+            raise Refused("Sealed LUKS link does not belong to trusted executor")
+        try:
+            sealed_handoff._assert_fd(descriptor, credentials.LUKS_MEMFD_LABEL)
+        except sealed_handoff.Refused:
+            raise Refused("Missing sealed LUKS credential") from None
+    elif keyfile.is_file():
+        metadata = keyfile.stat()
+        if (metadata.st_uid != 0 or not stat.S_ISREG(metadata.st_mode)
+                or not 16 <= metadata.st_size <= credentials.MAX_SECRET_BYTES
+                or stat.S_IMODE(metadata.st_mode) != 0o600):
+            raise Refused("Disposable fixture key is not root-owned 0600")
+    else:
+        raise Refused("QEMU LUKS credential not available")
+
+
 def check_lab_guard(*, require_luks: bool = True) -> list[str]:
     errors = []
     if os.geteuid() != 0:
@@ -99,26 +128,11 @@ def check_lab_guard(*, require_luks: bool = True) -> list[str]:
     # immutable formatter expects this exact /run pathname, so it is a
     # root-owned symlink to the executor's own live /proc/self/fd/N.
     # Never follow an arbitrary symlink or accept a caller-provided key path.
-    if not require_luks:
-        return errors
-    if KEYFILE.is_symlink():
+    if require_luks:
         try:
-            link = os.readlink(KEYFILE)
-            if not re.fullmatch(r"/proc/[1-9][0-9]*/fd/[0-9]+", link):
-                raise Refused("Invalid sealed LUKS link")
-            pid, descriptor = (int(part) for part in (link.split("/")[2], link.split("/")[4]))
-            if pid != os.getpid() or KEYFILE.lstat().st_uid != 0:
-                raise Refused("Sealed LUKS link belongs to another process")
-            sealed_handoff._assert_fd(descriptor, credentials.LUKS_MEMFD_LABEL)
-        except (OSError, ValueError, Refused, sealed_handoff.Refused):
-            errors.append("Sealed LUKS credential provenance failed")
-    elif not KEYFILE.is_file():
-        errors.append("Missing guarded QEMU LUKS input")
-    else:
-        metadata = KEYFILE.stat()
-        if (metadata.st_uid != 0 or metadata.st_size < 16
-                or metadata.st_mode & 0o077):
-            errors.append("Disposable LUKS fixture must be root-owned mode 0600")
+            verify_luks_input(KEYFILE)
+        except (Refused, OSError, ValueError):
+            errors.append("Disposable LUKS credential verification failed")
     return errors
 
 
