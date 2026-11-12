@@ -48,7 +48,7 @@ def run(*args: str) -> str:
                           timeout=30).stdout.strip()
 
 
-def verify_luks_input(keyfile: Path) -> None:
+def verify_luks_input(keyfile: Path, *, expected_uid: int = 0) -> None:
     """One closed credential file interface for the immutable Disko script.
 
     Secure mode accepts ONLY a root-owned symlink to THIS executor's live,
@@ -61,7 +61,7 @@ def verify_luks_input(keyfile: Path) -> None:
             raise Refused("Sealed LUKS link has invalid target")
         pieces = link.split("/")
         pid, descriptor = int(pieces[2]), int(pieces[4])
-        if pid != os.getpid() or keyfile.lstat().st_uid != 0:
+        if pid != os.getpid() or keyfile.lstat().st_uid != expected_uid:
             raise Refused("Sealed LUKS link does not belong to trusted executor")
         try:
             sealed_handoff._assert_fd(descriptor, credentials.LUKS_MEMFD_LABEL)
@@ -69,7 +69,7 @@ def verify_luks_input(keyfile: Path) -> None:
             raise Refused("Missing sealed LUKS credential") from None
     elif keyfile.is_file():
         metadata = keyfile.stat()
-        if (metadata.st_uid != 0 or not stat.S_ISREG(metadata.st_mode)
+        if (metadata.st_uid != expected_uid or not stat.S_ISREG(metadata.st_mode)
                 or not 16 <= metadata.st_size <= credentials.MAX_SECRET_BYTES
                 or stat.S_IMODE(metadata.st_mode) != 0o600):
             raise Refused("Disposable fixture key is not root-owned 0600")
