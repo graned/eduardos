@@ -105,22 +105,18 @@ pkgs.testers.runNixOSTest {
             "--confirm 'ERASE DISPOSABLE /dev/vda' --user-password-stdin "
             "</run/edos-public-user-password"
         )
-        # The one-shot transaction must pass every gated phase in order.
-        # Progress events contain only fixed vocabulary, never passwords,
-        # hashes, disk identifiers, or arbitrary executor commands.
-        stages = [
-            "guarded", "format-started", "formatted",
-            "mounted-attested", "credential-staged", "re-attested",
-            "install-started", "installed",
-        ]
-        positions = [install_log.find("FORGE_QEMU_PHASE=" + s) for s in stages]
-        assert all(pos >= 0 for pos in positions), (
-            "A guarded installation phase was missing from the VM run"
-        )
-        assert positions == sorted(positions), (
-            "Installation phase sequence was not monotonic"
-        )
-        assert "FORGE_QEMU_PHASE=halted-" not in install_log
+        # Inspect the *actual* captured disposable executor stdout with the
+        # strict phase observer, rather than substring-order checks (which
+        # can accidentally accept duplicates or 'installed' after failure).
+        import sys
+        sys.path.insert(0, "${../../installer}")
+        from forge_lab_progress import assess
+        verified = assess(install_log, process_returncode=0)
+        assert verified["status"] == "installed-lab-only"
+        assert verified["complete"] is True
+        assert verified["authorization_to_write"] is False
+        assert verified["automatic_retry_enabled"] is False
+
         installer.succeed("rm /run/edos-public-user-password")
         installer.succeed("test -s /mnt/persist/eduardos/credentials/testpilot.hash")
         installer.succeed(
