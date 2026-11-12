@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import secrets
+import shutil
 import subprocess
 import sys
 import threading
@@ -238,6 +239,34 @@ def make_handler(token: str, *, lab_session=None):
     return ForgeHandler
 
 
+
+def open_preview_browser(url: str) -> None:
+    """Use software-rasterized Brave only for the live ISO's broken GPU fonts.
+
+    This browser changes presentation only: Forge remains bound to loopback
+    and its token-guarded read-only API, and the VM lab executor is separate.
+    Fall back to the host's normal browser outside the live ISO.
+    """
+    if os.environ.get("EDOS_FORGE_SOFTWARE_BROWSER") == "1":
+        browser = shutil.which("brave") or shutil.which("brave-browser")
+        if browser:
+            try:
+                subprocess.Popen(
+                    [browser, "--disable-gpu", "--disable-gpu-compositing",
+                     "--disable-features=Vulkan", "--no-first-run", url],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, close_fds=True,
+                    start_new_session=True,
+                    env={**os.environ, "LIBGL_ALWAYS_SOFTWARE": "1"},
+                )
+                return
+            except OSError:
+                # Never make the installer page unreachable just because
+                # the optional software-rendering invocation failed.
+                pass
+    webbrowser.open(url)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="eduardOS graphical installer preview (read-only)")
     parser.add_argument("--no-browser", action="store_true", help="Print URL without opening browser")
@@ -250,7 +279,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Open locally: {url}", flush=True)
     print("Press Ctrl+C to stop.", flush=True)
     if not args.no_browser:
-        opener = threading.Timer(0.6, lambda: webbrowser.open(url))
+        opener = threading.Timer(0.6, lambda: open_preview_browser(url))
         opener.daemon = True
         opener.start()
     try:
