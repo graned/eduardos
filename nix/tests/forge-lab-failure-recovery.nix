@@ -69,6 +69,11 @@ pkgs.testers.runNixOSTest {
         "--user-password-stdin </run/edos-public-recovery-password 2>&1"
     )
 
+    # The NixOS driver type-checker cannot resolve local dynamic imports.
+    # Load the pinned source directly and assess actual captured VM output.
+    import runpy
+    assess_progress = runpy.run_path("${../../installer/forge_lab_progress.py}")["assess"]
+
     with subtest("Actual disposable disk receives partial GPT before intentional failure"):
         status, output = machine.execute(command)
         assert status != 0, "Injected partial Disko failure must fail"
@@ -76,6 +81,11 @@ pkgs.testers.runNixOSTest {
         assert "FORGE_QEMU_PHASE=halted-after-format-started" in output, output[-3000:]
         assert "FORGE_QEMU_PHASE=formatted" not in output
         assert "FORGE_QEMU_PHASE=installed" not in output
+        observed = assess_progress(output, process_returncode=status)
+        assert observed["status"] == "manual-recovery-required", observed
+        assert observed["complete"] is False
+        assert observed["authorization_to_write"] is False
+        assert observed["automatic_retry_enabled"] is False
         machine.succeed("test -f /run/eduardos-qemu-format-attempted")
         machine.succeed(
             "test \"$(stat -c %a /run/eduardos-qemu-format-attempted)\" = 600"
@@ -95,6 +105,10 @@ pkgs.testers.runNixOSTest {
         assert "attempt already started" in output, output[-3000:]
         assert "FORGE_QEMU_PHASE=format-started" not in output
         assert "FORGE_QEMU_PHASE=installed" not in output
+        blocked = assess_progress(output, process_returncode=status)
+        assert blocked["status"] == "incomplete-unknown-disk-state", blocked
+        assert blocked["complete"] is False
+        assert blocked["automatic_retry_enabled"] is False
         machine.succeed(
             "lsblk -dnro PTTYPE /dev/vda | grep -Fx gpt"
         )
