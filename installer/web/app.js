@@ -264,6 +264,10 @@ async function showDisposableLabControls(summary, diskId, revision) {
       $("username").value !== "testpilot" ||
       $("hostname").value !== "edos-installed-lab") return;
 
+  // The generic read-only notice applies to the production UI, not this
+  // independently authorized disposable-QEMU session.
+  const previewOnlyNotice = summary.querySelector(".blocked-text");
+  if (previewOnlyNotice) previewOnlyNotice.remove();
   const panel = element("div", "summary");
   panel.append(element("h3", "", "DISPOSABLE QEMU INSTALLATION LAB"),
                element("p", "", "A trusted local root operator pre-authorized this VM session. " +

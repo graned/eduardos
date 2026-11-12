@@ -29,6 +29,9 @@ pkgs.testers.runNixOSTest {
         mountAuditor
         guiPreview
         labGui
+        pkgs.chromium
+        pkgs.chromedriver
+        (pkgs.python3.withPackages (ps: [ ps.selenium ]))
         pkgs.stdenv
         pkgs.perlPackages.ConfigIniFiles
         pkgs.perlPackages.FileSlurp
@@ -104,10 +107,11 @@ pkgs.testers.runNixOSTest {
         # Actual installation now starts through Forge's disposable-VM-only
         # GUI HTTP contract, not via a direct CLI executor invocation.
         install_log = installer.succeed(
-            "${pkgs.python3}/bin/python3 ${./forge-lab-gui-in-qemu.py} "
-            "${lib.getExe labGui}"
+            "${pkgs.python3.withPackages (ps: [ ps.selenium ])}/bin/python3 "
+            "${./forge-lab-gui-in-qemu.py} ${lib.getExe labGui} "
+            "${lib.getExe pkgs.chromium} ${lib.getExe pkgs.chromedriver}"
         )
-        assert "FORGE_QEMU_GUI=installed-via-http-lab" in install_log
+        assert "FORGE_QEMU_GUI=installed-via-browser-click" in install_log
         # Inspect the *actual* captured disposable executor stdout with the
         # strict phase observer, rather than substring-order checks (which
         # can accidentally accept duplicates or 'installed' after failure).

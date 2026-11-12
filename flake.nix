@@ -157,6 +157,9 @@
         name = "forge-installer-lab-gui";
         runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
         text = ''
+          # Use the same immutable installer visual assets as production Forge.
+          export EDOS_FORGE_ARTWORK_PNG="${forgeEclipseInstallerArtwork}/installer.png"
+          export EDOS_FORGE_FONT_PATH="${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSans.ttf"
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_lab_gui.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
         '';
       };

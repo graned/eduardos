@@ -84,6 +84,11 @@ class LabHTTPTests(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/lab/start", payload)[0], 409)
         self.assertEqual(self.lab.starts, 2)
 
+    def test_favicon_probe_has_no_forbidden_response(self):
+        status, body = self.request("GET", "/favicon.ico")
+        self.assertEqual(status, 204)
+        self.assertEqual(body, b"")
+
     def test_nonsecret_body_and_cancel_route(self):
         self.assertEqual(self.request("POST", "/api/lab/start", {"password": "NEVER_ECHO"})[0], 409)
         status, body = self.request("POST", "/api/lab/cancel", {"operation": "wrong"})
