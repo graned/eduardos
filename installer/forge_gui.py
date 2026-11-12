@@ -241,7 +241,7 @@ def make_handler(token: str, *, lab_session=None):
 
 
 def open_preview_browser(url: str) -> None:
-    """Use software-rasterized Brave only for the live ISO's broken GPU fonts.
+    """Disable broken Brave GPU text rasterization in the live ISO.
 
     This browser changes presentation only: Forge remains bound to loopback
     and its token-guarded read-only API, and the VM lab executor is separate.
@@ -252,7 +252,8 @@ def open_preview_browser(url: str) -> None:
         if browser:
             try:
                 subprocess.Popen(
-                    [browser, "--disable-gpu", "--disable-gpu-compositing",
+                    [browser, "--disable-gpu-rasterization",
+                     "--disable-gpu-compositing", "--disable-zero-copy",
                      "--disable-features=Vulkan", "--no-first-run", url],
                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL, close_fds=True,
