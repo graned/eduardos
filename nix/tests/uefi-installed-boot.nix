@@ -80,10 +80,9 @@ pkgs.testers.runNixOSTest {
         installer.succeed("test ! -e /dev/vda1")
 
     with subtest("Partition through the real Disko layout"):
-        installer.succeed(
-            "umask 077; printf 'edos-disposable-test-passphrase' "
-            "> /run/edos-test-passphrase"
-        )
+        # Sealed LUKS test passphrase is provided through inherited
+        # role-labelled memfds; never create an account/LUKS plaintext file.
+        installer.succeed("test ! -e /run/edos-test-passphrase")
         # The lab executor runs Disko and nixos-install only after
         # checking an explicit QEMU-only marker, target disk state and
         # an exact human-readable confirmation.
@@ -93,10 +92,7 @@ pkgs.testers.runNixOSTest {
         # This string is PUBLIC, disposable test-only data, never a real
         # password. It lives under the test guest's /run tmpfs and is
         # supplied through stdin, never a process argument to the helper.
-        installer.succeed(
-            "umask 077; printf 'edos-QEMU-public-login-fixture-32' "
-            "> /run/edos-public-user-password"
-        )
+        installer.succeed("test ! -e /run/edos-public-user-password")
         # Reject missing password input BEFORE Disko erases the test disk.
         installer.fail(
             "${lib.getExe labExecutor} --execute "
@@ -109,7 +105,8 @@ pkgs.testers.runNixOSTest {
         install_log = installer.succeed(
             "${pkgs.python3.withPackages (ps: [ ps.selenium ])}/bin/python3 "
             "${./forge-lab-gui-in-qemu.py} ${lib.getExe labGui} "
-            "${lib.getExe pkgs.chromium} ${lib.getExe pkgs.chromedriver}"
+            "${lib.getExe pkgs.chromium} ${lib.getExe pkgs.chromedriver} "
+            "${../../installer}"
         )
         assert "FORGE_QEMU_GUI=installed-via-browser-click" in install_log
         # Inspect the *actual* captured disposable executor stdout with the
@@ -127,7 +124,8 @@ pkgs.testers.runNixOSTest {
         assert verified["authorization_to_write"] is False
         assert verified["automatic_retry_enabled"] is False
 
-        installer.succeed("rm /run/edos-public-user-password")
+        installer.succeed("test ! -e /run/edos-public-user-password")
+        installer.succeed("test ! -e /run/edos-test-passphrase")
         installer.succeed("test -s /mnt/persist/eduardos/credentials/testpilot.hash")
         installer.succeed(
             "test \"$(stat -c %a /mnt/persist/eduardos/credentials/testpilot.hash)\" = 600"
