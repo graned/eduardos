@@ -26,7 +26,7 @@ class SealedExecutionContractTests(unittest.TestCase):
             path = Path(temp) / "edos-test-passphrase"
             with handoff.sealed_credential_pair(LUKS, ACCOUNT) as pair:
                 os.symlink(f"/proc/{os.getpid()}/fd/{pair.luks}", path)
-                executor.verify_luks_input(path)
+                executor.verify_luks_input(path, expected_uid=os.geteuid())
                 self.assertTrue(path.is_symlink())
                 self.assertEqual(path.lstat().st_size > 0, True)
                 self.assertEqual(os.readlink(path),
@@ -38,7 +38,7 @@ class SealedExecutionContractTests(unittest.TestCase):
             with handoff.sealed_credential_pair(LUKS, ACCOUNT) as pair:
                 os.symlink(f"/proc/{os.getpid()}/fd/{pair.account}", path)
                 with self.assertRaises(executor.Refused):
-                    executor.verify_luks_input(path)
+                    executor.verify_luks_input(path, expected_uid=os.geteuid())
 
     def test_untrusted_symlink_and_other_process_rejected(self):
         with TemporaryDirectory() as temp:
@@ -50,18 +50,18 @@ class SealedExecutionContractTests(unittest.TestCase):
                     with self.subTest(target=target):
                         path.symlink_to(target)
                         with self.assertRaises(executor.Refused):
-                            executor.verify_luks_input(path)
+                            executor.verify_luks_input(path, expected_uid=os.geteuid())
                         path.unlink()
 
     def test_no_unsealed_file_or_short_fixture(self):
         with TemporaryDirectory() as temp:
             path = Path(temp) / "edos-test-passphrase"
             with self.assertRaises(executor.Refused):
-                executor.verify_luks_input(path)
+                executor.verify_luks_input(path, expected_uid=os.geteuid())
             path.write_bytes(b"short")
             path.chmod(0o600)
             with self.assertRaises(executor.Refused):
-                executor.verify_luks_input(path)
+                executor.verify_luks_input(path, expected_uid=os.geteuid())
 
     def test_operator_tty_mode_fails_closed_without_root(self):
         with mock.patch.object(gui.os, "geteuid", return_value=1000):
