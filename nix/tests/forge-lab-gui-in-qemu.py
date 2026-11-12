@@ -7,6 +7,7 @@ The frontend uses these same endpoints; browser-click acceptance is tracked
 separately for the next frozen roadmap milestone.
 """
 import http.client
+from contextlib import ExitStack
 import json
 import os
 import re
@@ -26,12 +27,28 @@ from urllib.parse import urlsplit
 COMPLETE = "installed-lab-only"
 
 
-def main(binary: str, chromium: str, chromedriver: str) -> None:
-    proc = subprocess.Popen(
-        [binary, "--operator-confirm", "ERASE DISPOSABLE /dev/vda"],
-        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL, bufsize=0, start_new_session=True,
-    )
+def main(binary: str, chromium: str, chromedriver: str, installer_src: str) -> None:
+    # This CI harness uses PUBLIC disposable credentials; real user secrets
+    # come from the operator's local TTY, never from browser or Nix store.
+    sys.path.insert(0, installer_src)
+    import forge_secret_handoff as sealed
+    secrets_stack = ExitStack()
+    try:
+        pair = secrets_stack.enter_context(sealed.sealed_credential_pair(
+            "edos-disposable-test-passphrase",
+            "edos-QEMU-public-login-fixture-32",
+        ))
+        proc = subprocess.Popen(
+            [binary, "--operator-confirm", "ERASE DISPOSABLE /dev/vda",
+             "--trusted-sealed-luks-fd", str(pair.luks),
+             "--trusted-sealed-account-fd", str(pair.account)],
+            pass_fds=(pair.luks, pair.account),
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, bufsize=0, start_new_session=True,
+        )
+    except BaseException:
+        secrets_stack.close()
+        raise
     try:
         end = time.monotonic() + 30
         pending = bytearray()
@@ -202,9 +219,10 @@ def main(binary: str, chromium: str, chromedriver: str) -> None:
             proc.wait(timeout=5)
         if proc.stdout is not None:
             proc.stdout.close()
+        secrets_stack.close()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        raise SystemExit("Usage: forge-lab-gui-in-qemu.py <lab-gui> <chromium> <chromedriver>")
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    if len(sys.argv) != 5:
+        raise SystemExit("Usage: forge-lab-gui-in-qemu.py <lab-gui> <chromium> <chromedriver> <installer-source>")
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
