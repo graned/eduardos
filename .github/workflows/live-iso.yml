@@ -4,6 +4,11 @@ on:
   # Preview ISO builds are manual to avoid repeated multi-GB builds and
   # the GitHub-hosted runner disk exhaustion observed in earlier iterations.
   workflow_dispatch:
+  # One pre-merge checkpoint build on this dedicated PR branch only;
+  # GitHub does not activate new PR workflow triggers from base until merged.
+  push:
+    branches:
+      - "ci/alpha02-iso-release-checkpoint"
   # One checkpoint build when the release-image packaging or boot contract
   # changes; NOT on ordinary application/theme/docs PRs.
   pull_request:
