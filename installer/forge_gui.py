@@ -152,7 +152,7 @@ def make_handler(token: str, *, lab_session=None):
                 return self.send_json(200, install_capabilities())
             if path == "/api/inventory":
                 try:
-                    result = inventory()
+                    result = lab_session.inventory() if lab_session is not None else inventory()
                 except (OSError, ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
                     return self.send_json(503, {"error": f"Hardware discovery failed: {type(exc).__name__}"})
                 return self.send_json(200, result)
@@ -162,7 +162,8 @@ def make_handler(token: str, *, lab_session=None):
                 if len(identifiers) != 1 or len(identifiers[0]) > 256:
                     return self.send_json(400, {"error": "Expected one stable disk identifier"})
                 try:
-                    result = plan_for_identifier(identifiers[0])
+                    result = (lab_session.preview(identifiers[0]) if lab_session is not None
+                              else plan_for_identifier(identifiers[0]))
                 except (OSError, ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
                     return self.send_json(503, {"error": f"Hardware discovery failed: {type(exc).__name__}"})
                 return self.send_json(200, result)
