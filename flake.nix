@@ -143,8 +143,10 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
         '';
       };
-      # Lab-only destructive installer, permanently hard-locked to a
-      # disposable QEMU /dev/vda. Not part of live ISO or GUI packages.
+      # Disposable-QEMU-only destructive executor, permanently hard-locked
+      # to /dev/vda. Also referenced by the Alpha 0.2 VM-only ISO's opt-in
+      # root console launcher; NEVER reachable from the desktop preview GUI
+      # and NEVER authorized for physical disks.
       forgeInstallerLab = pkgs.writeShellApplication {
         name = "forge-installer-lab";
         runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
@@ -173,6 +175,11 @@
         name = "forge-installer-vm";
         runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
         text = ''
+          # Same immutable art and font as the verified QEMU lab GUI.
+          # Without these, the ISO's privileged local loopback GUI serves
+          # HTTP 404 for /artwork.png and /forge-font.ttf.
+          export EDOS_FORGE_ARTWORK_PNG="${forgeEclipseInstallerArtwork}/installer.png"
+          export EDOS_FORGE_FONT_PATH="${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSans.ttf"
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_vm_iso_launcher.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
         '';
       };
