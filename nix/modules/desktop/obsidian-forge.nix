@@ -129,6 +129,17 @@ in
     environment.etc."xdg/eduardos/forge-eclipse-wallpaper.png" =
       lib.mkIf isEclipse { source = eclipseWallpaper + "/wallpaper.png"; };
 
+    # Brave/Chromium under XWayland resolves both browser chrome and CSS
+    # fallbacks through fontconfig; shipping fonts alone is insufficient
+    # if a minimal live ISO doesn't advertise matching system defaults.
+    fonts.fontconfig = {
+      enable = true;
+      defaultFonts = {
+        sansSerif = [ "DejaVu Sans" ];
+        serif = [ "DejaVu Serif" ];
+        monospace = [ "DejaVu Sans Mono" ];
+      };
+    };
     fonts.packages = with pkgs; [
       dejavu_fonts
       nerd-fonts.jetbrains-mono

@@ -11,6 +11,7 @@ import json
 import os
 import secrets
 import shutil
+import tempfile
 import subprocess
 import sys
 import threading
@@ -241,30 +242,48 @@ def make_handler(token: str, *, lab_session=None):
 
 
 def open_preview_browser(url: str) -> None:
-    """Disable broken Brave GPU text rasterization in the live ISO.
+    """Start an isolated XWayland browser for Forge's live-ISO preview.
 
-    This browser changes presentation only: Forge remains bound to loopback
-    and its token-guarded read-only API, and the VM lab executor is separate.
-    Fall back to the host's normal browser outside the live ISO.
+    Chromium forwards launches to an already running instance with the SAME
+    profile. That silently discards subsequent GPU/ozone switches, which
+    explains why toggling flags did not fix the text-less VM screenshot.
+    Use a fresh PRIVATE profile and X11/XWayland in this non-accelerated VM
+    instead of relying on the broken native Wayland glyph rasterizer.
+    Normal hosts keep their configured default browser.
     """
     if os.environ.get("EDOS_FORGE_SOFTWARE_BROWSER") == "1":
         browser = shutil.which("brave") or shutil.which("brave-browser")
         if browser:
+            # Runtime dir disappears at logout; no persistent credentials,
+            # browsing history or browser-profile contention. mkdtemp=0700.
+            runtime = os.environ.get("XDG_RUNTIME_DIR")
+            if not runtime or not os.path.isdir(runtime):
+                runtime = None
+            profile = tempfile.mkdtemp(prefix="edos-forge-", dir=runtime)
             try:
                 subprocess.Popen(
-                    [browser, "--disable-gpu-rasterization",
-                     "--disable-gpu-compositing", "--disable-zero-copy",
-                     "--disable-features=Vulkan", "--no-first-run", url],
+                    [browser,
+                     f"--user-data-dir={profile}",
+                     "--ozone-platform=x11",
+                     "--disable-gpu",
+                     "--disable-gpu-rasterization",
+                     "--disable-gpu-compositing",
+                     "--disable-zero-copy",
+                     "--disable-features=Vulkan",
+                     "--no-first-run",
+                     "--no-default-browser-check",
+                     "--new-window", url],
                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL, close_fds=True,
                     start_new_session=True,
-                    env={**os.environ, "LIBGL_ALWAYS_SOFTWARE": "1"},
+                    env={**os.environ, "LIBGL_ALWAYS_SOFTWARE": "1",
+                         "GDK_BACKEND": "x11"},
                 )
                 return
             except OSError:
-                # Never make the installer page unreachable just because
-                # the optional software-rendering invocation failed.
-                pass
+                # The browser never started; remove the unused profile and
+                # fall back to the host's browser for an actionable display.
+                shutil.rmtree(profile, ignore_errors=True)
     webbrowser.open(url)
 
 
