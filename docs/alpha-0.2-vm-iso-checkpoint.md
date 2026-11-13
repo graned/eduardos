@@ -73,27 +73,22 @@ The existing NixOS QEMU CI covers encrypted installation, login and cold
 boot from the lab test image, but the release additionally requires this
 ISO-originated test.
 
-## Disposable QEMU setup
+## Alternative: UTM on Apple Silicon
 
-Create a **new disposable qcow2** of at least 12 GiB. Allocate 4 GiB RAM and 2–4 CPUs. Present the target as virtio `/dev/vda` with serial `root`; the installer refuses other targets.
+Use a **new emulated x86_64 UEFI** VM, attach the freshly built ISO as a
+read-only CD-ROM, and create a **new disposable 16-GiB VirtIO disk**. Its
+VirtIO serial must be `root` so the guest sees
+`/dev/disk/by-id/virtio-root` mapped to `/dev/vda`; UTM's defaults
+may not expose that serial, so verify inside the guest **before**
+attempting installation. Never attach a real Mac disk or USB device.
 
-Example Linux/KVM command sequence:
-
-```sh
-qemu-img create -f qcow2 ./edos-disposable-vm.qcow2 16G
-qemu-system-x86_64 -enable-kvm -m 4096 -smp 4 \
-  -cdrom ./eduardos-alpha.iso -boot d \
-  -drive if=none,id=vm-target,file=./edos-disposable-vm.qcow2,format=qcow2 \
-  -device virtio-blk-pci,drive=vm-target,serial=root
-```
-
-After live boot, open a terminal and check `readlink -f /dev/disk/by-id/virtio-root` shows `/dev/vda`. Then run `sudo forge-installer-vm`.
-
-Type **ERASE DISPOSABLE /dev/vda** at the root authorization prompt, followed by separate, confirmed LUKS and account credentials entered on the terminal. The launcher produces a private loopback Forge URL. Open it **inside the same VM**, select the disposable target, enter `edos-installed-lab` / `testpilot` in the wizard, then click **Install disposable VM**.
-
-The browser never receives the secrets. The trusted operator's sealed, role-labelled Linux memfds are passed to the existing guarded executor. Cancellation after formatting requires manual recovery; never automatically retry an uncertain disk.
-
-Once installed, shut down, detach the ISO, and boot the qcow2 with OVMF/UEFI. Unlock with the selected LUKS passphrase and log in as `testpilot`.
+Use `sudo forge-installer-vm` inside the guest for explicit root-side
+consent and sealed credentials. After Forge reports success, power off,
+detach the ISO and boot the same VM disk with the **same UEFI variables**.
+Verify LUKS unlock, `testpilot` login, persistence witness and a
+second cold boot as described above. If UTM cannot configure an exact
+VirtIO serial, use the Linux QEMU acceptance runner rather than trying
+to bypass the target identity guard.
 
 ## Frozen Milestone 3 release gates
 
