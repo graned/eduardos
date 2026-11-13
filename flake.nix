@@ -173,6 +173,11 @@
         name = "forge-installer-vm";
         runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
         text = ''
+          # Same immutable art and font as the verified QEMU lab GUI.
+          # Without these, the ISO's privileged local loopback GUI serves
+          # HTTP 404 for /artwork.png and /forge-font.ttf.
+          export EDOS_FORGE_ARTWORK_PNG="${forgeEclipseInstallerArtwork}/installer.png"
+          export EDOS_FORGE_FONT_PATH="${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSans.ttf"
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_vm_iso_launcher.py --executor ${forgeInstallerLab}/bin/forge-installer-lab "$@"
         '';
       };
