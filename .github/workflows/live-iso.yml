@@ -60,7 +60,7 @@ jobs:
 
       - name: Validate preview tooling and live ISO configuration
         run: |
-          bash -n scripts/reassemble-live-iso.sh scripts/smoke-live-iso.sh
+          bash -n scripts/reassemble-live-iso.sh scripts/smoke-live-iso.sh scripts/accept-alpha02-iso-qemu.sh
           nix build --no-link --print-build-logs .#checks.x86_64-linux.live-iso-config
           df -h /
 
