@@ -14,6 +14,65 @@ The current installed profile is intentionally a fixed VM test template, with ho
 
 From the repository root run `nix build --out-link result -L .#live-iso`, or use GitHub Actions → **eduardOS Alpha live ISO** → **Run workflow** on the candidate branch. The workflow builds the ISO, checksums it, and checks diskless boot. Diskless boot success does NOT prove that installation from the ISO works.
 
+## Acceptance runner — exact ISO, disposable disk, and two cold boots
+
+On a **Linux x86_64 host with QEMU, OVMF firmware and qemu-img installed**, use
+the helper below. It creates a fresh 16-GiB qcow2 and UEFI variable image in
+a directory that must not already exist. It will **refuse an existing
+destination**, and never accepts a physical disk device path as an argument.
+The ISO is attached read-only. If your host's firmware paths are unusual,
+set `EDOS_OVMF_CODE` and `EDOS_OVMF_VARS` to the relevant OVMF template
+files. On Apple Silicon, use an equivalent x86_64 UEFI guest configured in
+UTM; this helper is written for Linux QEMU.
+
+```sh
+# From the repo root, after building the current checkout (not an old tag):
+bash scripts/accept-alpha02-iso-qemu.sh install \
+  out/eduardos-alpha.iso out/alpha02-acceptance-001
+```
+
+Inside that **new VM**, confirm `readlink -f /dev/disk/by-id/virtio-root`
+returns `/dev/vda`. Run `sudo forge-installer-vm` in an actual guest TTY,
+type exactly `ERASE DISPOSABLE /dev/vda`, enter and confirm your LUKS and
+account passwords, then open the printed loopback URL **inside that VM**.
+Complete the Forge wizard with `edos-installed-lab` and `testpilot`,
+select the fixed disposable VM disk, and wait for terminal state
+`installed-lab-only`. **Do not retry** a partially formatted disk; destroy
+the disposable acceptance directory and start over with a new one.
+
+Shut down the guest normally after installation. Boot the *same* image with
+the *same* OVMF variables, with the ISO now disconnected:
+
+```sh
+bash scripts/accept-alpha02-iso-qemu.sh boot - out/alpha02-acceptance-001
+```
+
+At UEFI startup, unlock LUKS with the password you chose and log in as
+`testpilot`. Create a persistence witness in the installed user's home
+directory, then shut down again:
+
+```sh
+printf 'alpha02-persisted\n' > ~/alpha02-acceptance-marker
+sudo systemctl poweroff
+```
+
+Repeat a **full cold boot** (not rebooting the still-running VM) and verify
+that the marker is still present:
+
+```sh
+bash scripts/accept-alpha02-iso-qemu.sh boot-again - out/alpha02-acceptance-001
+# Inside the installed guest:
+cat ~/alpha02-acceptance-marker
+```
+
+Record the ISO checksum in `out/alpha02-acceptance-001/ISO-SHA256`, the
+`out/BUILDINFO.txt` source revision, and the observed installer phases,
+LUKS unlock, PAM login and persistent marker. This is **operator-driven
+release acceptance**, not a claim that the steps are already verified.
+The existing NixOS QEMU CI covers encrypted installation, login and cold
+boot from the lab test image, but the release additionally requires this
+ISO-originated test.
+
 ## Disposable QEMU setup
 
 Create a **new disposable qcow2** of at least 12 GiB. Allocate 4 GiB RAM and 2–4 CPUs. Present the target as virtio `/dev/vda` with serial `root`; the installer refuses other targets.
