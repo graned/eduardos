@@ -143,8 +143,10 @@
           exec ${pkgs.python3}/bin/python3 ${./installer}/forge_gui.py "$@"
         '';
       };
-      # Lab-only destructive installer, permanently hard-locked to a
-      # disposable QEMU /dev/vda. Not part of live ISO or GUI packages.
+      # Disposable-QEMU-only destructive executor, permanently hard-locked
+      # to /dev/vda. Also referenced by the Alpha 0.2 VM-only ISO's opt-in
+      # root console launcher; NEVER reachable from the desktop preview GUI
+      # and NEVER authorized for physical disks.
       forgeInstallerLab = pkgs.writeShellApplication {
         name = "forge-installer-lab";
         runtimeInputs = with pkgs; [ python3 util-linux nixos-install-tools openssl ];
