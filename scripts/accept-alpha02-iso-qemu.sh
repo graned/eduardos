@@ -54,7 +54,7 @@ if [[ "$phase" == install ]]; then
   [[ ! -e "$disk" && ! -L "$disk" && ! -e "$vars" && ! -L "$vars" ]] || {
     echo "Refusing to overwrite an existing guest disk or UEFI state" >&2; exit 2;
   }
-  qemu-img create -f qcow2 -o backing_file=off "$disk" 16G 2>/dev/null || qemu-img create -f qcow2 "$disk" 16G
+  qemu-img create -f qcow2 "$disk" 16G
   cp -- "$template" "$vars"
   sha256sum "$iso" | cut -d' ' -f1 > "$manifest"
   printf 'ISO SHA256: %s\n' "$(cat "$manifest")"
